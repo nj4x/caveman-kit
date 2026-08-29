@@ -8,12 +8,22 @@ into `settings.json` and a small badge block into `statusline.sh`. Everything
 it touches is backed up under `~/.caveman-kit/backup/` so `uninstall.sh` can
 restore the original configuration exactly.
 
+## Prerequisites
+
+Install the caveman CLI and skill first:
+
+```bash
+npm install -g @caveman-ai/cli && caveman setup --install
+```
+
+See [caveman](https://github.com/JuliusBrussee/caveman) for details.
+
 ## Requirements
 
 - `node` on `PATH`
 - The `caveman` skill already installed at
   `$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` (this kit does not ship the
-  skill itself — see https://github.com/JuliusBrussee/caveman)
+  skill itself)
 
 ## Usage
 
