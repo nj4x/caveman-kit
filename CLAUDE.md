@@ -13,7 +13,7 @@ No build, lint, or test tooling — plain bash entry points and dependency-free 
 ```bash
 ./install.sh                  # install; prompts to auto-install the skill if missing
 ./install.sh --install-skill  # non-interactive skill-install consent (or CAVEMAN_KIT_INSTALL_SKILL=1)
-./uninstall.sh                # byte-exact restore from backups, removes ~/.caveman-kit
+./uninstall.sh                # marker-surgical removal of kit patches, removes ~/.caveman-kit
 ```
 
 Manual smoke-test of hooks (they read JSON on stdin, must always exit 0):
@@ -27,14 +27,14 @@ echo '{"prompt":"/caveman ultra","cwd":"'$PWD'"}' | node hooks/caveman-mode-trac
 
 Two lifecycles that must stay symmetric:
 
-1. **Install time** (`install.sh` + `lib/`): backs up `settings.json`, `statusline.sh`, and `SKILL.md` to `~/.caveman-kit/backup/`, then patches each via a `lib/*.js` script. Writes `~/.caveman-kit/manifest.json` recording backups and whether the kit auto-installed the skill. Manifest is written *before* the skill-frontmatter patch attempt so uninstall can always clean up (ADR 0003 decision 6). `uninstall.sh` restores from backups byte-exact — it never reverse-diffs the patches. Any new install-time mutation must add a backup + manifest field + uninstall path.
+1. **Install time** (`install.sh` + `lib/`): backs up `settings.json`, `statusline.sh`, and `SKILL.md` to `~/.caveman-kit/backup/`, then patches each via a `lib/*.js` script. Writes `~/.caveman-kit/manifest.json` recording backups and whether the kit auto-installed the skill. Manifest is written *before* the skill-frontmatter patch attempt so uninstall can always clean up (ADR 0003 decision 6). `uninstall.sh` removes the kit's own patches surgically (`lib/*-unpatch.js` match hook-command markers and statusline sentinels), so other kits' patches and post-install user edits survive; backups stay in the manifest for manual recovery only. `SKILL.md` frontmatter is still restored from its backup. Any new install-time mutation must add a backup + manifest field + uninstall path.
 
 2. **Runtime** (`hooks/`, copied to `~/.caveman-kit/hooks/` at install):
-   - `caveman-activate.js` (SessionStart) — resolves active mode, persists it to a flag file, injects the skill ruleset filtered to that mode's intensity-table row/examples. SessionStart re-fires on resume//clear/compaction; only `source === 'startup'` resets to the default.
+   - `caveman-activate.js` (SessionStart) — resolves active mode, persists it to a flag file, injects the skill ruleset filtered to that mode's intensity-table row/examples. The persisted flag (repo or global) is honored on every fire, including real startup; `CAVEMAN_DEFAULT_MODE`/built-in `full` seed only when the flag is absent (first run, or after `/caveman off`).
    - `caveman-mode-tracker.js` (UserPromptSubmit) — parses `/caveman <mode>` (delivered as a `<command-name>` envelope, which it unwraps) and natural-language triggers via `caveman-parse.js`, updates the flag, and re-asserts a one-line reminder each turn so mode survives long sessions.
    - `caveman-config.js` — shared: valid modes, flag-file resolution, safe read/write.
 
-**Flag-file resolution** (ADR 0004): repo-scoped `<repo>/.claude/.caveman-mode` when cwd is in a git repo whose root already has `.claude/` (never auto-created; auto-added to `.git/info/exclude`); otherwise global `~/.claude/.caveman-active`. The repo flag doubles as the persisted per-repo default honored at startup. The statusline badge block in `lib/statusline-patch.js` duplicates this resolution in shell — keep the two in sync.
+**Flag-file resolution** (ADR 0004): repo-scoped `<repo>/.claude/.caveman-mode` when cwd is in a git repo whose root has `.claude/` *and the flag file exists*; when the repo flag file is absent, hooks fall back to reading the global `~/.claude/.caveman-active` before the built-in default — a bare `.claude/` dir never shadows the global mode. Passive hooks never create `.claude/` nor the repo flag file (SessionStart re-persists to whichever file the mode came from); an explicit `/caveman <mode>` set does (symlink-safe, then re-resolves), and the flag file is auto-added to `.git/info/exclude`. Either flag doubles as the persisted default honored at startup. The statusline badge block in `lib/statusline-patch.js` duplicates this resolution in shell — keep the two in sync.
 
 **Skill location**: hooks find `SKILL.md` via `CLAUDE_PLUGIN_ROOT`, baked into the hook commands in `settings.json` at install time (symlink-resolved).
 

@@ -11,42 +11,44 @@ const fs = require('fs');
 const path = require('path');
 const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
 
-// SessionStart re-fires mid-conversation (resume, /clear, compaction), not
-// just at true session start. Only a real 'startup' resets to the configured
-// default; other sources preserve whatever mode the user already switched to.
-let source = 'startup';
 let cwd = null;
 try {
   if (!process.stdin.isTTY) {
     const raw = fs.readFileSync(0, 'utf8');
     if (raw) {
       const data = JSON.parse(raw);
-      if (data && typeof data.source === 'string') source = data.source;
       if (data && typeof data.cwd === 'string') cwd = data.cwd;
     }
   }
-} catch (e) { /* no/bad stdin → treat as startup */ }
+} catch (e) { /* no/bad stdin → global flag fallback */ }
 
-const { flagPath, repoRoot } = resolveFlagPath(cwd);
+const { flagPath, repoRoot, globalFlag } = resolveFlagPath(cwd);
 
-let mode = getDefaultMode();
-if (source !== 'startup') {
-  const existing = readFlag(flagPath);
-  if (existing) mode = existing;
-} else if (repoRoot) {
-  // Repo flag doubles as the persisted per-repo default (ADR 0004) — a real
-  // startup honors it instead of resetting to the env/built-in default.
-  const persisted = readFlag(flagPath);
-  if (persisted) mode = persisted;
+// The flag file — repo-scoped or global — is both the live session state and
+// the persisted default (ADR 0004): every SessionStart honors it, including
+// a real startup. Precedence (decision 6): repo flag file → global flag →
+// CAVEMAN_DEFAULT_MODE / built-in 'full'. The write goes to whichever file
+// the mode came from — a passive session never creates the repo flag file,
+// even when a .claude/ dir already exists (only an explicit '/caveman <mode>'
+// scopes the mode to the repo).
+let mode = readFlag(flagPath);
+let target = flagPath;
+if (mode === null && flagPath !== globalFlag) {
+  mode = readFlag(globalFlag);
+  if (mode !== null) target = globalFlag;
+}
+if (mode === null) {
+  mode = getDefaultMode();
+  target = globalFlag;
 }
 
 if (mode === 'off') {
-  clearFlag(flagPath);
+  clearFlag(target);
   process.exit(0);
 }
 
-safeWriteFlag(flagPath, mode);
-if (repoRoot) ensureGitExclude(repoRoot);
+safeWriteFlag(target, mode);
+if (target === flagPath && repoRoot) ensureGitExclude(repoRoot);
 
 if (!process.env.CLAUDE_PLUGIN_ROOT) {
   process.stderr.write('caveman-kit: CLAUDE_PLUGIN_ROOT not set, cannot locate the caveman skill\n');

@@ -38,6 +38,14 @@ again; a pre-existing skill is only ever restored, never removed.
 
 ## Usage
 
+### Quick install (clone-free)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/main/bootstrap.sh | bash
+```
+
+### Manual install from checkout
+
 ```bash
 ./install.sh                # prompts to install the skill if missing
 ./install.sh --install-skill  # non-interactive skill install consent
@@ -48,6 +56,16 @@ To revert:
 ```bash
 ./uninstall.sh
 ```
+
+### Damaged install recovery
+
+If the install state is corrupted, remove both directories manually:
+
+```bash
+rm -rf ~/.local/share/caveman-kit ~/.caveman-kit
+```
+
+Then manually remove hook entries from `~/.claude/settings.json` that reference `caveman-activate.js` or `caveman-mode-tracker.js`.
 
 ## Per-repository mode
 

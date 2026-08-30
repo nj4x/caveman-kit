@@ -26,13 +26,18 @@ function findRepoRoot(startDir) {
 }
 
 // Repo-scoped flag when cwd sits in a git repo whose root already has a
-// .claude/ directory; global flag otherwise. The repo file is both the live
-// session state and the persisted per-repo default (ADR 0004) — .claude/ is
-// deliberately never auto-created.
+// .claude/ directory; global flag otherwise. The flag file (either scope) is
+// both the live session state and the persisted default (ADR 0004). Hooks
+// never auto-create .claude/ passively; only an explicit '/caveman <mode>'
+// does, via createRepoClaudeDir. gitRoot reports the repo root even when
+// resolution fell back to global, so callers can offer that upgrade.
+// globalFlag is always returned: when the repo flag file is absent, callers
+// fall back to reading the global flag before the built-in default (ADR 0004
+// decision 6 precedence) — a bare .claude/ dir alone must not shadow it.
 function resolveFlagPath(cwd) {
   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(require('os').homedir(), '.claude');
   const globalFlag = path.join(claudeDir, '.caveman-active');
-  if (!cwd || typeof cwd !== 'string') return { flagPath: globalFlag, repoRoot: null };
+  if (!cwd || typeof cwd !== 'string') return { flagPath: globalFlag, repoRoot: null, gitRoot: null, globalFlag };
   let root = null;
   try { root = findRepoRoot(cwd); } catch (e) { /* fall through to global */ }
   if (root) {
@@ -42,11 +47,25 @@ function resolveFlagPath(cwd) {
       // followed, or safeWriteFlag/clearFlag would write/delete through it
       // into an attacker-chosen directory.
       if (fs.lstatSync(path.join(root, '.claude')).isDirectory()) {
-        return { flagPath: path.join(root, '.claude', '.caveman-mode'), repoRoot: root };
+        return { flagPath: path.join(root, '.claude', '.caveman-mode'), repoRoot: root, gitRoot: root, globalFlag };
       }
     } catch (e) { /* .claude missing → global */ }
   }
-  return { flagPath: globalFlag, repoRoot: null };
+  return { flagPath: globalFlag, repoRoot: null, gitRoot: root, globalFlag };
+}
+
+// Symlink-safe .claude/ creation for the explicit '/caveman <mode>' path
+// (ADR 0004 decision 2, amended). mkdir WITHOUT recursive: an existing entry
+// — including a hostile symlink committed by the repo — surfaces as EEXIST
+// instead of being silently accepted, and the caller re-runs resolveFlagPath
+// so its lstat check decides whether the dir is usable.
+function createRepoClaudeDir(repoRoot) {
+  try {
+    fs.mkdirSync(path.join(repoRoot, '.claude'));
+    return true;
+  } catch (e) {
+    return e.code === 'EEXIST';
+  }
 }
 
 const EXCLUDE_LINE = '.claude/.caveman-mode';
@@ -108,4 +127,4 @@ function clearFlag(flagPath) {
   try { fs.unlinkSync(flagPath); } catch (e) { /* already gone */ }
 }
 
-module.exports = { VALID_MODES, getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude };
+module.exports = { VALID_MODES, getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude, createRepoClaudeDir };

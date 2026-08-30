@@ -7,7 +7,7 @@
 // ruleset scrolls out of a long session's attention.
 'use strict';
 
-const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
+const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude, createRepoClaudeDir } = require('./caveman-config');
 const { parseModeChange } = require('./caveman-parse');
 
 let input = '';
@@ -18,7 +18,8 @@ process.stdin.on('error', () => process.exit(0));
 process.stdin.on('end', () => {
   try {
     const data = JSON.parse(input);
-    const { flagPath, repoRoot } = resolveFlagPath(typeof data.cwd === 'string' ? data.cwd : null);
+    const cwd = typeof data.cwd === 'string' ? data.cwd : null;
+    let { flagPath, repoRoot, gitRoot, globalFlag } = resolveFlagPath(cwd);
     let prompt = (data.prompt || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
     // Claude Code delivers slash commands to this hook as an envelope, not
@@ -42,6 +43,14 @@ process.stdin.on('end', () => {
 
     const change = skipParse ? null : parseModeChange(prompt);
     if (change && change.action === 'set') {
+      // Explicit set in a repo without .claude/: create the dir so the mode
+      // lands repo-scoped instead of clobbering the global flag (ADR 0004,
+      // amended decision 2). Re-resolve so the lstat symlink check decides
+      // whether the created/pre-existing entry is actually usable.
+      if (!repoRoot && gitRoot && createRepoClaudeDir(gitRoot)) {
+        const re = resolveFlagPath(cwd);
+        if (re.repoRoot) ({ flagPath, repoRoot } = re);
+      }
       safeWriteFlag(flagPath, change.mode);
       if (repoRoot) ensureGitExclude(repoRoot);
     } else if (change && change.action === 'clear') {
@@ -51,7 +60,12 @@ process.stdin.on('end', () => {
     // readFlag enforces symlink-safety + size cap + mode whitelist — if the
     // flag is missing, corrupted, or tampered with, this returns null and we
     // emit nothing rather than injecting untrusted bytes into model context.
-    const activeMode = readFlag(flagPath);
+    // Repo flag absent falls back to the global flag (ADR 0004 decision 6) —
+    // except right after an explicit clear, which must silence the reminder.
+    let activeMode = readFlag(flagPath);
+    if (activeMode === null && flagPath !== globalFlag && !(change && change.action === 'clear')) {
+      activeMode = readFlag(globalFlag);
+    }
     if (activeMode && getDefaultMode() !== 'off') {
       process.stdout.write(JSON.stringify({
         hookSpecificOutput: {

@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 # caveman-kit uninstaller.
 #
-# Restores settings.json and statusline.sh from the exact backups install.sh
-# made, then removes ~/.caveman-kit. Byte-exact restore, not a surgical diff —
-# simpler and safer than trying to reverse-parse what was injected.
+# Surgically removes caveman-kit entries from settings.json and statusline.sh
+# using marker-based detection (not byte-exact restore from backups):
+# - settings.json: removes hook entries containing 'caveman-activate.js' and
+#   'caveman-mode-tracker.js' via lib/settings-unpatch.js
+# - statusline.sh: removes the block between '# CAVEMAN-KIT BEGIN' and
+#   '# CAVEMAN-KIT END' via lib/statusline-unpatch.js
+# Install-time backups stay in the manifest for manual recovery only.
+# Then removes ~/.caveman-kit and the install source directory.
 set -euo pipefail
 
+KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KIT_HOME="$HOME/.caveman-kit"
 MANIFEST="$KIT_HOME/manifest.json"
+INSTALL_DIR="${CAVEMAN_KIT_INSTALL_DIR:-$HOME/.local/share/caveman-kit}"
 
 if [ ! -d "$KIT_HOME" ]; then
   echo "error: caveman-kit is not installed ($KIT_HOME not found)" >&2
@@ -20,34 +27,56 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 if [ ! -f "$MANIFEST" ]; then
-  echo "error: $MANIFEST missing — cannot determine what to restore." >&2
-  echo "Remove $KIT_HOME manually and revert settings.json/statusline.sh by hand." >&2
-  exit 1
+  echo "warning: $MANIFEST missing — cannot determine skill state." >&2
+  echo "Proceeding with best-effort cleanup (settings/statusline markers, $KIT_HOME)." >&2
+
+  CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+  SETTINGS="$CLAUDE_DIR/settings.json"
+  STATUSLINE="$CLAUDE_DIR/statusline.sh"
+
+  if [ -f "$SETTINGS" ]; then
+    node "$KIT_DIR/lib/settings-unpatch.js" "$SETTINGS" || true
+    echo "restored: $SETTINGS (best-effort, marker-based)"
+  fi
+
+  if [ -f "$STATUSLINE" ] && [ ! -L "$STATUSLINE" ]; then
+    node "$KIT_DIR/lib/statusline-unpatch.js" "$STATUSLINE" || true
+  fi
+
+  rm -rf "$KIT_HOME"
+  echo "removed: $KIT_HOME"
+
+  if [ -d "$INSTALL_DIR" ]; then
+    rm -rf "$INSTALL_DIR"
+    echo "removed: $INSTALL_DIR"
+  fi
+
+  echo
+  echo "caveman-kit uninstalled (best-effort, manifest was missing)."
+  echo "Manual cleanup may be needed for the skill entry."
+  exit 0
 fi
 
-CLAUDE_DIR="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')).claudeDir)")"
-SETTINGS_BACKUP="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')).settingsBackup)")"
-STATUSLINE_BACKUP="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.statuslineBackup || '')")"
+CLAUDE_DIR="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.claudeDir || '')")"
 SKILL_INSTALLED_BY_KIT="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.skillInstalledByKit === true ? 'true' : 'false')")"
-SKILL_BACKUP="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.skillBackup || '')")"
+SKILL_BACKUP="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log((m.skillBackup === null || m.skillBackup === undefined) ? '' : m.skillBackup)")"
 
 SETTINGS="$CLAUDE_DIR/settings.json"
 STATUSLINE="$CLAUDE_DIR/statusline.sh"
 
-if [ ! -f "$SETTINGS_BACKUP" ]; then
-  echo "error: settings backup not found at $SETTINGS_BACKUP" >&2
-  exit 1
+# Surgically remove caveman hooks from settings.json using marker-based detection
+if [ -f "$SETTINGS" ]; then
+  node "$KIT_DIR/lib/settings-unpatch.js" "$SETTINGS"
+  echo "restored: $SETTINGS (surgical removal)"
+else
+  echo "warning: $SETTINGS not found — skipping settings unpatch" >&2
 fi
-cp "$SETTINGS_BACKUP" "$SETTINGS"
-echo "restored: $SETTINGS"
 
-if [ -n "$STATUSLINE_BACKUP" ]; then
-  if [ -f "$STATUSLINE_BACKUP" ]; then
-    cp "$STATUSLINE_BACKUP" "$STATUSLINE"
-    echo "restored: $STATUSLINE"
-  else
-    echo "warning: statusline backup recorded but missing at $STATUSLINE_BACKUP — left $STATUSLINE untouched" >&2
-  fi
+# Surgically remove caveman badge block from statusline.sh using sentinel markers
+if [ -f "$STATUSLINE" ] && [ ! -L "$STATUSLINE" ]; then
+  node "$KIT_DIR/lib/statusline-unpatch.js" "$STATUSLINE"
+else
+  echo "warning: $STATUSLINE not found (or is a symlink) — skipping statusline unpatch" >&2
 fi
 
 # Skill cleanup (ADR 0002/0003): remove entirely if the kit installed it;
@@ -72,5 +101,12 @@ fi
 
 rm -rf "$KIT_HOME"
 echo "removed: $KIT_HOME"
+
+# Remove the install source directory if it exists
+if [ -d "$INSTALL_DIR" ]; then
+  rm -rf "$INSTALL_DIR"
+  echo "removed: $INSTALL_DIR"
+fi
+
 echo
 echo "caveman-kit uninstalled. Restart Claude Code."
