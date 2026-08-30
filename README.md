@@ -10,16 +10,19 @@ restore the original configuration exactly.
 
 ## Prerequisites
 
-The `caveman` skill must be present at
-`$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md`. If it is missing, `install.sh`
-offers to install it automatically (pinned to `JuliusBrussee/caveman@v2.2.0`,
-skill only — no CLI, proxy, or binaries):
+`install.sh` expects the `caveman` skill at
+`$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md`. You don't need to install it
+yourself first — if it's missing, `install.sh` offers to fetch it for you
+(pinned to `JuliusBrussee/caveman@v2.2.0`, skill only — no CLI, proxy, or
+binaries), but since that means running `npx` against a third-party
+GitHub repo, it always asks for consent first:
 
 - interactively: answer `y` at the prompt
-- non-interactively (CI/scripts): pass `--install-skill` or set
-  `CAVEMAN_KIT_INSTALL_SKILL=1`
+- non-interactively (CI/scripts, or a curl-piped install): pass
+  `--install-skill` or set `CAVEMAN_KIT_INSTALL_SKILL=1`
 
-To install the skill manually instead:
+Decline (or omit the flag non-interactively) and `install.sh` exits with
+the manual command below instead of installing anything:
 
 ```bash
 npx skills add JuliusBrussee/caveman@v2.2.0 --skill caveman -g --copy
@@ -41,7 +44,15 @@ again; a pre-existing skill is only ever restored, never removed.
 ### Quick install (clone-free)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.sh | bash
+```
+
+The pipe has no TTY, so the skill-install prompt can't ask for consent — if
+the `caveman` skill isn't installed yet, this aborts with a message asking
+you to pass `--install-skill`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.sh | bash -s -- --install-skill
 ```
 
 ### Manual install from checkout
