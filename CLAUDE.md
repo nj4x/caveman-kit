@@ -11,9 +11,9 @@ Installer kit that wires the third-party `caveman` Claude Code skill (JuliusBrus
 No build, lint, or test tooling — plain bash entry points and dependency-free Node scripts (`node` on PATH is the only requirement).
 
 ```bash
-./install.sh                  # install; prompts to auto-install the skill if missing
-./install.sh --install-skill  # non-interactive skill-install consent (or CAVEMAN_KIT_INSTALL_SKILL=1)
-./uninstall.sh                # marker-surgical removal of kit patches, removes ~/.caveman-kit
+./install.sh                     # install; auto-installs the skill if missing
+./install.sh --no-install-skill  # skip skill auto-install (or CAVEMAN_KIT_INSTALL_SKILL=0)
+./uninstall.sh                   # marker-surgical removal of kit patches, removes ~/.caveman-kit
 ```
 
 Manual smoke-test of hooks (they read JSON on stdin, must always exit 0):

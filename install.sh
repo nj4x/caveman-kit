@@ -7,9 +7,9 @@
 # ~/.caveman-kit/backup/ so uninstall.sh can restore it exactly.
 #
 # Requires the caveman skill at $CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md.
-# If missing, offers to install it (pinned) via `npx skills add` — with an
-# interactive prompt, or non-interactively when CAVEMAN_KIT_INSTALL_SKILL=1
-# or --install-skill is passed (ADR 0001).
+# If missing, installs it automatically (pinned) via `npx skills add`.
+# Pass --no-install-skill (or CAVEMAN_KIT_INSTALL_SKILL=0) to opt out and
+# manage it yourself (ADR 0001, amended).
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,9 +21,9 @@ STATUSLINE="$CLAUDE_DIR/statusline.sh"
 SKILL_PATH="$CLAUDE_DIR/skills/caveman/SKILL.md"
 SKILL_SOURCE="JuliusBrussee/caveman@v2.2.0"
 
-INSTALL_SKILL=0
-[ "${1:-}" = "--install-skill" ] && INSTALL_SKILL=1
-[ "${CAVEMAN_KIT_INSTALL_SKILL:-}" = "1" ] && INSTALL_SKILL=1
+INSTALL_SKILL=1
+[ "${1:-}" = "--no-install-skill" ] && INSTALL_SKILL=0
+[ "${CAVEMAN_KIT_INSTALL_SKILL:-}" = "0" ] && INSTALL_SKILL=0
 
 # Paths flow unescaped into manifest.json heredocs and node -e strings; a
 # quote or backslash in one would corrupt the manifest and break uninstall.
@@ -81,7 +81,7 @@ skill_missing_abort() {
   echo "[caveman-kit] error: caveman skill not found at $SKILL_PATH" >&2
   echo "caveman-kit only wires up hooks for it — install the skill first:" >&2
   echo "  npx skills add $SKILL_SOURCE --skill caveman -g --copy" >&2
-  echo "or re-run with --install-skill (or CAVEMAN_KIT_INSTALL_SKILL=1) to let this installer do it." >&2
+  echo "or drop --no-install-skill to let this installer do it automatically." >&2
   echo "Details: https://github.com/JuliusBrussee/caveman" >&2
   exit 1
 }
@@ -100,16 +100,6 @@ fi
 
 SKILL_INSTALLED_BY_KIT=false
 if [ ! -f "$SKILL_PATH" ]; then
-  if [ "$INSTALL_SKILL" != "1" ]; then
-    if [ -t 0 ]; then
-      printf '[caveman-kit] caveman skill not found. Install %s now? (y/N) ' "$SKILL_SOURCE"
-      if read -r answer; then
-        case "$answer" in
-          y|Y|yes|YES) INSTALL_SKILL=1 ;;
-        esac
-      fi
-    fi
-  fi
   [ "$INSTALL_SKILL" = "1" ] || skill_missing_abort
 
   echo "[caveman-kit] Installing caveman skill ($SKILL_SOURCE)..."

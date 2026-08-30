@@ -8,33 +8,6 @@ into `settings.json` and a small badge block into `statusline.sh`. Everything
 it touches is backed up under `~/.caveman-kit/backup/` so `uninstall.sh` can
 restore the original configuration exactly.
 
-## Prerequisites
-
-`install.sh` expects the `caveman` skill at
-`$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md`. You don't need to install it
-yourself first — if it's missing, `install.sh` offers to fetch it for you
-(pinned to `JuliusBrussee/caveman@v2.2.0`, skill only — no CLI, proxy, or
-binaries), but since that means running `npx` against a third-party
-GitHub repo, it always asks for consent first:
-
-- interactively: answer `y` at the prompt
-- non-interactively (CI/scripts, or a curl-piped install): pass
-  `--install-skill` or set `CAVEMAN_KIT_INSTALL_SKILL=1`
-
-Decline (or omit the flag non-interactively) and `install.sh` exits with
-the manual command below instead of installing anything:
-
-```bash
-npx skills add JuliusBrussee/caveman@v2.2.0 --skill caveman -g --copy
-```
-
-See [caveman](https://github.com/JuliusBrussee/caveman) for details.
-
-The installer also patches the skill's frontmatter with
-`disable-model-invocation: true` (original backed up and restored byte-exact
-on uninstall). If the kit auto-installed the skill, `uninstall.sh` removes it
-again; a pre-existing skill is only ever restored, never removed.
-
 ## Requirements
 
 - `node` on `PATH`
@@ -47,19 +20,13 @@ again; a pre-existing skill is only ever restored, never removed.
 curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.sh | bash
 ```
 
-The pipe has no TTY, so the skill-install prompt can't ask for consent — if
-the `caveman` skill isn't installed yet, this aborts with a message asking
-you to pass `--install-skill`:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.sh | bash -s -- --install-skill
-```
+This also installs the `caveman` skill itself if you don't already have it —
+nothing else to do first.
 
 ### Manual install from checkout
 
 ```bash
-./install.sh                # prompts to install the skill if missing
-./install.sh --install-skill  # non-interactive skill install consent
+./install.sh
 ```
 
 To revert:
@@ -77,6 +44,34 @@ rm -rf ~/.local/share/caveman-kit ~/.caveman-kit
 ```
 
 Then manually remove hook entries from `~/.claude/settings.json` that reference `caveman-activate.js` or `caveman-mode-tracker.js`.
+
+## The caveman skill
+
+`install.sh` expects the `caveman` skill at
+`$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` and installs it for you by
+default (pinned to `JuliusBrussee/caveman@v2.2.0`, skill only — no CLI,
+proxy, or binaries) via:
+
+```bash
+npx skills add JuliusBrussee/caveman@v2.2.0 --skill caveman -g --copy
+```
+
+If you'd rather manage that yourself — the install runs `npx` against a
+third-party GitHub repo — pass `--no-install-skill` (or set
+`CAVEMAN_KIT_INSTALL_SKILL=0`) and `install.sh` will exit with the command
+above instead of running it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.sh | bash -s -- --no-install-skill
+./install.sh --no-install-skill
+```
+
+See [caveman](https://github.com/JuliusBrussee/caveman) for details.
+
+The installer also patches the skill's frontmatter with
+`disable-model-invocation: true` (original backed up and restored byte-exact
+on uninstall). If the kit auto-installed the skill, `uninstall.sh` removes it
+again; a pre-existing skill is only ever restored, never removed.
 
 ## Per-repository mode
 
