@@ -7,13 +7,8 @@
 // ruleset scrolls out of a long session's attention.
 'use strict';
 
-const path = require('path');
-const os = require('os');
-const { getDefaultMode, safeWriteFlag, readFlag, clearFlag } = require('./caveman-config');
+const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
 const { parseModeChange } = require('./caveman-parse');
-
-const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-const flagPath = path.join(claudeDir, '.caveman-active');
 
 let input = '';
 process.stdin.on('data', chunk => { input += chunk; });
@@ -23,6 +18,7 @@ process.stdin.on('error', () => process.exit(0));
 process.stdin.on('end', () => {
   try {
     const data = JSON.parse(input);
+    const { flagPath, repoRoot } = resolveFlagPath(typeof data.cwd === 'string' ? data.cwd : null);
     let prompt = (data.prompt || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
     // Claude Code delivers slash commands to this hook as an envelope, not
@@ -47,6 +43,7 @@ process.stdin.on('end', () => {
     const change = skipParse ? null : parseModeChange(prompt);
     if (change && change.action === 'set') {
       safeWriteFlag(flagPath, change.mode);
+      if (repoRoot) ensureGitExclude(repoRoot);
     } else if (change && change.action === 'clear') {
       clearFlag(flagPath);
     }

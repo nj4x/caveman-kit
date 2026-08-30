@@ -10,25 +10,37 @@ restore the original configuration exactly.
 
 ## Prerequisites
 
-Install the caveman CLI and skill first:
+The `caveman` skill must be present at
+`$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md`. If it is missing, `install.sh`
+offers to install it automatically (pinned to `JuliusBrussee/caveman@v2.2.0`,
+skill only — no CLI, proxy, or binaries):
+
+- interactively: answer `y` at the prompt
+- non-interactively (CI/scripts): pass `--install-skill` or set
+  `CAVEMAN_KIT_INSTALL_SKILL=1`
+
+To install the skill manually instead:
 
 ```bash
-npm install -g @caveman-ai/cli && caveman setup --install
+npx skills add JuliusBrussee/caveman@v2.2.0 --skill caveman -g --copy
 ```
 
 See [caveman](https://github.com/JuliusBrussee/caveman) for details.
 
+The installer also patches the skill's frontmatter with
+`disable-model-invocation: true` (original backed up and restored byte-exact
+on uninstall). If the kit auto-installed the skill, `uninstall.sh` removes it
+again; a pre-existing skill is only ever restored, never removed.
+
 ## Requirements
 
 - `node` on `PATH`
-- The `caveman` skill already installed at
-  `$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` (this kit does not ship the
-  skill itself)
 
 ## Usage
 
 ```bash
-./install.sh
+./install.sh                # prompts to install the skill if missing
+./install.sh --install-skill  # non-interactive skill install consent
 ```
 
 To revert:
@@ -36,6 +48,16 @@ To revert:
 ```bash
 ./uninstall.sh
 ```
+
+## Per-repository mode
+
+The mode is repo-scoped when the repository root contains a `.claude/`
+directory: `/caveman <mode>` then reads and writes
+`<repo>/.claude/.caveman-mode` (auto-added to `.git/info/exclude`, so it
+stays local to your clone). Without a repo or `.claude/` directory, the
+global `~/.claude/.caveman-active` flag is used, as before. The repo file is
+also the persisted default for that repo — a new session starts in whatever
+mode was last set there. Hand-editing the file works too.
 
 ## Layout
 

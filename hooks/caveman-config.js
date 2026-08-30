@@ -15,6 +15,59 @@ function getDefaultMode() {
   return 'full';
 }
 
+function findRepoRoot(startDir) {
+  let dir = path.resolve(startDir);
+  for (;;) {
+    if (fs.existsSync(path.join(dir, '.git'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
+// Repo-scoped flag when cwd sits in a git repo whose root already has a
+// .claude/ directory; global flag otherwise. The repo file is both the live
+// session state and the persisted per-repo default (ADR 0004) — .claude/ is
+// deliberately never auto-created.
+function resolveFlagPath(cwd) {
+  const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(require('os').homedir(), '.claude');
+  const globalFlag = path.join(claudeDir, '.caveman-active');
+  if (!cwd || typeof cwd !== 'string') return { flagPath: globalFlag, repoRoot: null };
+  let root = null;
+  try { root = findRepoRoot(cwd); } catch (e) { /* fall through to global */ }
+  if (root) {
+    try {
+      // lstat, not stat: a symlinked .claude/ (e.g. committed by a hostile
+      // repo — git only blocks the name .git, not .claude) must not be
+      // followed, or safeWriteFlag/clearFlag would write/delete through it
+      // into an attacker-chosen directory.
+      if (fs.lstatSync(path.join(root, '.claude')).isDirectory()) {
+        return { flagPath: path.join(root, '.claude', '.caveman-mode'), repoRoot: root };
+      }
+    } catch (e) { /* .claude missing → global */ }
+  }
+  return { flagPath: globalFlag, repoRoot: null };
+}
+
+const EXCLUDE_LINE = '.claude/.caveman-mode';
+
+// Best-effort, idempotent. A worktree/submodule .git *file*, or a symlinked
+// .git dir (same hostile-repo risk as .claude above), is skipped — lstat
+// (not stat) never follows the symlink. Not load-bearing (ADR 0004 decision 5).
+function ensureGitExclude(repoRoot) {
+  try {
+    const gitDir = path.join(repoRoot, '.git');
+    if (!fs.lstatSync(gitDir).isDirectory()) return;
+    const excludePath = path.join(gitDir, 'info', 'exclude');
+    let existing = '';
+    try { existing = fs.readFileSync(excludePath, 'utf8'); } catch (e) { /* absent */ }
+    if (existing.split('\n').some(l => l.trim() === EXCLUDE_LINE)) return;
+    fs.mkdirSync(path.dirname(excludePath), { recursive: true });
+    const sep = existing && !existing.endsWith('\n') ? '\n' : '';
+    fs.appendFileSync(excludePath, `${sep}${EXCLUDE_LINE}\n`);
+  } catch (e) { /* best-effort */ }
+}
+
 // Refuses a symlink at the flag path — defends against a local attacker
 // pointing the flag at a sensitive file that a reader (statusline, the
 // UserPromptSubmit hook) would then read and act on. Atomic write via
@@ -55,4 +108,4 @@ function clearFlag(flagPath) {
   try { fs.unlinkSync(flagPath); } catch (e) { /* already gone */ }
 }
 
-module.exports = { VALID_MODES, getDefaultMode, safeWriteFlag, readFlag, clearFlag };
+module.exports = { VALID_MODES, getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude };

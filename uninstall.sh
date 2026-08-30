@@ -28,6 +28,8 @@ fi
 CLAUDE_DIR="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')).claudeDir)")"
 SETTINGS_BACKUP="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')).settingsBackup)")"
 STATUSLINE_BACKUP="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.statuslineBackup || '')")"
+SKILL_INSTALLED_BY_KIT="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.skillInstalledByKit === true ? 'true' : 'false')")"
+SKILL_BACKUP="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.skillBackup || '')")"
 
 SETTINGS="$CLAUDE_DIR/settings.json"
 STATUSLINE="$CLAUDE_DIR/statusline.sh"
@@ -45,6 +47,26 @@ if [ -n "$STATUSLINE_BACKUP" ]; then
     echo "restored: $STATUSLINE"
   else
     echo "warning: statusline backup recorded but missing at $STATUSLINE_BACKUP — left $STATUSLINE untouched" >&2
+  fi
+fi
+
+# Skill cleanup (ADR 0002/0003): remove entirely if the kit installed it;
+# otherwise restore the pre-patch backup and leave the skill in place.
+SKILL_DIR="$CLAUDE_DIR/skills/caveman"
+if [ "$SKILL_INSTALLED_BY_KIT" = "true" ]; then
+  rm -rf "$SKILL_DIR"
+  echo "removed: $SKILL_DIR (installed by caveman-kit)"
+elif [ -n "$SKILL_BACKUP" ]; then
+  if [ -f "$SKILL_BACKUP" ] && [ -d "$SKILL_DIR" ]; then
+    if cp "$SKILL_BACKUP" "$SKILL_DIR/SKILL.md"; then
+      echo "restored: $SKILL_DIR/SKILL.md"
+    else
+      echo "warning: failed to restore $SKILL_DIR/SKILL.md from backup — left as-is" >&2
+    fi
+  elif [ ! -d "$SKILL_DIR" ]; then
+    echo "warning: $SKILL_DIR no longer exists — skipping SKILL.md restore" >&2
+  else
+    echo "warning: skill backup recorded but missing at $SKILL_BACKUP — left SKILL.md untouched" >&2
   fi
 fi
 

@@ -6,8 +6,10 @@
 # into statusline.sh. Everything touched is backed up under
 # ~/.caveman-kit/backup/ so uninstall.sh can restore it exactly.
 #
-# Requires the caveman skill to already be installed at
-# $CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md — this kit does not ship it.
+# Requires the caveman skill at $CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md.
+# If missing, offers to install it (pinned) via `npx skills add` — with an
+# interactive prompt, or non-interactively when CAVEMAN_KIT_INSTALL_SKILL=1
+# or --install-skill is passed (ADR 0001).
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,6 +19,20 @@ BACKUP_DIR="$KIT_HOME/backup"
 SETTINGS="$CLAUDE_DIR/settings.json"
 STATUSLINE="$CLAUDE_DIR/statusline.sh"
 SKILL_PATH="$CLAUDE_DIR/skills/caveman/SKILL.md"
+SKILL_SOURCE="JuliusBrussee/caveman@v2.2.0"
+
+INSTALL_SKILL=0
+[ "${1:-}" = "--install-skill" ] && INSTALL_SKILL=1
+[ "${CAVEMAN_KIT_INSTALL_SKILL:-}" = "1" ] && INSTALL_SKILL=1
+
+skill_missing_abort() {
+  echo "error: caveman skill not found at $SKILL_PATH" >&2
+  echo "caveman-kit only wires up hooks for it — install the skill first:" >&2
+  echo "  npx skills add $SKILL_SOURCE --skill caveman -g --copy" >&2
+  echo "or re-run with --install-skill (or CAVEMAN_KIT_INSTALL_SKILL=1) to let this installer do it." >&2
+  echo "Details: https://github.com/JuliusBrussee/caveman" >&2
+  exit 1
+}
 
 if [ -d "$KIT_HOME" ]; then
   echo "error: caveman-kit already installed at $KIT_HOME. Run uninstall.sh first." >&2
@@ -33,11 +49,30 @@ if [ ! -f "$SETTINGS" ]; then
   exit 1
 fi
 
+SKILL_INSTALLED_BY_KIT=false
 if [ ! -f "$SKILL_PATH" ]; then
-  echo "error: caveman skill not found at $SKILL_PATH" >&2
-  echo "caveman-kit only wires up hooks for it — it does not install the skill itself." >&2
-  echo "Install the caveman skill first: https://github.com/JuliusBrussee/caveman" >&2
-  exit 1
+  if [ "$INSTALL_SKILL" != "1" ]; then
+    if [ -t 0 ]; then
+      printf 'caveman skill not found. Install %s now? (y/N) ' "$SKILL_SOURCE"
+      if read -r answer; then
+        case "$answer" in
+          y|Y|yes|YES) INSTALL_SKILL=1 ;;
+        esac
+      fi
+    fi
+  fi
+  [ "$INSTALL_SKILL" = "1" ] || skill_missing_abort
+
+  echo "installing caveman skill ($SKILL_SOURCE)..."
+  if ! npx --yes skills add "$SKILL_SOURCE" --skill caveman -g -y --copy; then
+    echo "warning: automated skill install failed" >&2
+    skill_missing_abort
+  fi
+  if [ ! -f "$SKILL_PATH" ]; then
+    echo "warning: skill install ran but $SKILL_PATH still missing" >&2
+    skill_missing_abort
+  fi
+  SKILL_INSTALLED_BY_KIT=true
 fi
 
 # Resolve through the skill's symlink chain (if any) so the SessionStart hook
@@ -59,15 +94,41 @@ else
   echo "warning: $STATUSLINE not found (or is a symlink) — skipping statusline badge" >&2
 fi
 
+# Skill frontmatter patch (ADR 0002). Backup first; manifest is written with
+# the skill fields BEFORE the patch attempt (decision 6) so uninstall.sh can
+# always clean up correctly even if the patch fails. Patch failure is
+# non-fatal by design.
+SKILL_BACKUP_JSON="null"
+SKILL_NEEDS_PATCH=1
+if grep -q '^disable-model-invocation:' "$SKILL_PATH" 2>/dev/null; then
+  SKILL_NEEDS_PATCH=0
+fi
+if [ "$SKILL_NEEDS_PATCH" = "1" ]; then
+  if cp "$SKILL_PATH" "$BACKUP_DIR/SKILL.md.bak"; then
+    SKILL_BACKUP_JSON="\"$BACKUP_DIR/SKILL.md.bak\""
+  else
+    echo "warning: could not back up SKILL.md — skipping frontmatter patch" >&2
+    SKILL_NEEDS_PATCH=0
+  fi
+fi
+
 cat > "$KIT_HOME/manifest.json" <<JSON
 {
   "installedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "claudeDir": "$CLAUDE_DIR",
   "settingsBackup": "$BACKUP_DIR/settings.json.bak",
   "statuslineBackup": $STATUSLINE_BACKUP_JSON,
-  "pluginRoot": "$PLUGIN_ROOT"
+  "pluginRoot": "$PLUGIN_ROOT",
+  "skillInstalledByKit": $SKILL_INSTALLED_BY_KIT,
+  "skillBackup": $SKILL_BACKUP_JSON
 }
 JSON
+
+if [ "$SKILL_NEEDS_PATCH" = "1" ]; then
+  if ! node "$KIT_DIR/lib/skill-patch.js" "$SKILL_PATH"; then
+    echo "warning: failed to patch SKILL.md frontmatter — skill installed without disable-model-invocation" >&2
+  fi
+fi
 
 echo
 echo "caveman-kit installed to $KIT_HOME"

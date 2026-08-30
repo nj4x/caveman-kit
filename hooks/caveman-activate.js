@@ -9,30 +9,35 @@
 
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
-const { getDefaultMode, safeWriteFlag, readFlag, clearFlag } = require('./caveman-config');
-
-const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-const flagPath = path.join(claudeDir, '.caveman-active');
+const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
 
 // SessionStart re-fires mid-conversation (resume, /clear, compaction), not
 // just at true session start. Only a real 'startup' resets to the configured
 // default; other sources preserve whatever mode the user already switched to.
 let source = 'startup';
+let cwd = null;
 try {
   if (!process.stdin.isTTY) {
     const raw = fs.readFileSync(0, 'utf8');
     if (raw) {
       const data = JSON.parse(raw);
       if (data && typeof data.source === 'string') source = data.source;
+      if (data && typeof data.cwd === 'string') cwd = data.cwd;
     }
   }
 } catch (e) { /* no/bad stdin → treat as startup */ }
+
+const { flagPath, repoRoot } = resolveFlagPath(cwd);
 
 let mode = getDefaultMode();
 if (source !== 'startup') {
   const existing = readFlag(flagPath);
   if (existing) mode = existing;
+} else if (repoRoot) {
+  // Repo flag doubles as the persisted per-repo default (ADR 0004) — a real
+  // startup honors it instead of resetting to the env/built-in default.
+  const persisted = readFlag(flagPath);
+  if (persisted) mode = persisted;
 }
 
 if (mode === 'off') {
@@ -41,6 +46,7 @@ if (mode === 'off') {
 }
 
 safeWriteFlag(flagPath, mode);
+if (repoRoot) ensureGitExclude(repoRoot);
 
 if (!process.env.CLAUDE_PLUGIN_ROOT) {
   process.stderr.write('caveman-kit: CLAUDE_PLUGIN_ROOT not set, cannot locate the caveman skill\n');
