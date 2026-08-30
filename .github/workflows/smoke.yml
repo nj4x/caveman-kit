@@ -1,0 +1,20 @@
+name: Smoke Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # nightly at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install bats-core
+        run: brew install bats-core
+      
+      - name: Run tests
+        run: bats tests/
