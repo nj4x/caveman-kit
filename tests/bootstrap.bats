@@ -8,10 +8,8 @@ setup_file() {
   export TEST_BARE_REPO="$BATS_TMPDIR/caveman-kit-bare.git"
   rm -rf "$TEST_BARE_REPO"
   git init --bare "$TEST_BARE_REPO"
-  # Push current repo to bare clone (use master branch) and set HEAD
-  git -C "$BATS_TEST_DIRNAME/.." push --force "$TEST_BARE_REPO" master:master 2>&1 || {
-    echo "Warning: Could not push to bare repo, tests may fail"
-  }
+  # Push current checkout (HEAD may be detached in CI) to bare clone as master
+  git -C "$BATS_TEST_DIRNAME/.." push --force "$TEST_BARE_REPO" HEAD:refs/heads/master
   git -C "$TEST_BARE_REPO" symbolic-ref HEAD refs/heads/master 2>/dev/null || true
   export CAVEMAN_KIT_GIT_REPO="file://$TEST_BARE_REPO"
   export CAVEMAN_KIT_INSTALL_DIR="$BATS_TMPDIR/caveman-kit-install"
