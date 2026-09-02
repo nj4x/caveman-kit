@@ -10,8 +10,8 @@ setup() {
   export KIT_DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." && pwd)"
 
   mkdir -p "$CLAUDE_CONFIG_DIR/skills/caveman"
-  # Copy the actual SKILL.md so the hook can read it
-  cp "$HOME/.claude/skills/caveman/SKILL.md" "$CLAUDE_CONFIG_DIR/skills/caveman/" 2>/dev/null || cat > "$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md" <<'SKILL'
+  # Write a minimal SKILL.md fixture for the hook to read
+  cat > "$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md" <<'SKILL'
 ---
 name: caveman
 disable-model-invocation: true
@@ -49,14 +49,10 @@ teardown() {
   rm -rf "$HOME"
 }
 
-# Runs the hook with the given cwd on stdin and extracts additionalContext
-# from its JSON hookSpecificOutput envelope (or passes non-JSON output, i.e.
-# a stderr-only failure path, through unchanged) so existing assertions can
-# keep matching on plain ruleset text.
-#
-# Known gap: if the hook ever regresses to plain-text stdout, this passthrough
-# masks it for the tests below (asserting on `hookEventName`/`additionalContext` keys
-# directly, bypassing run_hook) actually guard the JSON envelope shape.
+# Extracts additionalContext from the JSON hookSpecificOutput envelope.
+# Non-JSON output (stderr-only failure paths, merged via 2>&1) passes through
+# unchanged. The JSON envelope shape itself is guarded by the tests asserting
+# on raw hookEventName/additionalContext keys.
 run_hook() {
   local payload
   if [ "$#" -eq 0 ]; then
@@ -118,13 +114,22 @@ make_repo() {
 }
 
 @test "every mode is resolvable from the global flag" {
-  for mode in lite full ultra; do
+  for mode in lite full ultra wenyan-lite wenyan-full wenyan-ultra; do
     echo "$mode" > "$CLAUDE_CONFIG_DIR/.caveman-active"
 
     output="$(run_hook)"
 
     [[ "$output" == *"CAVEMAN MODE ACTIVE — level: $mode"* ]]
   done
+}
+
+@test "off mode emits nothing and clears the flag" {
+  echo "off" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+
+  output="$(run_hook)"
+
+  [ -z "$output" ]
+  [ ! -f "$CLAUDE_CONFIG_DIR/.caveman-active" ]
 }
 
 @test "reports the skill path on stderr when SKILL.md is unreadable" {
