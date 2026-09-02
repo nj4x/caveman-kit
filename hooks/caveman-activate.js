@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// caveman-kit — SessionStart hook.
+// caveman-kit — SessionStart and SubagentStart hook.
 //
 // Resolves the active mode, persists it to a flag file (read by the
 // statusline badge and the UserPromptSubmit hook), and — unless mode is
@@ -12,12 +12,14 @@ const path = require('path');
 const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
 
 let cwd = null;
+let hookEventName = 'SessionStart';
 try {
   if (!process.stdin.isTTY) {
     const raw = fs.readFileSync(0, 'utf8');
     if (raw) {
       const data = JSON.parse(raw);
       if (data && typeof data.cwd === 'string') cwd = data.cwd;
+      if (data && typeof data.hook_event_name === 'string') hookEventName = data.hook_event_name;
     }
   }
 } catch (e) { /* no/bad stdin → global flag fallback */ }
@@ -84,4 +86,9 @@ const filtered = body.split('\n').reduce((acc, line) => {
   return acc;
 }, []);
 
-process.stdout.write(`CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + filtered.join('\n'));
+process.stdout.write(JSON.stringify({
+  hookSpecificOutput: {
+    hookEventName,
+    additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + filtered.join('\n')
+  }
+}));

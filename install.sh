@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # caveman-kit installer.
 #
-# Preserves the existing Claude Code configuration: injects two hook entries
-# (SessionStart, UserPromptSubmit) into settings.json and a small badge block
+# Preserves the existing Claude Code configuration: injects three hook entries
+# (SessionStart, SubagentStart, UserPromptSubmit) into settings.json and a small badge block
 # into statusline.sh. Everything touched is backed up under
 # ~/.caveman-kit/backup/ so uninstall.sh can restore it exactly.
 #

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # caveman-kit uninstaller.
 #
-# Surgically removes caveman-kit entries from settings.json and statusline.sh
+# Surgically removes caveman-kit entries (SessionStart, SubagentStart, UserPromptSubmit) from settings.json and statusline.sh
 # using marker-based detection (not byte-exact restore from backups):
 # - settings.json: removes hook entries containing 'caveman-activate.js' and
-#   'caveman-mode-tracker.js' via lib/settings-unpatch.js
+#   'caveman-mode-tracker.js' via lib/settings-unpatch.js from SessionStart, SubagentStart, UserPromptSubmit
 # - statusline.sh: removes the block between '# CAVEMAN-KIT BEGIN' and
 #   '# CAVEMAN-KIT END' via lib/statusline-unpatch.js
 # Install-time backups stay in the manifest for manual recovery only.
