@@ -43,11 +43,11 @@ Two lifecycles that must stay symmetric:
 - **Hooks always exit 0** and fail silent/soft — a broken hook must never block Claude Code. Flag operations are best-effort, not load-bearing.
 - **Flag files are untrusted input**: `readFlag` rejects symlinks, caps at 16 bytes, whitelists modes; `safeWriteFlag` refuses symlinks and writes atomically (temp + rename). `resolveFlagPath`/`ensureGitExclude` use `lstat`, never following a symlinked `.claude/` or `.git/` a hostile repo could commit. Preserve these properties in any change touching flag I/O.
 - **Patch scripts are idempotent** — re-running detects prior injection (marker string in settings, sentinel comments in statusline, existing key in frontmatter) and skips.
-- Valid modes: `off, lite, full, ultra, wenyan-lite, wenyan-full, wenyan-ultra` — must match the intensity levels in the upstream skill's SKILL.md.
+- Valid modes: `off, lite, full, ultra` (wenyan modes dropped per ADR 0006) — must match the kit-supported levels.
 
 ## Design records
 
-`docs/adr/` holds four accepted ADRs (auto-install, frontmatter patch, uninstall symmetry/manifest, per-repo mode). Code comments cite them by number — read the relevant ADR before changing behavior it governs, and record significant new decisions as a new ADR.
+`docs/adr/` holds six accepted ADRs (auto-install, frontmatter patch, uninstall symmetry/manifest, per-repo mode, SubagentStart delivery, dropped wenyan support). Code comments cite them by number — read the relevant ADR before changing behavior it governs, and record significant new decisions as a new ADR.
 
 ## Agent skills
 

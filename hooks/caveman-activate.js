@@ -66,12 +66,28 @@ try {
   process.exit(0);
 }
 
+// Supplemental kit-authored examples (hooks/caveman-examples.md), covering
+// topics the upstream skill doesn't demonstrate. Optional — a missing file
+// just means no supplemental examples, never a hard failure.
+let examplesContent = '';
+try {
+  examplesContent = fs.readFileSync(path.join(__dirname, 'caveman-examples.md'), 'utf8');
+} catch (e) { /* no supplemental examples shipped/found */ }
+
 // Strip YAML frontmatter, then keep only the active level's intensity-table
 // row and example lines — the rest of the ruleset (rules, boundaries, etc.)
-// applies at every level and is kept as-is.
-const body = skillContent.replace(/^---[\s\S]*?---\s*/, '');
+// applies at every level and is kept as-is. Supplemental examples are
+// appended before filtering so the same mode-keyed bullet regex applies.
+const body = skillContent.replace(/^---[\s\S]*?---\s*/, '') + (examplesContent ? '\n' + examplesContent : '');
 
-const filtered = body.split('\n').reduce((acc, line) => {
+// The kit no longer supports wenyan-* modes (ADR 0006), but the pinned
+// upstream SKILL.md still advertises them in prose outside the table/bullet
+// lines below (e.g. the "Switch:" line). Strip those mentions so the
+// injected ruleset never advertises a mode caveman-mode-tracker.js rejects.
+const dropUnsupportedMode = line => line.replace(/\|?wenyan-(lite|full|ultra)/gi, '');
+
+const filtered = body.split('\n').reduce((acc, rawLine) => {
+  const line = dropUnsupportedMode(rawLine);
   const tableRowMatch = line.match(/^\|\s*\*\*(\S+?)\*\*\s*\|/);
   if (tableRowMatch) {
     if (tableRowMatch[1] === mode) acc.push(line);
@@ -82,6 +98,7 @@ const filtered = body.split('\n').reduce((acc, line) => {
     if (exampleMatch[1] === mode) acc.push(line);
     return acc;
   }
+  if (/wenyan/i.test(line)) return acc;
   acc.push(line);
   return acc;
 }, []);

@@ -121,6 +121,7 @@ PLUGIN_ROOT="$(cd -P "$(dirname "$SKILL_PATH")/../.." && pwd)"
 echo "[caveman-kit] Creating kit home directory..."
 mkdir -p "$KIT_HOME/hooks" "$BACKUP_DIR"
 cp "$KIT_DIR"/hooks/*.js "$KIT_HOME/hooks/"
+cp "$KIT_DIR"/hooks/*.md "$KIT_HOME/hooks/" 2>/dev/null || true
 
 # Write initial manifest with partial state
 write_manifest "null" "null" "null" "null" "false" "false"

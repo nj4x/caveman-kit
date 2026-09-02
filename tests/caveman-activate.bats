@@ -25,6 +25,8 @@ Default: **full**. Switch: `/caveman lite|full|ultra|wenyan-lite|wenyan-full|wen
 
 Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries, hedging. Fragments OK. Short synonyms. No tool-call narration, no decorative tables/emoji.
 
+Classical chars = wenyan modes only. Never swap a word to a classical char to shrink at non-wenyan levels.
+
 ## Intensity
 
 | Level | What change |
@@ -32,9 +34,6 @@ Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleas
 | **lite** | No filler/hedging. Keep articles + full sentences. Professional but tight |
 | **full** | Drop articles, fragments OK, short synonyms. Classic caveman |
 | **ultra** | Strip conjunctions when cause-then-effect stay unambiguous. One word when one word enough |
-| **wenyan-lite** | Semi-classical. Drop filler/hedging but keep grammar structure |
-| **wenyan-full** | Maximum classical terseness. Fully 文言文 |
-| **wenyan-ultra** | Extreme abbreviation while keeping classical Chinese feel |
 
 Example "Why React component re-render?"
 - lite: "Your component re-renders because you create a new object reference each render. Wrap it in `useMemo`."
@@ -114,7 +113,7 @@ make_repo() {
 }
 
 @test "every mode is resolvable from the global flag" {
-  for mode in lite full ultra wenyan-lite wenyan-full wenyan-ultra; do
+  for mode in lite full ultra; do
     echo "$mode" > "$CLAUDE_CONFIG_DIR/.caveman-active"
 
     output="$(run_hook)"
@@ -169,4 +168,35 @@ make_repo() {
 
   [[ "$raw" == *'"hookEventName":"SubagentStart"'* ]]
   [[ "$raw" == *"CAVEMAN MODE ACTIVE — level: ultra"* ]]
+}
+
+@test "appends the active mode's supplemental example, not other modes'" {
+  echo "full" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"- full: \"Two threads hit same resource, race."* ]]
+  [[ "$output" != *"- lite: \"A race condition occurs"* ]]
+  [[ "$output" != *"- ultra: \"Threads hit same resource unsync"* ]]
+}
+
+@test "strips wenyan mentions from the pinned upstream skill's prose" {
+  echo "full" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+
+  output="$(run_hook)"
+
+  [[ "$output" != *"wenyan"* ]]
+  [[ "$output" == *'Switch: `/caveman lite|full|ultra|off`.'* ]]
+}
+
+@test "still emits a valid hook envelope when caveman-examples.md is missing" {
+  echo "full" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  tmp_hooks="$(mktemp -d)"
+  cp "$KIT_DIR"/hooks/*.js "$tmp_hooks/"
+
+  raw="$(printf '{}' | node "$tmp_hooks/caveman-activate.js")"
+
+  [[ "$raw" == *'"additionalContext"'* ]]
+  [[ "$raw" == *"CAVEMAN MODE ACTIVE — level: full"* ]]
+  rm -rf "$tmp_hooks"
 }

@@ -20,7 +20,7 @@ The installed system and the kit are **architecturally different products** that
 | Compression | Real: `output_replacement`, context rewrite via Go engine | Instructional: tells model to respond in compressed style |
 | Hook events covered | 11: SessionStart, UserPromptSubmit, PreToolUse ×2, PostToolUse, PostToolUseFailure, PreCompact, PostCompact, Stop, SubagentStart, SubagentStop, SessionEnd | 2: SessionStart, UserPromptSubmit |
 | State | `~/.caveman/caveman.db` (50 MB), `ccr.db` (52 MB), 78 session receipt files, `~/.caveman-cloud/config.json` | `~/.claude/.caveman-active` (≤64 byte flag), `~/.caveman-mode-log.jsonl`, `~/.caveman-statusline-suffix` |
-| Modes/levels (compression) | record / compress / pixel (proxy policy); safe / max (native hook policy) | off, lite, full, ultra, wenyan-lite, wenyan, wenyan-full, wenyan-ultra, commit, review, compress |
+| Modes/levels (compression) | record / compress / pixel (proxy policy); safe / max (native hook policy) | off, lite, full, ultra (ADR 0006: wenyan modes dropped) |
 | Config file | `~/.caveman-cloud/config.json` | `$XDG_CONFIG_HOME/caveman/config.json` (XDG) or env `CAVEMAN_DEFAULT_MODE`; per-repo: `.caveman/config.json` or `.caveman.json` walked from cwd |
 | Per-repo config | None visible on disk | Walked upward from session cwd; 64-level depth limit |
 | Default mode | compress (unless `~/.caveman-cloud/config.json` overrides) | full |
