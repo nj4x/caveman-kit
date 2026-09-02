@@ -23,6 +23,12 @@ curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.s
 This also installs the `caveman` skill itself if you don't already have it —
 nothing else to do first.
 
+To update:
+
+```bash
+~/.local/share/caveman-kit/update.sh
+```
+
 To uninstall:
 
 ```bash
@@ -33,6 +39,12 @@ To uninstall:
 
 ```bash
 ./install.sh
+```
+
+To update:
+
+```bash
+./update.sh
 ```
 
 To uninstall:

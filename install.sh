@@ -181,5 +181,6 @@ write_manifest "$BACKUP_DIR/settings.json.bak" "$STATUSLINE_BACKUP_JSON" "$SKILL
 
 echo
 echo "[caveman-kit] caveman-kit installed to $KIT_HOME"
-echo "To uninstall: $KIT_HOME/uninstall.sh"
+echo "To update: $KIT_DIR/update.sh"
+echo "To uninstall: $KIT_DIR/uninstall.sh"
 echo "Restart Claude Code for the hooks to take effect."
