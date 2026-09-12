@@ -124,7 +124,7 @@ if [ "$SKILL_INSTALLED_BY_KIT" = "true" ]; then
   SKILL_SOURCE="$(grep 'SKILL_SOURCE=' "$KIT_DIR/install.sh" | head -1 | cut -d= -f2 | tr -d '"')"
   if [ -n "$SKILL_SOURCE" ]; then
     echo "[caveman-kit update] Upgrading caveman skill ($SKILL_SOURCE)..."
-    if npx --yes skills add "$SKILL_SOURCE" --skill caveman -g -y --copy 2>/dev/null; then
+    if GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx --yes skills add "$SKILL_SOURCE" --skill caveman -g -y --copy 2>/dev/null; then
       echo "[caveman-kit update] Skill upgraded"
     else
       echo "[caveman-kit update] warning: skill upgrade failed — proceeding with kit update only" >&2

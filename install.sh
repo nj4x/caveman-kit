@@ -80,7 +80,7 @@ fi
 skill_missing_abort() {
   echo "[caveman-kit] error: caveman skill not found at $SKILL_PATH" >&2
   echo "caveman-kit only wires up hooks for it — install the skill first:" >&2
-  echo "  npx skills add $SKILL_SOURCE --skill caveman -g --copy" >&2
+  echo "  GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx skills add $SKILL_SOURCE --skill caveman -g --copy" >&2
   echo "or drop --no-install-skill to let this installer do it automatically." >&2
   echo "Details: https://github.com/JuliusBrussee/caveman" >&2
   exit 1
@@ -103,7 +103,7 @@ if [ ! -f "$SKILL_PATH" ]; then
   [ "$INSTALL_SKILL" = "1" ] || skill_missing_abort
 
   echo "[caveman-kit] Installing caveman skill ($SKILL_SOURCE)..."
-  if ! npx --yes skills add "$SKILL_SOURCE" --skill caveman -g -y --copy; then
+  if ! GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx --yes skills add "$SKILL_SOURCE" --skill caveman -g -y --copy; then
     echo "[caveman-kit] warning: automated skill install failed" >&2
     skill_missing_abort
   fi
