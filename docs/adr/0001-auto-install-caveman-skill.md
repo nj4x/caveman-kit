@@ -15,12 +15,12 @@ This friction is avoidable: caveman-kit's own hooks never invoke the caveman CLI
 
 **Decision:**
 
-1. **Detect and offer auto-install:** If `$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` does not exist when `install.sh` runs, offer automated installation via `npx skills add JuliusBrussee/caveman@v2.2.0 --skill caveman -g -y --copy`.
+1. **Detect and offer auto-install:** If `$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` does not exist when `install.sh` runs, offer automated installation via `npx skills add JuliusBrussee/caveman@v3.0.0 --skill caveman -g -y --copy`.
 2. **Require explicit consent:** 
    - Interactive (TTY): Prompt `Install caveman skill? (y/N)`. Decline exits with current error+URL message.
    - Non-interactive: Require `CAVEMAN_KIT_INSTALL_SKILL=1` environment variable or `--install-skill` shell argument to proceed. Without it, exit with error+URL.
    - **Amendment (2026-08-30):** Auto-install is now the default in both interactive and non-interactive runs — no prompt, no flag needed. The observed failure mode was that `curl | bash` pipes stdin into the installer, so `[ -t 0 ]` is always false and the interactive prompt path never fires; every clone-free install aborted, defeating the one-liner Quick Install this kit advertises. Opt out with `--no-install-skill` (or `CAVEMAN_KIT_INSTALL_SKILL=0`) to fall back to the error+manual-command message instead. The consent removal is a deliberate tradeoff — see the updated Trust boundary consequence below.
-3. **Version pin:** Pin to `@v2.2.0` to match caveman repository version. Bump explicitly when caveman tags a new release.
+3. **Version pin:** Pin to `@v3.0.0` to match caveman repository version. Bump explicitly when caveman tags a new release.
 4. **Fallback on failure:** If auto-install fails (npx missing, network down, `skills add` exits non-zero), fall back to current error+URL message. Do not hard-fail with raw npx error.
 5. **Copy, don't symlink:** Use `--copy` flag so kit receives a private copy of `SKILL.md`, avoiding mutation of shared skill store when patching frontmatter later.
 6. **Track auto-install in manifest:** Record `"skillInstalledByKit": true` in `~/.caveman-kit/manifest.json` if kit performed the install.

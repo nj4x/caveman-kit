@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Installer kit that wires the third-party `caveman` Claude Code skill (JuliusBrussee/caveman, pinned to v2.2.0) into an existing Claude Code configuration via hooks. It does not contain the skill itself — it injects hook entries into `settings.json`, a badge into `statusline.sh`, and patches the skill's frontmatter.
+Installer kit that wires the third-party `caveman` Claude Code skill (JuliusBrussee/caveman, pinned to v3.0.0) into an existing Claude Code configuration via hooks. It does not contain the skill itself — it injects hook entries into `settings.json`, a badge into `statusline.sh`, and patches the skill's frontmatter.
 
 ## Commands
 

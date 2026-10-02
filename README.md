@@ -67,11 +67,11 @@ Then manually remove hook entries from `~/.claude/settings.json` that reference 
 
 `install.sh` expects the `caveman` skill at
 `$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` and installs it for you by
-default (pinned to `JuliusBrussee/caveman@v2.2.0`, skill only — no CLI,
+default (pinned to `JuliusBrussee/caveman@v3.0.0`, skill only — no CLI,
 proxy, or binaries) via:
 
 ```bash
-npx skills add JuliusBrussee/caveman@v2.2.0 --skill caveman -g --copy
+npx skills add JuliusBrussee/caveman@v3.0.0 --skill caveman -g --copy
 ```
 
 If you'd rather manage that yourself — the install runs `npx` against a
