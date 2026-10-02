@@ -86,6 +86,12 @@ curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.s
 
 See [caveman](https://github.com/JuliusBrussee/caveman) for details.
 
+`update.sh` upgrades the skill to the pinned version only when the kit
+installed it. A skill you installed yourself is never touched; upgrade it
+with the command above. `update.sh` also re-resolves where the hooks read
+`SKILL.md` from, so moving or replacing the skill directory does not leave
+the hooks pointing at a stale copy.
+
 The installer also patches the skill's frontmatter with
 `disable-model-invocation: true` (original backed up and restored byte-exact
 on uninstall). If the kit auto-installed the skill, `uninstall.sh` removes it

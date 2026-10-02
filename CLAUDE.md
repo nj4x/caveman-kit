@@ -36,7 +36,7 @@ Two lifecycles that must stay symmetric:
 
 **Flag-file resolution** (ADR 0004): repo-scoped `<repo>/.claude/.caveman-mode` when cwd is in a git repo whose root has `.claude/` *and the flag file exists*; when the repo flag file is absent, hooks fall back to reading the global `~/.claude/.caveman-active` before the built-in default — a bare `.claude/` dir never shadows the global mode. Passive hooks never create `.claude/` nor the repo flag file (SessionStart re-persists to whichever file the mode came from); an explicit `/caveman <mode>` set does (symlink-safe, then re-resolves), and the flag file is auto-added to `.git/info/exclude`. Either flag doubles as the persisted default honored at startup. The statusline badge block in `lib/statusline-patch.js` duplicates this resolution in shell — keep the two in sync.
 
-**Skill location**: hooks find `SKILL.md` via `CLAUDE_PLUGIN_ROOT`, baked into the hook commands in `settings.json` at install time (symlink-resolved).
+**Skill location**: hooks find `SKILL.md` via `CLAUDE_PLUGIN_ROOT`, baked into the hook commands in `settings.json` at install time (symlink-resolved) and stored as `pluginRoot` in the manifest. `update.sh` re-resolves it (`refresh_plugin_root`) and repatches on drift. Deleting or moving the directory it points at silently disables the hooks — check `settings.json` hook commands before touching any `skills/caveman` directory. `update.sh` upgrades the skill only when `skillInstalledByKit=true`.
 
 ## Invariants
 

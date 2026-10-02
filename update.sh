@@ -11,7 +11,10 @@ print_help() {
 Usage: update.sh [--help]
 
 In-place update for caveman-kit. Checks for new commits, repatches settings.json
-and statusline.sh, copies updated hook files, and optionally upgrades the skill.
+and statusline.sh, copies updated hook files, and upgrades the skill only when
+the kit installed it (manifest skillInstalledByKit=true); a skill you manage
+yourself is never touched. Also re-resolves the skill location the hooks read
+(pluginRoot) and warns if SKILL.md is unreadable there.
 
 Requires an existing manifest.json from a prior install. First install still
 requires bootstrap.sh.
@@ -74,6 +77,36 @@ SKILL_PATH="$CLAUDE_DIR/skills/caveman/SKILL.md"
 
 [ ! -f "$SETTINGS" ] && fail "settings.json not found at $SETTINGS"
 
+# Hooks read SKILL.md from PLUGIN_ROOT, frozen into settings.json at install.
+# Re-resolve it exactly as install.sh does, so a skill dir that was moved or
+# replaced (e.g. a symlink swapped for a real copy) cannot leave hooks reading
+# a stale or missing file.
+PLUGIN_ROOT_DRIFTED=0
+refresh_plugin_root() {
+  [ -f "$SKILL_PATH" ] || return 0
+  local live_root
+  live_root="$(cd -P "$(dirname "$SKILL_PATH")/../.." && pwd)"
+  if [ "$live_root" != "$PLUGIN_ROOT" ]; then
+    echo "[caveman-kit update] Skill location changed: $PLUGIN_ROOT -> $live_root"
+    PLUGIN_ROOT="$live_root"
+    PLUGIN_ROOT_DRIFTED=1
+  fi
+}
+
+save_plugin_root() {
+  if [ "$PLUGIN_ROOT_DRIFTED" = "1" ]; then
+    node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));m.pluginRoot=process.argv[2];fs.writeFileSync(process.argv[1],JSON.stringify(m,null,2)+'\\n')" "$MANIFEST" "$PLUGIN_ROOT" || fail "could not save pluginRoot to manifest"
+  fi
+}
+
+health_check() {
+  if [ ! -r "$PLUGIN_ROOT/skills/caveman/SKILL.md" ]; then
+    echo "[caveman-kit update] warning: hooks read $PLUGIN_ROOT/skills/caveman/SKILL.md but it is missing or unreadable; caveman rules will not load until the skill is restored there" >&2
+  fi
+}
+
+refresh_plugin_root
+
 # ===== Git check =====
 
 if [ ! -d "$KIT_DIR/.git" ]; then
@@ -90,6 +123,13 @@ REMOTE_SHA="$(git rev-parse origin/$REMOTE_HEAD 2>/dev/null || git rev-parse ori
 
 if [ "$REMOTE_SHA" = "$CURRENT_KIT_SHA" ]; then
   echo "[caveman-kit update] Kit is already up to date (SHA: $REMOTE_SHA)"
+  if [ "$PLUGIN_ROOT_DRIFTED" = "1" ]; then
+    echo "[caveman-kit update] Repatching settings.json for new skill location..."
+    node "$KIT_DIR/lib/settings-unpatch.js" "$SETTINGS" || fail "settings unpatch failed"
+    node "$KIT_DIR/lib/settings-patch.js" "$SETTINGS" "$KIT_HOME/hooks" "$PLUGIN_ROOT" || fail "settings repatch failed"
+    save_plugin_root
+  fi
+  health_check
   exit 0
 fi
 
@@ -130,7 +170,11 @@ if [ "$SKILL_INSTALLED_BY_KIT" = "true" ]; then
       echo "[caveman-kit update] warning: skill upgrade failed — proceeding with kit update only" >&2
     fi
   fi
+else
+  echo "[caveman-kit update] Skill not kit-managed, skipped (upgrade it yourself; pin: see SKILL_SOURCE in install.sh)"
 fi
+
+refresh_plugin_root
 
 # ===== Repatch =====
 
@@ -144,6 +188,8 @@ fi
 
 # ===== Update manifest =====
 
+save_plugin_root
+
 NEW_KIT_SHA="$(git -C "$KIT_DIR" rev-parse HEAD)"
 
 if command -v jq >/dev/null 2>&1; then
@@ -152,6 +198,8 @@ else
   # Fallback: naive JSON update (assumes "completed" is last field)
   sed "s/\"completed\": true/\"kitSha\": \"$NEW_KIT_SHA\",\n  \"completed\": true/" "$MANIFEST" > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
 fi
+
+health_check
 
 echo
 echo "[caveman-kit update] caveman-kit updated to $(git -C "$KIT_DIR" rev-parse HEAD | cut -c1-8)"
