@@ -70,7 +70,7 @@ process.stdin.on('end', () => {
       process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'UserPromptSubmit',
-          additionalContext: `CAVEMAN MODE ACTIVE (${activeMode}) — session ruleset applies.`
+          additionalContext: `CAVEMAN MODE ACTIVE (${activeMode}) — session ruleset applies. Answer only what was asked: answer plus key point, a few short lines. No unrequested background, lists, examples, walkthroughs, or follow-up offers; give code, steps, or warnings when the task needs them.`
         }
       }));
     }
