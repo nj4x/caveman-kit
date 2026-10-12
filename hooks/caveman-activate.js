@@ -103,9 +103,21 @@ const filtered = body.split('\n').reduce((acc, rawLine) => {
   return acc;
 }, []);
 
+// Context Diet supplement (hooks/caveman-context-diet.md, ADR 0009). Appended
+// after the filtered ruleset, same text in every non-off mode. Skipped only
+// when CAVEMAN_CONTEXT_DIET is exactly '0'; a missing/unreadable file means
+// no section, never a failure.
+let dietContent = '';
+if (process.env.CAVEMAN_CONTEXT_DIET !== '0') {
+  try {
+    dietContent = fs.readFileSync(path.join(__dirname, 'caveman-context-diet.md'), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '').trim();
+  } catch (e) { /* no diet file shipped/found */ }
+}
+
 process.stdout.write(JSON.stringify({
   hookSpecificOutput: {
     hookEventName,
-    additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + filtered.join('\n')
+    additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + filtered.join('\n') + (dietContent ? '\n\n' + dietContent : '')
   }
 }));
