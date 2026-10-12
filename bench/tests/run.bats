@@ -57,8 +57,8 @@ teardown() { bench_teardown; }
   run run_bench --kind single-turn --seeds 1 --yes --kit-dir "$fake_kit"
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"preflight lite: mode lite injected empty context"* ]]
-  [[ "$output" != *"Estimated cost"* ]]
+  [[ "$output" == *"preflight lite: mode lite injected empty context"* ]] || false
+  [[ "$output" != *"Estimated cost"* ]] || false
   [ "$(stub_calls)" -eq 0 ]
 }
 
@@ -68,9 +68,9 @@ teardown() { bench_teardown; }
   run run_bench --kind single-turn --seeds 1 --yes
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"ANTHROPIC_API_KEY"* ]]
-  [[ "$output" == *"$HOME/.claude/.credentials.json"* ]]
-  [[ "$output" != *"Estimated cost"* ]]
+  [[ "$output" == *"ANTHROPIC_API_KEY"* ]] || false
+  [[ "$output" == *"$HOME/.claude/.credentials.json"* ]] || false
+  [[ "$output" != *"Estimated cost"* ]] || false
   [ "$(stub_calls)" -eq 0 ]
 }
 
@@ -107,8 +107,8 @@ teardown() { bench_teardown; }
   run run_bench --kind single-turn --seeds 1
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"refusing to start"* ]]
-  [[ "$output" == *"--yes"* ]]
+  [[ "$output" == *"refusing to start"* ]] || false
+  [[ "$output" == *"--yes"* ]] || false
   [ "$(stub_calls)" -eq 0 ]
 }
 
@@ -158,8 +158,8 @@ teardown() { bench_teardown; }
 @test "resume: existing cells are skipped on rerun and failed cells are retried" {
   STUB_FAIL_ARM=lite run run_bench --kind single-turn --seeds 1 --yes --run-id resume-test
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FAIL lite--"* ]]
-  [[ "$output" == *"rerun with --run-id resume-test"* ]]
+  [[ "$output" == *"FAIL lite--"* ]] || false
+  [[ "$output" == *"rerun with --run-id resume-test"* ]] || false
   [ "$(find "$RESULTS/resume-test" -name '*.json' | wc -l | tr -d ' ')" -eq 30 ]
   [ "$(find "$RESULTS/resume-test" -name 'lite--*' | wc -l | tr -d ' ')" -eq 0 ]
 
@@ -174,6 +174,41 @@ teardown() { bench_teardown; }
   run run_bench --kind single-turn --seeds 1 --run-id resume-test
   [ "$status" -eq 0 ]
   [ "$(stub_calls)" -eq 0 ]
+}
+
+@test "resume: cells from another model under the same run id are stale and rerun" {
+  run run_bench --kind single-turn --seeds 1 --yes --run-id model-test
+  [ "$status" -eq 0 ]
+  [ "$(stub_calls)" -eq 36 ]
+
+  rm "$STUB_LOG"
+  run run_bench --kind single-turn --seeds 1 --yes --run-id model-test --model claude-opus-5-5
+  [ "$status" -eq 0 ]
+  [ "$(stub_calls)" -eq 36 ]
+  echo "$output" | grep -E '^bare +6 '
+  node -e '
+    const cells = require(process.env.BENCH_DIR + "/lib/cells").readCells(process.argv[1]);
+    require("assert").ok(cells.length === 36 && cells.every(c => c.model === "claude-opus-5-5"), JSON.stringify(cells.map(c => c.model)));
+  ' "$RESULTS/model-test"
+}
+
+@test "cell-timeout: a hung claude that ignores SIGTERM is killed and the cell fails" {
+  write_canned_cells hung '{"seeds":1,"arms":{"bare":{"output":500,"input":1000},"bare-control":{"output":500,"input":1000},"lite":{"output":400,"input":900},"full":{"output":300,"input":800},"ultra":{"output":200,"input":700},"ultra-no-focus":{"output":250,"input":700}}}'
+  rm "$RESULTS/hung/lite--explain-race--s1.json"
+  export STUB_SLEEP=60 STUB_IGNORE_TERM=1
+
+  start=$SECONDS
+  run run_bench --kind single-turn --seeds 1 --yes --run-id hung --cell-timeout 1
+  elapsed=$((SECONDS - start))
+
+  [ "$status" -ne 0 ]
+  [ "$(stub_calls)" -eq 1 ]
+  [[ "$output" == *"FAIL lite--explain-race--s1: timed out after 1s (killed by SIGKILL)"* ]] || false
+  [ "$elapsed" -lt 30 ]
+  [ ! -f "$RESULTS/hung/lite--explain-race--s1.json" ]
+  stub_pid="$(head -1 "$STUB_LOG" | node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync(0, "utf8")).pid))')"
+  [[ "$stub_pid" =~ ^[0-9]+$ ]] || false
+  ! kill -0 "$stub_pid" 2>/dev/null || false
 }
 
 @test "report: a rerun with fewer seeds reports only its own planned cells" {
@@ -228,26 +263,30 @@ teardown() { bench_teardown; }
 @test "cli: --kind is required, agentic is not implemented, bad flags are rejected" {
   run run_bench --seeds 1 --yes
   [ "$status" -eq 2 ]
-  [[ "$output" == *"--kind is required"* ]]
+  [[ "$output" == *"--kind is required"* ]] || false
 
   run run_bench --kind agentic --yes
   [ "$status" -ne 0 ]
-  [[ "$output" == *"not implemented"* ]]
+  [[ "$output" == *"not implemented"* ]] || false
 
   run run_bench --kind single-turn --seeds 0 --yes
   [ "$status" -eq 2 ]
 
+  run run_bench --kind single-turn --cell-timeout 0 --yes
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--cell-timeout must be a positive number"* ]] || false
+
   run run_bench --kind single-turn --bogus --yes
   [ "$status" -eq 2 ]
-  [[ "$output" == *"unknown option: --bogus"* ]]
+  [[ "$output" == *"unknown option: --bogus"* ]] || false
 
   run run_bench --kind single-turn --run-id .. --yes
   [ "$status" -eq 2 ]
-  [[ "$output" == *"--run-id must start with a letter or digit"* ]]
+  [[ "$output" == *"--run-id must start with a letter or digit"* ]] || false
 
   run run_bench --kind single-turn --run-id --yes
   [ "$status" -eq 2 ]
-  [[ "$output" == *"--run-id needs a value"* ]]
+  [[ "$output" == *"--run-id needs a value"* ]] || false
 
   run run_bench --kind single-turn --yes=no
   [ "$status" -eq 2 ]
@@ -260,7 +299,7 @@ teardown() { bench_teardown; }
   [ "$status" -eq 0 ]
 
   # Stub output_tokens for bare = 500 + call count (1..6): 3021 in total.
-  [[ "$output" == *"output"*"cache_read"*"cache_write"* ]]
+  [[ "$output" == *"output"*"cache_read"*"cache_write"* ]] || false
   echo "$output" | grep -E '^bare +6 +3021 +60 +12000 +6000 '
   echo "$output" | grep -E '^ultra +6 +1221 '
 }

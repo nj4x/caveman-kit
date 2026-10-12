@@ -61,9 +61,7 @@ function patchNoFocus(srcHooksDir, root) {
 // Runs an arm's UserPromptSubmit hook once, as claude would, and returns the
 // injected reminder. Checks it still carries FOCUS_ANCHOR and lacks clause.
 function checkReminder(armConfig, clause) {
-  const settings = JSON.parse(fs.readFileSync(armConfig.settingsPath, 'utf8'));
-  const command = settings.hooks.UserPromptSubmit[0].hooks[0].command;
-  const res = spawnSync('/bin/sh', ['-c', command], {
+  const res = spawnSync('/bin/sh', ['-c', armConfig.userPromptSubmitCommand], {
     input: JSON.stringify({ session_id: 'bench-preflight', hook_event_name: 'UserPromptSubmit', prompt: 'hello', cwd: armConfig.workDir }),
     env: armConfig.env, cwd: armConfig.workDir, encoding: 'utf8', timeout: 30000,
   });

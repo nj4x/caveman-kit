@@ -77,7 +77,7 @@ verdict_of() {
   '
 }
 
-@test "gate: ultra-no-focus is judged against ultra only when its cells exist; unpaired cells are listed" {
+@test "gate: every candidate is judged, a candidate with no cells is no-ship; unpaired cells are listed" {
   node_assert '
     const tasks = ["a", "b", "c", "d"];
     const mk = (arm, out, missing = []) => tasks.flatMap((task, i) => [1, 2].map(seed => ({
@@ -85,8 +85,10 @@ verdict_of() {
     }))).filter(c => !missing.includes(`${c.task}${c.seed}`));
     const base = [...mk("bare", 500, ["b2"]), ...mk("bare-control", 500), ...mk("ultra", 300)];
     let gate = stats.singleTurnGate(base);
-    assert.deepStrictEqual(gate.candidates.map(c => c.candidate), ["ultra"]);
-    assert.strictEqual(gate.candidates[0].pairs, 7);
+    assert.strictEqual(gate.noisy, false);
+    assert.deepStrictEqual(gate.candidates.map(c => [c.candidate, c.pairs, c.verdict]),
+      [["lite", 0, "no-ship"], ["full", 0, "no-ship"], ["ultra", 7, "ship"], ["ultra-no-focus", 0, "no-ship"]]);
+    assert.ok(report.formatGate(gate).split("\n").some(l => /^lite +bare +0 /.test(l)), report.formatGate(gate));
     gate = stats.singleTurnGate([...base, ...mk("ultra-no-focus", 400)]);
     const nf = gate.candidates.find(c => c.candidate === "ultra-no-focus");
     assert.strictEqual(nf.reference, "ultra");
@@ -94,7 +96,22 @@ verdict_of() {
     assert.strictEqual(nf.verdict, "no-ship");
     assert.ok(nf.metrics.output.ci.lo > 0, "output regression vs ultra");
     const text = report.formatGate(gate);
-    assert.ok(text.includes("Unpaired cells excluded (2): bare-control--b--s2, ultra--b--s2"), text);
+    // bare cells with no lite/full partner are listed too (9 in all).
+    assert.ok(text.includes("Unpaired cells excluded (9): bare--a--s1,"), text);
+    assert.ok(text.includes("bare-control--b--s2, ultra--b--s2"), text);
+  '
+}
+
+@test "gate-inconclusive: a noise baseline with fewer than 2 pairs makes every verdict inconclusive" {
+  node_assert '
+    const mk = (arm, out, seeds) => seeds.map(seed => ({ arm, task: "a", seed, usage: { input_tokens: 1000 - 100 * (arm !== "bare"), output_tokens: out + seed } }));
+    const gate = stats.singleTurnGate([...mk("bare", 500, [1, 2, 3]), ...mk("bare-control", 500, [1]), ...mk("ultra", 300, [1, 2, 3])]);
+    assert.strictEqual(gate.noise.pairs, 1);
+    assert.strictEqual(gate.noisy, true);
+    assert.ok(gate.candidates.every(c => c.verdict === "inconclusive"), JSON.stringify(gate.candidates.map(c => c.verdict)));
+    const text = report.formatGate(gate);
+    assert.ok(text.includes("fewer than 2 pairs"), text);
+    assert.ok(text.includes("every verdict is inconclusive"), text);
   '
 }
 
@@ -109,7 +126,7 @@ verdict_of() {
   [ "$(verdict_of full bare)" = ship ]
   [ "$(verdict_of ultra bare)" = ship ]
   [ "$(verdict_of bare bare-control)" = baseline ]
-  [[ "$output" == *"cost_ci95"*"out_ci95"*"verdict"* ]]
+  [[ "$output" == *"cost_ci95"*"out_ci95"*"verdict"* ]] || false
   echo "$output" | grep -E '^ultra +bare +18 +'
 }
 
@@ -154,7 +171,7 @@ verdict_of() {
   [ "$(verdict_of lite bare)" = inconclusive ]
   [ "$(verdict_of full bare)" = inconclusive ]
   [ "$(verdict_of ultra bare)" = inconclusive ]
-  [[ "$output" == *"every verdict is inconclusive"* ]]
+  [[ "$output" == *"every verdict is inconclusive"* ]] || false
 }
 
 @test "gate-inconclusive: noise on input cost alone also makes every verdict inconclusive" {
@@ -184,15 +201,16 @@ verdict_of() {
 }
 
 @test "summary-note: a complete run writes a dated note under the research dir with run parameters" {
-  write_canned_cells canned "$(canned_spec 500 500 450 400 300  1000 1000 900 800 600)"
+  write_canned_cells canned "$(canned_spec 500 500 450 400 300  1000 1000 900 800 600)" claude-opus-5-5
 
   run run_bench --kind single-turn --run-id canned --model claude-opus-5-5
 
   [ "$status" -eq 0 ]
+  [ "$(stub_calls)" -eq 0 ]
   note="$(find "$RESEARCH" -name '*-bench-canned.md')"
   [ -n "$note" ]
-  [[ "$(basename "$note")" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-bench-canned\.md$ ]]
-  [[ "$output" == *"Summary note: $note"* ]]
+  [[ "$(basename "$note")" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-bench-canned\.md$ ]] || false
+  [[ "$output" == *"Summary note: $note"* ]] || false
   grep -F -- '- Model: claude-opus-5-5' "$note"
   grep -F -- '- Seeds: 3' "$note"
   grep -F -- "- Kit-dir commit: $(git -C "$KIT_DIR" rev-parse HEAD)" "$note"
@@ -200,6 +218,27 @@ verdict_of() {
   grep -E '^\| ultra \| bare \| 18 \| .* \| \*\*ship\*\* \|$' "$note"
   grep -E '^\| bare \| bare-control \| 18 \| .* \| baseline \|$' "$note"
   grep -F 'Unpaired cells excluded: none' "$note"
+}
+
+@test "summary-note: uncommitted changes under the kit's hooks/ mark the commit -dirty" {
+  kit="$TEST_ROOT/kit"
+  mkdir -p "$kit/hooks"
+  cp "$KIT_DIR"/hooks/* "$kit/hooks/"
+  git -C "$kit" init -q
+  git -C "$kit" add hooks
+  git -C "$kit" -c user.name=bench -c user.email=bench@example.invalid commit -qm kit
+  sha="$(git -C "$kit" rev-parse HEAD)"
+  write_canned_cells clean "$(canned_spec 500 500 450 400 300  1000 1000 900 800 600)"
+  write_canned_cells dirty "$(canned_spec 500 500 450 400 300  1000 1000 900 800 600)"
+
+  run run_bench --kind single-turn --run-id clean --kit-dir "$kit"
+  [ "$status" -eq 0 ]
+  grep -Fx -- "- Kit-dir commit: $sha" "$RESEARCH"/*-bench-clean.md
+
+  echo '// local edit' >> "$kit/hooks/caveman-mode-tracker.js"
+  run run_bench --kind single-turn --run-id dirty --kit-dir "$kit"
+  [ "$status" -eq 0 ]
+  grep -Fx -- "- Kit-dir commit: $sha-dirty" "$RESEARCH"/*-bench-dirty.md
 }
 
 @test "summary-note: an incomplete run skips the note and lists unpaired cells" {
@@ -210,8 +249,8 @@ verdict_of() {
 
   [ "$status" -ne 0 ]
   [ "$(stub_calls)" -eq 1 ]
-  [[ "$output" == *"Summary note skipped: 107/108 cells complete"* ]]
-  [[ "$output" == *"Unpaired cells excluded (1): bare--explain-race--s2"* ]]
+  [[ "$output" == *"Summary note skipped: 107/108 cells complete"* ]] || false
+  [[ "$output" == *"Unpaired cells excluded (1): bare--explain-race--s2"* ]] || false
   echo "$output" | grep -E '^lite +bare +17 +'
   [ ! -d "$RESEARCH" ]
 }

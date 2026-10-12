@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { cellId } = require('./cells');
 
 const USAGE_KEYS = [
   ['output_tokens', 'output'],
@@ -67,9 +68,16 @@ function gateRow(cmp, verdict) {
 function unpairedIds(gate) {
   const ids = new Set();
   for (const cmp of [gate.noise, ...gate.candidates]) {
-    for (const c of cmp.unpaired) ids.add(`${c.arm}--${c.task}--s${c.seed}`);
+    for (const c of cmp.unpaired) ids.add(cellId(c));
   }
   return [...ids].sort();
+}
+
+// Why the noise baseline voids every verdict (only meaningful when noisy).
+function noiseReason(gate) {
+  return gate.noise.pairs < 2
+    ? 'bare vs bare-control has fewer than 2 pairs: no noise baseline'
+    : 'bare vs bare-control CI excludes zero: harness noise';
 }
 
 // The single-turn gate table: one row per candidate (means, paired mean
@@ -81,7 +89,7 @@ function formatGate(gate) {
   body.push(gateRow(gate.noise, gate.noisy ? 'NOISY' : 'baseline'));
   const lines = [alignTable(GATE_HEADER, body, 2)];
   if (gate.noisy) {
-    lines.push('', 'bare vs bare-control CI excludes zero: harness noise, every verdict is inconclusive (counts as no-ship).');
+    lines.push('', `${noiseReason(gate)}, every verdict is inconclusive (counts as no-ship).`);
   }
   const unpaired = unpairedIds(gate);
   if (unpaired.length) lines.push('', `Unpaired cells excluded (${unpaired.length}): ${unpaired.join(', ')}`);
@@ -120,11 +128,11 @@ function summaryNote(params, rows, gate) {
     'Cost is cache-weighted input tokens (input + 0.1 x cache read + 1.25 x cache write); lower is better for both metrics.',
     '`ship`: one interval excludes zero below and the other does not exclude zero above.',
     '`no-ship`: either interval excludes zero above, or both include zero.',
-    '`inconclusive`: bare vs bare-control excludes zero on either metric; counts as no-ship.',
+    '`inconclusive`: bare vs bare-control excludes zero on either metric, or has fewer than 2 pairs; counts as no-ship.',
     '',
     md(GATE_HEADER, gateBody),
     '',
-    gate.noisy ? 'Noise baseline excludes zero: every verdict in this run is inconclusive.' : 'Noise baseline includes zero on both metrics.',
+    gate.noisy ? `${noiseReason(gate)}: every verdict in this run is inconclusive.` : 'Noise baseline includes zero on both metrics.',
     '',
     `Unpaired cells excluded: ${unpaired.length ? unpaired.join(', ') : 'none'}`,
     '',

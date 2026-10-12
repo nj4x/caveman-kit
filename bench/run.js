@@ -4,7 +4,7 @@
 //
 //   node bench/run.js --kind single-turn [--seeds 3] [--model claude-sonnet-5-5]
 //                     [--kit-dir <repo root>] [--run-id <id>] [--results-dir <dir>]
-//                     [--research-dir <dir>] [--yes]
+//                     [--research-dir <dir>] [--cell-timeout <s>] [--yes]
 //
 // Order of work: argument checks, auth, skill and `claude` resolution,
 // per-arm preflight, cost estimate, confirmation — all before the first paid
@@ -12,7 +12,6 @@
 // table, the gate table and (on a complete run) the summary note.
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const isolation = require('./lib/isolation');
@@ -35,6 +34,7 @@ const USAGE = `usage: node bench/run.js --kind single-turn|agentic [options]
                       default <kind>-<model>-<kit-dir HEAD short SHA>
   --results-dir <dir> parent of run dirs                                default bench/results
   --research-dir <d>  where the summary note goes                     default docs/research
+  --cell-timeout <s>  seconds before one claude call is killed          default ${cells.DEFAULT_CELL_TIMEOUT_MS / 1000}
   --yes               start without asking (required when there is no TTY)
 
 Auth: ANTHROPIC_API_KEY, else a readable <config dir>/.credentials.json.
@@ -43,8 +43,8 @@ Skill: CAVEMAN_BENCH_SKILL_ROOT, else the kit manifest pluginRoot, else ~/.claud
 class UsageError extends Error {}
 
 function parseArgs(argv) {
-  const opts = { seeds: 3, model: cells.DEFAULT_MODEL, kitDir: path.resolve(BENCH_DIR, '..'), yes: false };
-  const takesValue = { '--kind': 'kind', '--seeds': 'seeds', '--model': 'model', '--kit-dir': 'kitDir', '--run-id': 'runId', '--results-dir': 'resultsDir', '--research-dir': 'researchDir' };
+  const opts = { seeds: 3, model: cells.DEFAULT_MODEL, kitDir: path.resolve(BENCH_DIR, '..'), cellTimeout: cells.DEFAULT_CELL_TIMEOUT_MS / 1000, yes: false };
+  const takesValue = { '--kind': 'kind', '--seeds': 'seeds', '--model': 'model', '--kit-dir': 'kitDir', '--run-id': 'runId', '--results-dir': 'resultsDir', '--research-dir': 'researchDir', '--cell-timeout': 'cellTimeout' };
   for (let i = 0; i < argv.length; i++) {
     let arg = argv[i];
     let value;
@@ -69,6 +69,9 @@ function parseArgs(argv) {
   const seeds = Number(opts.seeds);
   if (!Number.isInteger(seeds) || seeds < 1) throw new UsageError(`--seeds must be a positive integer, got ${opts.seeds}`);
   opts.seeds = seeds;
+  const cellTimeout = Number(opts.cellTimeout);
+  if (!Number.isFinite(cellTimeout) || cellTimeout <= 0) throw new UsageError(`--cell-timeout must be a positive number of seconds, got ${opts.cellTimeout}`);
+  opts.cellTimeout = cellTimeout;
   if (!opts.model) throw new UsageError('--model needs a value');
   if (opts.runId !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(opts.runId)) {
     throw new UsageError('--run-id must start with a letter or digit and contain only letters, digits, ".", "_" and "-"');
@@ -79,10 +82,15 @@ function parseArgs(argv) {
   return opts;
 }
 
-// Full HEAD SHA of the kit checkout under test, for the summary note.
+// Full HEAD SHA of the kit checkout under test, for the summary note, with
+// "-dirty" appended when hooks/ has uncommitted changes (what was measured
+// is then not exactly that commit).
 function kitCommit(kitDir) {
   const res = spawnSync('git', ['-C', kitDir, 'rev-parse', 'HEAD'], { encoding: 'utf8' });
-  return res.status === 0 && res.stdout.trim() ? res.stdout.trim() : 'not a git checkout';
+  if (res.status !== 0 || !res.stdout.trim()) return 'not a git checkout';
+  const status = spawnSync('git', ['-C', kitDir, 'status', '--porcelain', '--', 'hooks'], { encoding: 'utf8' });
+  const dirty = status.status !== 0 || status.stdout.trim() !== '';
+  return `${res.stdout.trim()}${dirty ? '-dirty' : ''}`;
 }
 
 function installSignalHandlers() {
@@ -148,7 +156,10 @@ async function main() {
       for (let seed = 1; seed <= opts.seeds; seed++) plan.push({ arm, task, cell: { arm: arm.name, task: task.id, seed } });
     }
   }
-  const pending = plan.filter(p => !fs.existsSync(cells.cellPath(runDir, p.cell)));
+  // A cell file from another model or kind under the same run id is stale:
+  // it is rerun (and overwritten), never reused or reported.
+  const current = c => Boolean(c) && c.model === opts.model && c.kind === opts.kind;
+  const pending = plan.filter(p => !current(cells.readCell(runDir, p.cell)));
 
   process.stdout.write(`Run ${runId} -> ${runDir}\n`);
   process.stdout.write(`${arms.length} arms x ${tasks.length} tasks x ${opts.seeds} seeds, model ${opts.model}, auth ${auth.kind}\n`);
@@ -166,7 +177,7 @@ async function main() {
       try {
         const res = await cells.runCell({
           claudePath, armConfig, cell: p.cell, prompt: p.task.prompt,
-          model: opts.model, runId, kind: opts.kind, runDir,
+          model: opts.model, runId, kind: opts.kind, runDir, timeoutMs: opts.cellTimeout * 1000,
         });
         if (res.ok) {
           process.stdout.write(`ok   ${cells.cellId(p.cell)}\n`);
@@ -180,9 +191,10 @@ async function main() {
     }
   }
 
-  // Only this plan's cells: a reused run id may hold cells from a larger --seeds.
+  // Only this plan's cells: a reused run id may hold cells from a larger
+  // --seeds, or stale cells from another model or kind.
   const planned = new Set(plan.map(p => cells.cellId(p.cell)));
-  const done = cells.readCells(runDir).filter(c => planned.has(cells.cellId(c)));
+  const done = cells.readCells(runDir).filter(c => planned.has(cells.cellId(c)) && current(c));
   const rows = report.summarize(done, arms.map(a => a.name));
   process.stdout.write(`\n${report.formatTable(rows)}\n`);
   // Seeds never escalate in the single-turn harness: the gate judges exactly

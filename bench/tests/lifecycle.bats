@@ -44,10 +44,16 @@ start_sleeping_run() {
   fake_kit="$TEST_ROOT/fake-kit"
   mkdir -p "$fake_kit/hooks"
   cp "$KIT_DIR"/hooks/*.js "$fake_kit/hooks/"
-  printf '%s\n' "process.exit(0);" > "$fake_kit/hooks/caveman-activate.js"
+  # The broken hook records its cwd (an arm work dir inside the temp root),
+  # proving the root existed before preflight aborted.
+  printf '%s\n' 'require("fs").writeFileSync(process.env.TEST_ROOT + "/hook-cwd", process.cwd()); process.exit(0);' > "$fake_kit/hooks/caveman-activate.js"
 
   run run_bench --kind single-turn --seeds 1 --yes --kit-dir "$fake_kit"
   [ "$status" -ne 0 ]
+  [[ "$output" == *"injected empty context"* ]] || false
+  hook_cwd="$(cat "$TEST_ROOT/hook-cwd")"
+  [[ "$hook_cwd" == */caveman-bench-*/*/work ]] || false
+  [ ! -e "$hook_cwd" ]
   [ "$(leftover_temp_dirs)" -eq 0 ]
 }
 
@@ -83,6 +89,7 @@ start_sleeping_run() {
 
 @test "tempdir-lifecycle: SIGHUP stops claude and removes the temp root" {
   start_sleeping_run
+  [ "$(leftover_temp_dirs)" -eq 1 ]
 
   kill -HUP "$BENCH_PID"
   status=0; wait "$BENCH_PID" || status=$?
@@ -92,6 +99,6 @@ start_sleeping_run() {
   [ "$(leftover_temp_dirs)" -eq 0 ]
   [ "$(stub_calls)" -eq 1 ]
   stub_pid="$(head -1 "$STUB_LOG" | node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync(0, "utf8")).pid))')"
-  [[ "$stub_pid" =~ ^[0-9]+$ ]]
+  [[ "$stub_pid" =~ ^[0-9]+$ ]] || false
   ! kill -0 "$stub_pid" 2>/dev/null || false
 }

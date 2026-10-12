@@ -6,8 +6,13 @@
 // Knobs: STUB_FAIL=1 fails every call; STUB_FAIL_ARM=<arm> fails that arm's
 // calls; STUB_SLEEP=<seconds> sleeps after logging (signal tests);
 // STUB_MARK=<file> appends a "STUB CALL" line (ordering tests);
-// STUB_FLAT=1 gives every arm the same usage (no effect anywhere).
+// STUB_FLAT=1 gives every arm the same usage (no effect anywhere);
+// STUB_IGNORE_TERM=1 ignores SIGTERM, SIGINT and SIGHUP (SIGKILL tests).
 'use strict';
+
+if (process.env.STUB_IGNORE_TERM === '1') {
+  for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.on(sig, () => {});
+}
 
 const fs = require('fs');
 const path = require('path');

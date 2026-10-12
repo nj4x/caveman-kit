@@ -112,21 +112,20 @@ function comparePair(cells, { candidate, reference }) {
   return { candidate, reference, pairs: pairs.length, unpaired, metrics };
 }
 
-// The single-turn gate over one run's cells. Each reference pair is judged
-// on its paired task+seed differences; a pair whose candidate arm has no
-// cells is left out (ultra-no-focus before its arm exists). When the noise
-// baseline (bare vs bare-control) excludes zero on either co-primary metric,
-// every verdict is 'inconclusive'. Seeds never escalate here.
+// The single-turn gate over one run's cells. Every reference pair is judged
+// on its paired task+seed differences, even when an arm has no cells: fewer
+// than 2 pairs give an infinite interval, so that row is no-ship rather than
+// silently missing. The noise baseline (bare vs bare-control) is noisy when
+// it has fewer than 2 pairs or excludes zero on either co-primary metric;
+// then every verdict is 'inconclusive'. Seeds never escalate here.
 function singleTurnGate(cells) {
   const noise = comparePair(cells, NOISE_PAIR);
-  const noisy = METRICS.some(m => noise.metrics[m.key].direction !== 'zero');
-  const candidates = SINGLE_TURN_PAIRS
-    .filter(p => cells.some(c => c.arm === p.candidate))
-    .map(p => {
-      const cmp = comparePair(cells, p);
-      cmp.verdict = noisy ? 'inconclusive' : singleTurnVerdict(cmp.metrics.cost.ci, cmp.metrics.output.ci);
-      return cmp;
-    });
+  const noisy = noise.pairs < 2 || METRICS.some(m => noise.metrics[m.key].direction !== 'zero');
+  const candidates = SINGLE_TURN_PAIRS.map(p => {
+    const cmp = comparePair(cells, p);
+    cmp.verdict = noisy ? 'inconclusive' : singleTurnVerdict(cmp.metrics.cost.ci, cmp.metrics.output.ci);
+    return cmp;
+  });
   return { noise, noisy, candidates };
 }
 
