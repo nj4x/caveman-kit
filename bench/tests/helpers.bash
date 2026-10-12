@@ -38,7 +38,7 @@ SKILL
   export PATH="$BENCH_DIR/tests/stub:$PATH"
   export ANTHROPIC_API_KEY="test-key"
   unset CLAUDE_CONFIG_DIR CLAUDE_PLUGIN_ROOT CAVEMAN_DEFAULT_MODE CAVEMAN_CONTEXT_DIET CAVEMAN_BENCH_SKILL_ROOT
-  unset STUB_FAIL STUB_FAIL_ARM STUB_SLEEP STUB_MARK STUB_FLAT
+  unset STUB_FAIL STUB_FAIL_ARM STUB_SLEEP STUB_MARK STUB_FLAT STUB_IGNORE_TERM
 }
 
 bench_teardown() {
@@ -71,11 +71,13 @@ log_assert() {
 
 # Writes canned cell files for every single-turn task under $RESULTS/<run-id>.
 # $2 is JSON: {"seeds": n, "arms": {"<arm>": {"output": o, "input": i, "noise": k}}}.
+# $3 is the cells' model (default: the runner's default model); the runner
+# reruns cells whose model differs from its --model.
 # Per cell: output_tokens = o + shared(task, seed) + k * e1, input_tokens =
 # i + shared(task, seed) + k * e2, with e1, e2 deterministic in [-1, 1] per
 # (arm, task, seed); shared() is the same for every arm, so pairs cancel it.
 write_canned_cells() {
-  RUN_ID="$1" SPEC="$2" node -e '
+  RUN_ID="$1" SPEC="$2" MODEL="${3:-}" node -e '
     const path = require("path");
     const cells = require(process.env.BENCH_DIR + "/lib/cells");
     const tasks = require(process.env.BENCH_DIR + "/tasks/single-turn");
@@ -92,7 +94,7 @@ write_canned_cells() {
           const shared = 40 * ti + 15 * seed;
           const k = a.noise || 0;
           cells.writeJsonAtomic(cells.cellPath(runDir, { arm, task: t.id, seed }), {
-            runId: process.env.RUN_ID, kind: "single-turn", arm, task: t.id, seed, totalCostUsd: 0.01,
+            runId: process.env.RUN_ID, kind: "single-turn", model: process.env.MODEL || cells.DEFAULT_MODEL, arm, task: t.id, seed, totalCostUsd: 0.01,
             usage: {
               output_tokens: Math.round(a.output + shared + k * rand(`o|${arm}|${t.id}|${seed}`)),
               input_tokens: Math.round(a.input + shared + k * rand(`i|${arm}|${t.id}|${seed}`)),

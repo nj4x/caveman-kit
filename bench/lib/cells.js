@@ -37,6 +37,11 @@ function writeJsonAtomic(file, data) {
   fs.renameSync(tmp, file);
 }
 
+// One cell's record, or null when its file is missing or unreadable.
+function readCell(runDir, cell) {
+  try { return JSON.parse(fs.readFileSync(cellPath(runDir, cell), 'utf8')); } catch (e) { return null; }
+}
+
 // Every completed cell file in a run dir (temp files are skipped).
 function readCells(runDir) {
   let names = [];
@@ -63,22 +68,35 @@ function resolveClaude(env) {
   return null;
 }
 
+const KILL_GRACE_MS = 5000;
+const DEFAULT_CELL_TIMEOUT_MS = 10 * 60 * 1000;
+
 let activeChild = null;
 
-// Stops an in-flight claude call (signal path) and waits up to 5s for it to
-// exit, so the caller can remove the temp dir without the child re-creating
-// files in it.
-function stopActive(signal) {
-  const child = activeChild;
-  if (!child || child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
+// Sends signal to child, escalates to SIGKILL after KILL_GRACE_MS, and
+// resolves once it exits (or 1s after the SIGKILL, whichever comes first).
+function terminate(child, signal) {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
   return new Promise(resolve => {
-    const timer = setTimeout(resolve, 5000);
-    child.once('exit', () => { clearTimeout(timer); resolve(); });
-    try { child.kill(signal); } catch (e) { clearTimeout(timer); resolve(); }
+    let giveUp = null;
+    const killTimer = setTimeout(() => {
+      try { child.kill('SIGKILL'); } catch (e) { /* already gone */ }
+      giveUp = setTimeout(done, 1000);
+    }, KILL_GRACE_MS);
+    function done() { clearTimeout(killTimer); clearTimeout(giveUp); resolve(); }
+    child.once('exit', done);
+    try { child.kill(signal); } catch (e) { done(); }
   });
 }
 
-function invoke(claudePath, args, armConfig) {
+// Stops an in-flight claude call (signal path) and waits for it to exit, so
+// the caller can remove the temp dir without the child re-creating files in it.
+function stopActive(signal) {
+  return activeChild ? terminate(activeChild, signal) : Promise.resolve();
+}
+
+// Runs claude once; after timeoutMs it is terminated and timedOut is set.
+function invoke(claudePath, args, armConfig, timeoutMs) {
   return new Promise(resolve => {
     const child = spawn(claudePath, args, {
       cwd: armConfig.workDir, env: armConfig.env, stdio: ['ignore', 'pipe', 'pipe'],
@@ -86,20 +104,25 @@ function invoke(claudePath, args, armConfig) {
     activeChild = child;
     let stdout = '';
     let stderr = '';
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; terminate(child, 'SIGTERM'); }, timeoutMs);
     child.stdout.on('data', d => { stdout += d; });
     child.stderr.on('data', d => { stderr += d; });
-    child.on('error', err => { activeChild = null; resolve({ status: null, stdout, stderr: String(err.message) }); });
-    child.on('close', (status, signal) => { activeChild = null; resolve({ status, signal, stdout, stderr }); });
+    child.on('error', err => { clearTimeout(timer); activeChild = null; resolve({ status: null, stdout, stderr: String(err.message), timedOut }); });
+    child.on('close', (status, signal) => { clearTimeout(timer); activeChild = null; resolve({ status, signal, stdout, stderr, timedOut }); });
   });
 }
 
 // Runs one cell. Returns { ok: true, record } after writing the file, or
 // { ok: false, error } and writes nothing.
-async function runCell({ claudePath, armConfig, cell, prompt, model, runId, kind, runDir }) {
+async function runCell({ claudePath, armConfig, cell, prompt, model, runId, kind, runDir, timeoutMs = DEFAULT_CELL_TIMEOUT_MS }) {
   const args = ['-p', prompt, '--output-format', 'json', '--model', model];
   const started = Date.now();
-  const res = await invoke(claudePath, args, armConfig);
+  const res = await invoke(claudePath, args, armConfig, timeoutMs);
   const durationMs = Date.now() - started;
+  if (res.timedOut) {
+    return { ok: false, error: `timed out after ${timeoutMs / 1000}s (${res.signal ? `killed by ${res.signal}` : `exit ${res.status}`})` };
+  }
   if (res.status !== 0) {
     const why = res.signal ? `killed by ${res.signal}` : `exit ${res.status}`;
     return { ok: false, error: `${why}: ${res.stderr.trim().slice(-500)}` };
@@ -128,10 +151,12 @@ async function runCell({ claudePath, armConfig, cell, prompt, model, runId, kind
 }
 
 module.exports = {
+  DEFAULT_CELL_TIMEOUT_MS,
   DEFAULT_MODEL,
   defaultRunId,
   cellId,
   cellPath,
+  readCell,
   readCells,
   resolveClaude,
   runCell,

@@ -89,8 +89,8 @@ fake_kit() {
   run run_bench --kind single-turn --seeds 1 --yes --kit-dir "$FAKE_KIT"
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"ultra-no-focus: focus clause not found"* ]]
-  [[ "$output" != *"Estimated cost"* ]]
+  [[ "$output" == *"ultra-no-focus: focus clause not found"* ]] || false
+  [[ "$output" != *"Estimated cost"* ]] || false
   [ "$(stub_calls)" -eq 0 ]
   [ "$(leftover_temp_dirs)" -eq 0 ]
 }
@@ -102,7 +102,7 @@ fake_kit() {
   run run_bench --kind single-turn --seeds 1 --yes --kit-dir "$FAKE_KIT"
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"ultra-no-focus: focus clause not found"* ]]
-  [[ "$output" != *"Estimated cost"* ]]
+  [[ "$output" == *"ultra-no-focus: focus clause not found"* ]] || false
+  [[ "$output" != *"Estimated cost"* ]] || false
   [ "$(stub_calls)" -eq 0 ]
 }
