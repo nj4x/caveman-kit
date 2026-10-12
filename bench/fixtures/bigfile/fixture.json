@@ -1,0 +1,5 @@
+{
+  "source": "https://github.com/nj4x/anthrouter.git",
+  "sha": "8a94cf6f6134bc61c02f350baf257e1127443843",
+  "testCommand": "if python3 -c 'import pytest' 2>/dev/null; then python3 -m pytest -q -p no:cacheprovider tests/test_bench_hidden_bigfile.py; else uv run --no-project --with pytest python -m pytest -q -p no:cacheprovider tests/test_bench_hidden_bigfile.py; fi"
+}

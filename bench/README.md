@@ -69,16 +69,90 @@ hidden test tends to fail; the agentic gate should read `hitMaxTurns` and report
 capped cells per arm. Any other non-zero exit, error result or signal fails the
 cell: no file is written and a rerun retries it.
 
-Fixture format (`bench/fixtures/<name>/`; the real fixtures arrive with a later
-ticket, so until then the default dir does not exist and the run stops with "no
-fixtures found" — point `--fixtures-dir` at your own fixtures): `fixture.json` (`source`, `sha`,
-`testCommand`, optional `plantPatch`/`prompt` file names), `plant.patch`,
-`prompt.md`, `hidden/` (copied over the repo root after the run). Before any
-paid call each fixture's hidden test must pass twice on the unpatched tree and
-fail twice on the planted tree (run with `UV_OFFLINE=1`, `PIP_NO_INDEX=1`);
-otherwise the fixture is dropped and printed as `DROPPED fixture ...`.
+Fixture format (`bench/fixtures/<name>/`, or the dir `--fixtures-dir` names):
+`fixture.json` (`source`, `sha`, `testCommand`, optional `plantPatch`/`prompt`
+file names), `plant.patch`, `prompt.md`, `hidden/` (copied over the repo root
+after the run). Before any paid call each fixture's hidden test must pass twice
+on the unpatched tree and fail twice on the planted tree (run with
+`UV_OFFLINE=1`, `PIP_NO_INDEX=1`); otherwise the fixture is dropped and printed
+as `DROPPED fixture ...`.
 Preflight needs `<kit-dir>/hooks/caveman-context-diet.md`: its text (HTML
 comments stripped) must appear in the `full-diet` context and not in `full`.
+
+### Fixtures
+
+Four real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5). Each pins
+one upstream commit, and the run clones it from GitHub:
+
+| Fixture | Source repo | Pinned SHA | Planted bug / task |
+|---------|-------------|------------|--------------------|
+| `bigfile` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | off-by-one in `parse_classifier_score` inside the 2,100-line `anthrouter/model_router.py`: a score of 100 is rejected |
+| `rootcause` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `request_text.strip_reminders` stops trimming whitespace; the prompt names one symptom, the hidden test checks the helper and three call sites |
+| `noisylog` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | misspelt rate-limit header in `http_util`; the prompt sends the agent through the full suite (1,100+ tests, a few minutes, some unrelated failures) |
+| `reuse` | `nj4x/skills-dev` | `41193d1541fe3af0f821869c326870d97f75e008` | the `flagged` subcommand of `skills/planning/critic/scripts/critic_ledger.py` is removed; the existing `_load_json` helper already does the fence-tolerant loading it needs |
+
+`noisylog` uses anthrouter because its test suite is the longer one that runs
+offline: at the pinned commits anthrouter's suite ran 1,125 passing tests in
+about 130 s, and skills-dev's (`mcp/mcp-vectors`) ran 599 in about 35 s.
+
+Each `testCommand` runs one pytest file from `hidden/`: with `python3 -m pytest`
+when `python3` can import `pytest`, otherwise with
+`uv run --no-project --with pytest`. The hidden tests use only the standard
+library and the repo's own code. Because tests run with `UV_OFFLINE=1`, the uv
+branch needs `pytest` already in the uv cache: run any `uv run --with pytest`
+once online, or install `pytest` for `python3`.
+
+To move a pin, set the new `sha` in each affected `fixture.json`, regenerate
+`plant.patch` against that commit if it no longer applies, and rerun the live
+check:
+
+```bash
+BENCH_LIVE_FIXTURES=1 bats -f real-fixtures-live bench/tests/fixtures.bats
+```
+
+It clones each pinned commit (network, no API quota) and runs the offline
+reliability check above. A fixture it drops must be fixed before a paid run.
+
+### Measuring the Context Diet branch
+
+The agentic gate measures the hooks of the checkout `--kit-dir` names, so point
+it at a worktree of the `context-diet` branch and run from this checkout:
+
+```bash
+git worktree add ../caveman-kit-context-diet context-diet
+node bench/run.js --kind agentic --kit-dir ../caveman-kit-context-diet
+git worktree remove ../caveman-kit-context-diet   # when done
+```
+
+The run id carries that worktree's HEAD short SHA, so a run on a new
+`context-diet` commit starts fresh cells. Agentic gate (spec #1): the paired
+difference `full-diet` minus `full` by fixture and seed passes when the 95%
+interval of cache-weighted input cost lies below zero and the `full-diet`
+hidden-test pass rate is not lower than `full`'s. An interval that includes
+zero after 3 seeds earns one rerun with up to 6 seeds, then `no-ship`. Fewer
+than 3 fixtures left after drops is `inconclusive`; `bare` is reference only.
+The runner does not compute this gate or escalate seeds by itself: read the
+paired cells yourself, and to escalate rerun with `--seeds 6` and the same
+`--run-id` (cells for seeds 1-3 are reused).
+
+## Cost
+
+Every run spends real quota; the runner prints an estimate before the first
+call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 36
+agentic runs (3 arms x 4 fixtures x 3 seeds), 72 when the agentic gate
+escalates to 6 seeds. At the `lib/estimate.js` assumptions and Sonnet list
+price, that is at most about $10 for the single-turn kind (~$0.09 per call) and
+about $39 to $78 for the agentic kind (~$1.08 per run). Prompt caching usually
+makes the real bill lower. `--model claude-opus-5-5` costs about 1.7x as much.
+
+## Requirements
+
+- `node` and `git`
+- `claude` on `PATH` (the runner calls it headless)
+- agentic kind: `python3` 3.10 or newer (anthrouter requires it) plus
+  `pytest`, or `uv` with `pytest` in its cache (see Fixtures)
+- `bats` for the tests
+- auth: `ANTHROPIC_API_KEY`, or a readable credentials file (see below)
 
 ## Resuming
 
@@ -140,4 +214,8 @@ bats bench/tests/
 ```
 
 Tests put a stub `claude` (`tests/stub/claude`) first on `PATH`; they never
-call the API. `bats tests/` does not pick them up.
+call the API and need no network: agentic tests clone a tiny local git repo,
+and `tests/fixtures.bats` checks the real fixtures' format, pins and plant
+patches against local stand-ins (its live check is skipped unless
+`BENCH_LIVE_FIXTURES=1`). `bats tests/` does not pick them up, and CI does not
+run them.

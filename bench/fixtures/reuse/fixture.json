@@ -1,0 +1,5 @@
+{
+  "source": "https://github.com/nj4x/skills-dev.git",
+  "sha": "41193d1541fe3af0f821869c326870d97f75e008",
+  "testCommand": "if python3 -c 'import pytest' 2>/dev/null; then python3 -m pytest -q -p no:cacheprovider bench_hidden/test_reuse.py; else uv run --no-project --with pytest python -m pytest -q -p no:cacheprovider bench_hidden/test_reuse.py; fi"
+}
