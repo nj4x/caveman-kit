@@ -224,14 +224,14 @@ teardown() { bench_teardown; }
   [ -d "$RESULTS/single-turn-claude-sonnet-5-5-$sha" ]
 }
 
-@test "cli: --kind is required, agentic is not implemented, bad flags are rejected" {
+@test "cli: --kind is required, --fixtures needs agentic, bad flags are rejected" {
   run run_bench --seeds 1 --yes
   [ "$status" -eq 2 ]
   [[ "$output" == *"--kind is required"* ]]
 
-  run run_bench --kind agentic --yes
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"not implemented"* ]]
+  run run_bench --kind single-turn --fixtures tiny --yes
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--fixtures only applies to --kind agentic"* ]]
 
   run run_bench --kind single-turn --seeds 0 --yes
   [ "$status" -eq 2 ]
