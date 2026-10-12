@@ -12,6 +12,7 @@
 // those paths exist in cwd (hidden-test check); STUB_FIX_ARMS=<arm,arm> makes
 // those arms write "good" to cwd/value.txt (a passing hidden test); output is
 // a canned stream with 5 Read results (370 chars), 2 re-reads, 7 turns.
+// full-diet reads less cache (1000 vs 2000), so its cost is lower, unless STUB_FLAT=1.
 // STUB_MAX_TURNS=1 ends it with subtype error_max_turns, is_error, exit 1;
 // STUB_RESULT_ERROR=1 ends it with subtype error_during_execution, is_error;
 // STUB_EXIT=<n> sets the exit code; STUB_SELF_KILL=1 SIGKILLs itself after the
@@ -91,7 +92,7 @@ function finish() {
     const subtype = maxTurns ? 'error_max_turns' : (resultError ? 'error_during_execution' : 'success');
     const last = JSON.stringify({
       type: 'result', subtype, is_error: maxTurns || resultError, result: leak ? `leaked ${leak}` : 'done', num_turns: 7, total_cost_usd: 0.5,
-      usage: { input_tokens: 10, cache_creation_input_tokens: 1000, cache_read_input_tokens: 2000, output_tokens: abase + count },
+      usage: { input_tokens: 10, cache_creation_input_tokens: 1000, cache_read_input_tokens: arm === 'full-diet' && process.env.STUB_FLAT !== '1' ? 1000 : 2000, output_tokens: abase + count },
     }) + '\n';
     if (leak) process.stderr.write(`stub stderr ${leak}${'p'.repeat(Number(process.env.STUB_STDERR_PAD || 0))}\n`);
     // Like the real CLI, a --max-turns stop exits 1. STUB_EXIT overrides the code.

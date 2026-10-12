@@ -66,5 +66,56 @@ agentic_cell() {
 }
 
 run_agentic() {
-  run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --yes "$@"
+  run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --min-fixtures 1 --no-escalate --yes "$@"
+}
+
+# make_fixtures <names...>: one valid fixture dir per name under $FIXTURES.
+make_fixtures() {
+  make_source_repo
+  local name
+  for name in "$@"; do make_fixture "$name"; done
+  export FIXTURES
+}
+
+# Writes canned agentic cell files under $RESULTS/<run-id> (model and kind
+# match the runner defaults, so the runner reuses them).
+# $2 is JSON: {"fixtures": [...], "seeds": [1,2,3], "arms": {"<arm>":
+# {"input": n, "noise": k, "pass": true|false, "capped": true|false}}}.
+# input_tokens = input + shared(fixture, seed) + noise * e, e deterministic in
+# [-1, 1] per (arm, fixture, seed); shared() is the same for every arm.
+write_agentic_cells() {
+  RUN_ID="$1" SPEC="$2" node -e '
+    const path = require("path");
+    const cells = require(process.env.BENCH_DIR + "/lib/cells");
+    const spec = JSON.parse(process.env.SPEC);
+    const runDir = path.join(process.env.RESULTS, process.env.RUN_ID);
+    const rand = key => {
+      let h = 2166136261;
+      for (const ch of key) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+      return (h % 2001) / 1000 - 1;
+    };
+    for (const [arm, a] of Object.entries(spec.arms)) {
+      spec.fixtures.forEach((task, fi) => {
+        for (const seed of spec.seeds) {
+          const shared = 50 * fi + 20 * seed;
+          cells.writeJsonAtomic(cells.cellPath(runDir, { arm, task, seed }), {
+            runId: process.env.RUN_ID, kind: "agentic", model: cells.DEFAULT_MODEL, arm, task, seed, totalCostUsd: 0.5,
+            usage: {
+              input_tokens: Math.round(a.input + shared + (a.noise || 0) * rand(`i|${arm}|${task}|${seed}`)),
+              cache_read_input_tokens: 2000, cache_creation_input_tokens: 1000, output_tokens: 300,
+            },
+            hitMaxTurns: Boolean(a.capped),
+            hiddenTest: { pass: Boolean(a.pass), exitCode: a.pass ? 0 : 1, timedOut: false, tail: "" },
+            diagnostics: { readChars: 100, reReads: 1, turns: 7, outputTokens: 300 },
+          });
+        }
+      });
+    }
+  '
+}
+
+# canned_arms <bare input> <full input> <diet input> <full pass> <diet pass>
+canned_arms() {
+  printf '{"bare":{"input":%s,"noise":20,"pass":false},"full":{"input":%s,"noise":20,"pass":%s},"full-diet":{"input":%s,"noise":20,"pass":%s}}' \
+    "$1" "$2" "$4" "$3" "$5"
 }

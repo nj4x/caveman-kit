@@ -129,7 +129,108 @@ function singleTurnGate(cells) {
   return { noise, noisy, candidates };
 }
 
+// ---- Agentic gate (ticket 06; spec #1 "Gate") ----------------------------
+// full-diet minus full, paired by fixture and seed. The bare arm is reference
+// only and feeds no verdict.
+const AGENTIC_PAIR = { candidate: 'full-diet', reference: 'full' };
+const AGENTIC_BARE = 'bare';
+const MIN_FIXTURES = 3;
+
+// A cell counts only when it recorded usage and a hidden-test result.
+function isCompleted(cell) {
+  return Boolean(cell) && Boolean(cell.usage) && typeof cell.usage === 'object'
+    && Boolean(cell.hiddenTest) && typeof cell.hiddenTest.pass === 'boolean';
+}
+
+const meanOf = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
+
+// Arm summary over completed cells, for the capped-cell and bare reference
+// lines. Not used in any verdict.
+function armSummary(cells, arm) {
+  const mine = cells.filter(c => c.arm === arm && isCompleted(c));
+  return {
+    arm,
+    cells: mine.length,
+    passed: mine.filter(c => c.hiddenTest.pass).length,
+    capped: mine.filter(c => c.hitMaxTurns).length,
+    costMean: meanOf(mine.map(c => cacheWeightedCost(c.usage))),
+  };
+}
+
+// The agentic gate over cells (any arms; only full-diet and full are judged).
+// opts.minFixtures (default 3): fewer paired fixtures is 'inconclusive'.
+// opts.final: when the cost interval includes zero and no escalation is left,
+// the verdict is 'no-ship'; when not final it is 'pending' with
+// escalate: true (the runner then adds seeds N+1..2N, once).
+// opts.noEscalate only words the reason: escalation was disabled, not done.
+// Verdicts: ship | no-ship | inconclusive | pending.
+function agenticGate(cells, opts = {}) {
+  const minFixtures = opts.minFixtures === undefined ? MIN_FIXTURES : opts.minFixtures;
+  const of = arm => cells.filter(c => c.arm === arm);
+  const usable = arm => of(arm).filter(isCompleted);
+  const incomplete = [...of(AGENTIC_PAIR.candidate), ...of(AGENTIC_PAIR.reference)].filter(c => !isCompleted(c));
+  const { pairs, unpaired } = pairCells(usable(AGENTIC_PAIR.candidate), usable(AGENTIC_PAIR.reference));
+  const fixtures = [...new Set(pairs.map(p => p.candidate.task))].sort();
+  const cand = pairs.map(p => cacheWeightedCost(p.candidate.usage));
+  const ref = pairs.map(p => cacheWeightedCost(p.reference.usage));
+  const ci = confidenceInterval(cand.map((v, i) => v - ref[i]));
+  const rate = list => (list.length ? list.filter(p => p).length / list.length : NaN);
+  const candPass = pairs.map(p => p.candidate.hiddenTest.pass);
+  const refPass = pairs.map(p => p.reference.hiddenTest.pass);
+  const passCandidate = rate(candPass);
+  const passReference = rate(refPass);
+  const passLower = pairs.length > 0 && passCandidate < passReference;
+  const dir = direction(ci);
+
+  let verdict;
+  let reason;
+  let escalate = false;
+  if (fixtures.length < minFixtures) {
+    verdict = 'inconclusive';
+    reason = `${fixtures.length} fixture(s) left after drops, need ${minFixtures}`;
+  } else if (dir === 'bad') {
+    verdict = 'no-ship';
+    reason = 'cost interval excludes zero in the bad direction';
+  } else if (passLower) {
+    verdict = 'no-ship';
+    reason = 'hidden-test pass rate is lower than full';
+  } else if (dir === 'good') {
+    verdict = 'ship';
+    reason = 'cost interval excludes zero in the good direction and pass rate is not lower';
+  } else if (opts.final) {
+    verdict = 'no-ship';
+    reason = opts.noEscalate ? 'cost interval includes zero (escalation disabled)' : 'cost interval includes zero after escalation';
+  } else {
+    verdict = 'pending';
+    escalate = true;
+    reason = 'cost interval includes zero';
+  }
+  return {
+    candidate: AGENTIC_PAIR.candidate,
+    reference: AGENTIC_PAIR.reference,
+    pairs: pairs.length,
+    fixtures,
+    unpaired: [...unpaired, ...incomplete],
+    cost: { candidateMean: meanOf(cand), referenceMean: meanOf(ref), ci, direction: dir },
+    pass: {
+      candidate: candPass.filter(p => p).length,
+      reference: refPass.filter(p => p).length,
+      candidateRate: passCandidate,
+      referenceRate: passReference,
+    },
+    arms: [AGENTIC_BARE, AGENTIC_PAIR.reference, AGENTIC_PAIR.candidate].map(a => armSummary(cells, a)),
+    minFixtures,
+    verdict,
+    reason,
+    escalate,
+  };
+}
+
 module.exports = {
+  AGENTIC_PAIR,
+  MIN_FIXTURES,
+  agenticGate,
+  isCompleted,
   METRICS,
   NOISE_PAIR,
   SINGLE_TURN_PAIRS,

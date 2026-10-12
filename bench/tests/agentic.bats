@@ -67,7 +67,7 @@ teardown() { bench_teardown; }
     for (const [arm, out] of Object.entries(expected)) {
       const cell = JSON.parse(fs.readFileSync(dir + "/" + arm + "--tiny--s1.json", "utf8"));
       assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, turns: 7, outputTokens: out }, arm);
-      assert.strictEqual(cell.usage.cache_read_input_tokens, 2000);
+      assert.strictEqual(cell.usage.cache_read_input_tokens, arm === "full-diet" ? 1000 : 2000);
       assert.ok(fs.existsSync(dir + "/" + arm + "--tiny--s1.stream.jsonl"));
     }
   '
@@ -244,7 +244,7 @@ teardown() { bench_teardown; }
 @test "agentic-estimate: the cost estimate prints before the first stub call" {
   export STUB_MARK="$TEST_ROOT/combined.log"
 
-  node "$BENCH_DIR/run.js" --results-dir "$RESULTS" --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --seeds 1 --yes < /dev/null >> "$STUB_MARK"
+  node "$BENCH_DIR/run.js" --results-dir "$RESULTS" --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --research-dir "$RESEARCH" --min-fixtures 1 --no-escalate --seeds 1 --yes < /dev/null >> "$STUB_MARK"
 
   estimate_line="$(grep -n 'Estimated cost: 3 call(s)' "$STUB_MARK" | head -1 | cut -d: -f1)"
   first_call="$(grep -n 'STUB CALL' "$STUB_MARK" | head -1 | cut -d: -f1)"
