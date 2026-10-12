@@ -11,8 +11,9 @@ teardown() { bench_teardown; }
 # Canned spec: arms with given mean output/input tokens and per-cell noise.
 canned_spec() {
   # $1..$5: output for bare, bare-control, lite, full, ultra; $6..$10: input.
-  printf '{"seeds":3,"arms":{"bare":{"output":%s,"input":%s,"noise":20},"bare-control":{"output":%s,"input":%s,"noise":20},"lite":{"output":%s,"input":%s,"noise":20},"full":{"output":%s,"input":%s,"noise":20},"ultra":{"output":%s,"input":%s,"noise":20}}}' \
-    "$1" "$6" "$2" "$7" "$3" "$8" "$4" "$9" "$5" "${10}"
+  # ultra-no-focus copies ultra ($5, $10), so its pair has no effect.
+  printf '{"seeds":3,"arms":{"bare":{"output":%s,"input":%s,"noise":20},"bare-control":{"output":%s,"input":%s,"noise":20},"lite":{"output":%s,"input":%s,"noise":20},"full":{"output":%s,"input":%s,"noise":20},"ultra":{"output":%s,"input":%s,"noise":20},"ultra-no-focus":{"output":%s,"input":%s,"noise":20}}}' \
+    "$1" "$6" "$2" "$7" "$3" "$8" "$4" "$9" "$5" "${10}" "$5" "${10}"
 }
 
 # Verdict column of the gate row for <candidate> <reference>.
@@ -171,15 +172,15 @@ verdict_of() {
   run run_bench --kind single-turn --seeds 2 --yes --run-id flat
 
   [ "$status" -eq 0 ]
-  # 5 arms x 6 tasks x 2 seeds; every interval includes zero, still no rerun.
-  [ "$(stub_calls)" -eq 60 ]
+  # 6 arms x 6 tasks x 2 seeds; every interval includes zero, still no rerun.
+  [ "$(stub_calls)" -eq 72 ]
   [ "$(verdict_of ultra bare)" = no-ship ]
-  [ "$(find "$RESULTS/flat" -name '*.json' | wc -l | tr -d ' ')" -eq 60 ]
+  [ "$(find "$RESULTS/flat" -name '*.json' | wc -l | tr -d ' ')" -eq 72 ]
   [ "$(find "$RESULTS/flat" -name '*--s3.json' | wc -l | tr -d ' ')" -eq 0 ]
 
   run run_bench --kind single-turn --seeds 2 --yes --run-id flat
   [ "$status" -eq 0 ]
-  [ "$(stub_calls)" -eq 60 ]
+  [ "$(stub_calls)" -eq 72 ]
 }
 
 @test "summary-note: a complete run writes a dated note under the research dir with run parameters" {
@@ -209,7 +210,7 @@ verdict_of() {
 
   [ "$status" -ne 0 ]
   [ "$(stub_calls)" -eq 1 ]
-  [[ "$output" == *"Summary note skipped: 89/90 cells complete"* ]]
+  [[ "$output" == *"Summary note skipped: 107/108 cells complete"* ]]
   [[ "$output" == *"Unpaired cells excluded (1): bare--explain-race--s2"* ]]
   echo "$output" | grep -E '^lite +bare +17 +'
   [ ! -d "$RESEARCH" ]

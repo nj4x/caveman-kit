@@ -9,17 +9,18 @@ teardown() { bench_teardown; }
 @test "arm-config: each arm's config registers the three kit hooks and seeds its flag" {
   run run_bench --kind single-turn --seeds 1 --yes
   [ "$status" -eq 0 ]
-  [ "$(stub_calls)" -eq 30 ]
+  [ "$(stub_calls)" -eq 36 ]
 
   log_assert '
-    const modes = { bare: "off", "bare-control": "off", lite: "lite", full: "full", ultra: "ultra" };
+    const modes = { bare: "off", "bare-control": "off", lite: "lite", full: "full", ultra: "ultra", "ultra-no-focus": "ultra" };
     assert.deepStrictEqual([...new Set(entries.map(e => e.arm))].sort(), Object.keys(modes).sort());
     for (const e of entries) {
       const s = JSON.parse(e.settings);
       assert.deepStrictEqual(Object.keys(s).sort(), ["hooks"]);
       assert.deepStrictEqual(Object.keys(s.hooks).sort(), ["SessionStart", "SubagentStart", "UserPromptSubmit"]);
       const cmd = ev => { assert.strictEqual(s.hooks[ev].length, 1); return s.hooks[ev][0].hooks[0].command; };
-      const hooks = process.env.KIT_DIR + "/hooks/";
+      // ultra-no-focus runs a patched temp copy of the hooks (nofocus.bats).
+      const hooks = e.arm === "ultra-no-focus" ? "/hooks-no-focus/" : process.env.KIT_DIR + "/hooks/";
       assert.ok(cmd("SessionStart").includes(hooks + "caveman-activate.js"), cmd("SessionStart"));
       assert.ok(cmd("SubagentStart").includes(hooks + "caveman-activate.js"));
       assert.ok(cmd("UserPromptSubmit").includes(hooks + "caveman-mode-tracker.js"));
@@ -159,7 +160,7 @@ teardown() { bench_teardown; }
   [ "$status" -ne 0 ]
   [[ "$output" == *"FAIL lite--"* ]]
   [[ "$output" == *"rerun with --run-id resume-test"* ]]
-  [ "$(find "$RESULTS/resume-test" -name '*.json' | wc -l | tr -d ' ')" -eq 24 ]
+  [ "$(find "$RESULTS/resume-test" -name '*.json' | wc -l | tr -d ' ')" -eq 30 ]
   [ "$(find "$RESULTS/resume-test" -name 'lite--*' | wc -l | tr -d ' ')" -eq 0 ]
 
   rm "$STUB_LOG"
@@ -167,7 +168,7 @@ teardown() { bench_teardown; }
   [ "$status" -eq 0 ]
   [ "$(stub_calls)" -eq 6 ]
   log_assert 'assert.ok(entries.every(e => e.arm === "lite"));'
-  [ "$(find "$RESULTS/resume-test" -name '*.json' | wc -l | tr -d ' ')" -eq 30 ]
+  [ "$(find "$RESULTS/resume-test" -name '*.json' | wc -l | tr -d ' ')" -eq 36 ]
 
   rm "$STUB_LOG"
   run run_bench --kind single-turn --seeds 1 --run-id resume-test
@@ -187,8 +188,8 @@ teardown() { bench_teardown; }
 @test "cells: one file per arm x task x seed, written atomically with usage" {
   run run_bench --kind single-turn --seeds 2 --yes --run-id cells-test
   [ "$status" -eq 0 ]
-  [ "$(stub_calls)" -eq 60 ]
-  [ "$(find "$RESULTS/cells-test" -type f | wc -l | tr -d ' ')" -eq 60 ]
+  [ "$(stub_calls)" -eq 72 ]
+  [ "$(find "$RESULTS/cells-test" -type f | wc -l | tr -d ' ')" -eq 72 ]
   [ "$(find "$RESULTS/cells-test" -name '.*' | wc -l | tr -d ' ')" -eq 0 ]
   [ -f "$RESULTS/cells-test/ultra--design-cache--s2.json" ]
 

@@ -50,7 +50,7 @@ function finish() {
     process.stderr.write('stub: simulated failure\n');
     process.exit(1);
   }
-  const base = process.env.STUB_FLAT === '1' ? 500 : { bare: 500, 'bare-control': 505, lite: 400, full: 300, ultra: 200 }[arm] || 100;
+  const base = process.env.STUB_FLAT === '1' ? 500 : { bare: 500, 'bare-control': 505, lite: 400, full: 300, ultra: 200, 'ultra-no-focus': 250 }[arm] || 100;
   process.stdout.write(JSON.stringify({
     type: 'result',
     subtype: 'success',
