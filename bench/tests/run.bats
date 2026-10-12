@@ -145,7 +145,7 @@ teardown() { bench_teardown; }
 @test "estimate-first: the cost estimate prints before the first claude call" {
   export STUB_MARK="$TEST_ROOT/combined.log"
 
-  node "$BENCH_DIR/run.js" --results-dir "$RESULTS" --kind single-turn --seeds 1 --yes < /dev/null >> "$STUB_MARK"
+  node "$BENCH_DIR/run.js" --results-dir "$RESULTS" --research-dir "$RESEARCH" --kind single-turn --seeds 1 --yes < /dev/null >> "$STUB_MARK"
 
   estimate_line="$(grep -n 'Estimated cost' "$STUB_MARK" | head -1 | cut -d: -f1)"
   first_call="$(grep -n 'STUB CALL' "$STUB_MARK" | head -1 | cut -d: -f1)"

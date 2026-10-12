@@ -20,6 +20,7 @@ node bench/run.js --kind single-turn --yes      # unattended
 | `--kit-dir <path>` | repo root | kit checkout whose `hooks/` are measured |
 | `--run-id <id>` | `<kind>-<model>-<kit-dir HEAD short SHA>` | results subdirectory |
 | `--results-dir <dir>` | `bench/results` | parent of run directories |
+| `--research-dir <dir>` | `docs/research` | where the summary note is written |
 | `--yes` | off | start without asking; required when there is no TTY |
 
 Single-turn arms: `bare`, `bare-control`, `lite`, `full`, `ultra`, over the six
@@ -32,6 +33,32 @@ Each successful call writes one file, `<results-dir>/<run-id>/<arm>--<task>--s<s
 A rerun with the same run id skips cells that already have a file and retries
 failed ones. The default run id depends only on the kit-dir's HEAD commit, so
 uncommitted hook edits reuse the old id: pass `--run-id` to keep them apart.
+
+## Gate and report
+
+After the calls the runner prints raw per-arm totals, then the gate table
+(`lib/stats.js`). Two co-primary metrics, lower is better for both:
+cache-weighted input cost (`input + 0.1 x cache read + 1.25 x cache write`
+tokens) and billed output tokens. Each candidate is paired with its reference
+by task and seed: `lite`, `full`, `ultra` against `bare`, and
+`ultra-no-focus` against `ultra` when that arm has cells. The table shows both
+means, the mean paired difference and its 95% t-interval per metric, and the
+verdict:
+
+- `ship`: one interval excludes zero below and the other does not exclude
+  zero above.
+- `no-ship`: either interval excludes zero above, or both include zero.
+- `inconclusive`: the noise baseline (`bare` against `bare-control`) excludes
+  zero on either metric, so every verdict in the run is void. Counts as
+  no-ship.
+
+Cells without a partner are left out of the intervals and listed under the
+table. The single-turn harness never runs more than `--seeds` seeds.
+
+When every planned cell exists, the runner writes
+`<research-dir>/<YYYY-MM-DD>-bench-<run-id>.md` with the run parameters
+(model, seeds, kit-dir commit), the gate table and the raw totals. Commit it
+with the run's cells under `bench/results/<run-id>/`.
 
 ## Isolation and auth
 
