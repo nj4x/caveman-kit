@@ -5,7 +5,9 @@
 //
 // Knobs: STUB_FAIL=1 fails every call; STUB_FAIL_ARM=<arm> fails that arm's
 // calls; STUB_SLEEP=<seconds> sleeps after logging (signal tests);
-// STUB_MARK=<file> appends a "STUB CALL" line (ordering tests).
+// STUB_MARK=<file> appends a "STUB CALL" line (ordering tests);
+// STUB_FLAT=1 gives every arm the same usage (no effect anywhere);
+// STUB_IGNORE_TERM=1 ignores SIGTERM, SIGINT and SIGHUP (SIGKILL tests).
 // Agentic (--output-format stream-json): STUB_ABSENT=<rel,rel> records whether
 // those paths exist in cwd (hidden-test check); STUB_FIX_ARMS=<arm,arm> makes
 // those arms write "good" to cwd/value.txt (a passing hidden test); output is
@@ -16,6 +18,10 @@
 // stream; STUB_LEAK=1 puts ANTHROPIC_API_KEY in the stream, result, stderr and
 // cwd/leak.txt.
 'use strict';
+
+if (process.env.STUB_IGNORE_TERM === '1') {
+  for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.on(sig, () => {});
+}
 
 const fs = require('fs');
 const path = require('path');
@@ -95,7 +101,7 @@ function finish() {
     });
     return;
   }
-  const base = { bare: 500, 'bare-control': 505, lite: 400, full: 300, ultra: 200 }[arm] || 100;
+  const base = process.env.STUB_FLAT === '1' ? 500 : { bare: 500, 'bare-control': 505, lite: 400, full: 300, ultra: 200, 'ultra-no-focus': 250 }[arm] || 100;
   process.stdout.write(JSON.stringify({
     type: 'result',
     subtype: 'success',

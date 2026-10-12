@@ -185,7 +185,7 @@ function buildArmConfig(arm, options = {}) {
   return {
     arm, name: arm.name, mode: arm.mode,
     dir, configDir, pluginRoot, workDir, hooksDir, settingsPath, flagPath,
-    sessionStartCommand: activateCmd, env,
+    sessionStartCommand: activateCmd, userPromptSubmitCommand: trackerCmd, env,
   };
 }
 
@@ -255,6 +255,7 @@ module.exports = {
   BenchError,
   VALID_MODES,
   createTempRoot,
+  getDefaultRoot,
   cleanupTempRoots,
   realConfigDir,
   resolveAuth,

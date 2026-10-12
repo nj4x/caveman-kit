@@ -261,6 +261,22 @@ teardown() { bench_teardown; }
   run run_agentic --seeds 1 --run-id r1
   [ "$status" -eq 0 ]
   [ "$(stub_calls)" -eq 3 ]
+
+  # Cells carry kind and model; a cell from another model is stale and rerun.
+  grep -q '"kind": "agentic"' "$RESULTS/r1/bare--tiny--s1.json"
+  grep -q '"model": "claude-sonnet-5-5"' "$RESULTS/r1/bare--tiny--s1.json"
+  run run_agentic --seeds 1 --run-id r1 --model claude-opus-5-5
+  [ "$status" -eq 0 ]
+  [ "$(stub_calls)" -eq 6 ]
+  grep -q '"model": "claude-opus-5-5"' "$RESULTS/r1/bare--tiny--s1.json"
+}
+
+@test "agentic-cell-timeout: a hung agent is killed after --cell-timeout and the cell fails" {
+  STUB_SLEEP=60 STUB_IGNORE_TERM=1 run run_agentic --seeds 1 --run-id hung --cell-timeout 1 --fixtures tiny
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"FAIL bare--tiny--s1: timed out after 1s"* ]] || false
+  [ ! -e "$RESULTS/hung/bare--tiny--s1.json" ]
+  [ "$(leftover_temp_dirs)" -eq 0 ]
 }
 
 @test "agentic-failed-cell: a failing stub leaves no cell file and exits non-zero; temp dir is removed" {

@@ -21,6 +21,9 @@ const DIET_FILE = 'caveman-context-diet.md';
 // most is not silently dropped and re-paid on every rerun.
 const MAX_TURNS = 40;
 const MAX_TURNS_SUBTYPE = 'error_max_turns';
+// An agentic run takes many turns: its default --cell-timeout is longer than
+// the single-turn one.
+const DEFAULT_CELL_TIMEOUT_MS = 30 * 60 * 1000;
 
 // The injected form of the diet file: HTML comments stripped, trimmed. This
 // is what preflight requires in `full-diet` and forbids in `full`.
@@ -51,7 +54,7 @@ function writeTextAtomic(file, text) {
 // Returns { ok: true, record } after writing the cell file, or
 // { ok: false, error } and writes nothing (a hidden-test failure is a result,
 // not a cell failure).
-async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, runId, runDir, testEnv }) {
+async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, runId, runDir, testEnv, timeoutMs = DEFAULT_CELL_TIMEOUT_MS }) {
   try {
     fixtures.prepareWorkDir(fixture, armConfig.workDir);
   } catch (e) {
@@ -65,12 +68,15 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
     '--max-turns', String(MAX_TURNS),
   ];
   const started = Date.now();
-  const res = await cells.invoke(claudePath, args, armConfig);
+  const res = await cells.invoke(claudePath, args, armConfig, timeoutMs);
   const durationMs = Date.now() - started;
   // Cell files, raw streams and printed errors must never hold the API key.
   // Diagnostics are parsed from the unredacted stream.
   const secret = armConfig.env.ANTHROPIC_API_KEY;
   const redact = text => (secret && typeof text === 'string' ? text.split(secret).join('[redacted]') : text);
+  if (res.timedOut) {
+    return { ok: false, error: `timed out after ${timeoutMs / 1000}s (${res.signal ? `killed by ${res.signal}` : `exit ${res.status}`})` };
+  }
   if (res.signal || res.status === null) {
     return { ok: false, error: redact(`${res.signal ? `killed by ${res.signal}` : 'did not run'}: ${res.stderr.trim().slice(-500)}`) };
   }
@@ -105,4 +111,4 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   return { ok: true, record };
 }
 
-module.exports = { DIET_FILE, MAX_TURNS, dietText, runAgenticCell };
+module.exports = { DEFAULT_CELL_TIMEOUT_MS, DIET_FILE, MAX_TURNS, dietText, runAgenticCell };

@@ -22,11 +22,22 @@ node bench/run.js --kind single-turn --yes      # unattended
 | `--kit-dir <path>` | repo root | kit checkout whose `hooks/` are measured |
 | `--run-id <id>` | `<kind>-<model>-<kit-dir HEAD short SHA>` | results subdirectory |
 | `--results-dir <dir>` | `bench/results` | parent of run directories |
+| `--research-dir <dir>` | `docs/research` | where the summary note is written |
+| `--cell-timeout <s>` | `600` (agentic: `1800`) | seconds before one `claude` call is stopped (SIGTERM, SIGKILL 5 s later) and the cell fails |
 | `--yes` | off | start without asking; required when there is no TTY |
 
-Single-turn arms: `bare`, `bare-control`, `lite`, `full`, `ultra`, over the six
-prompts in `tasks/single-turn.js`. The bare arms register the same hooks with
-the flag seeded to `off` and `CAVEMAN_DEFAULT_MODE=off`.
+Single-turn arms: `bare`, `bare-control`, `lite`, `full`, `ultra`,
+`ultra-no-focus`, over the six prompts in `tasks/single-turn.js`. The bare
+arms register the same hooks with the flag seeded to `off` and
+`CAVEMAN_DEFAULT_MODE=off`.
+
+`ultra-no-focus` measures the focus directive in the per-turn reminder
+(commit `e11e665`). The runner copies `--kit-dir`'s `hooks/` into the temp
+dir and removes the focus clause (the text after `— session ruleset applies.`)
+from the copied `caveman-mode-tracker.js`; the arm runs that copy with the flag
+seeded to `ultra`. The shipped hooks are only read. If the clause is not found,
+the run exits non-zero before the cost estimate and before any `claude` call
+(`lib/nofocus.js`).
 
 ## Agentic kind
 
@@ -35,13 +46,15 @@ the flag seeded to `off` and `CAVEMAN_DEFAULT_MODE=off`.
 against fixture repos (needs `git`, `python3` and `pytest` or `uv` on the
 machine; a run is budgeted at ~300k input + ~12k output tokens, see
 `lib/estimate.js`). Per cell: clone at the pinned SHA, drop the clone's
-history, apply the plant patch, record the tree as one root commit, run `claude -p ... --output-format stream-json --verbose
---permission-mode bypassPermissions --max-turns 40` in the clone (only the
-throwaway work dir is writable by intent, but the permission bypass is real:
-the agent could read or edit files elsewhere, including `hidden/` and the
-hooks, by absolute path),
-and only after it exits copy the hidden test in and run it. Each cell file
-records `hiddenTest.pass` and `diagnostics` (`readChars`, `reReads`, `turns`,
+history, apply the plant patch, record the tree as one root commit, run
+`claude -p ... --output-format stream-json --verbose --permission-mode
+bypassPermissions --max-turns 40` in the clone (only the throwaway work dir is
+writable by intent, but the permission bypass is real: the agent could read or
+edit files elsewhere, including `hidden/` and the hooks, by absolute path), and
+only after it exits copy the hidden test in and run it. Cells use the same
+format as single-turn cells (`kind: "agentic"`, `model`, `usage`; a cell from
+another model or kind is stale and rerun). Each agentic cell also records
+`hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`, `turns`,
 `outputTokens`); the raw stream sits beside it as `<cell>.stream.jsonl`.
 `ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
 and printed `FAIL` lines. The gate is not computed here.
@@ -71,8 +84,37 @@ comments stripped) must appear in the `full-diet` context and not in `full`.
 
 Each successful call writes one file, `<results-dir>/<run-id>/<arm>--<task>--s<seed>.json`.
 A rerun with the same run id skips cells that already have a file and retries
-failed ones. The default run id depends only on the kit-dir's HEAD commit, so
-uncommitted hook edits reuse the old id: pass `--run-id` to keep them apart.
+failed ones. A cell recorded with a different `--model` or `--kind` is stale:
+it is rerun and overwritten, never reused. The default run id depends only on
+the kit-dir's HEAD commit, so uncommitted hook edits reuse the old id: pass
+`--run-id` to keep them apart. The summary note marks such a commit `-dirty`.
+
+## Gate and report
+
+After the calls the runner prints raw per-arm totals, then the gate table
+(`lib/stats.js`). Two co-primary metrics, lower is better for both:
+cache-weighted input cost (`input + 0.1 x cache read + 1.25 x cache write`
+tokens) and billed output tokens. Each candidate is paired with its reference
+by task and seed: `lite`, `full`, `ultra` against `bare`, and
+`ultra-no-focus` against `ultra`. Every candidate gets a row; one with fewer
+than 2 pairs has an infinite interval and is no-ship. The table shows both
+means, the mean paired difference and its 95% t-interval per metric, and the
+verdict:
+
+- `ship`: one interval excludes zero below and the other does not exclude
+  zero above.
+- `no-ship`: either interval excludes zero above, or both include zero.
+- `inconclusive`: the noise baseline (`bare` against `bare-control`) excludes
+  zero on either metric, or has fewer than 2 pairs, so every verdict in the
+  run is void. Counts as no-ship.
+
+Cells without a partner are left out of the intervals and listed under the
+table. The single-turn harness never runs more than `--seeds` seeds.
+
+When every planned cell exists, the runner writes
+`<research-dir>/<YYYY-MM-DD>-bench-<run-id>.md` with the run parameters
+(model, seeds, kit-dir commit), the gate table and the raw totals. Commit it
+with the run's cells under `bench/results/<run-id>/`.
 
 ## Isolation and auth
 
