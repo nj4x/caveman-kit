@@ -1,0 +1,59 @@
+// caveman-kit bench — cost estimate and run confirmation.
+//
+// The estimate is deliberately rough: a fixed per-call token assumption times
+// list price. It exists so a maintainer can abort an expensive run, not to
+// predict the bill. Edit the constants when prices or prompt sizes change.
+'use strict';
+
+const readline = require('readline');
+
+// USD per million tokens. Unknown models fall back to the Sonnet row.
+const PRICES = {
+  'claude-sonnet-5-5': { input: 3, output: 15 },
+  'claude-opus-5-5': { input: 5, output: 25 },
+};
+const FALLBACK_MODEL = 'claude-sonnet-5-5';
+
+// Per single-turn call: Claude Code's system prompt plus injected ruleset,
+// billed as uncached input (upper bound), and a medium-length answer.
+const ASSUMED_TOKENS = { input: 25000, output: 1000 };
+
+function estimateCost({ model, pendingCalls }) {
+  const known = Object.prototype.hasOwnProperty.call(PRICES, model);
+  const price = PRICES[known ? model : FALLBACK_MODEL];
+  const perCall = (ASSUMED_TOKENS.input * price.input + ASSUMED_TOKENS.output * price.output) / 1e6;
+  return { perCall, total: perCall * pendingCalls, knownModel: known };
+}
+
+function formatEstimate({ model, pendingCalls, doneCalls }) {
+  const e = estimateCost({ model, pendingCalls });
+  const lines = [
+    `Estimated cost: ${pendingCalls} call(s) x ~$${e.perCall.toFixed(3)} = ~$${e.total.toFixed(2)} ` +
+    `(${doneCalls} cell(s) already done, skipped)`,
+    `  assumes ~${ASSUMED_TOKENS.input} uncached input + ~${ASSUMED_TOKENS.output} output tokens per call at ` +
+    `${e.knownModel ? model : `${FALLBACK_MODEL} prices (unknown model ${model})`} list price`,
+  ];
+  return lines.join('\n');
+}
+
+// --yes: proceed. TTY: ask. No TTY: refuse. Resolves { proceed, reason? }.
+function confirm({ yes, stdin = process.stdin, stderr = process.stderr }) {
+  if (yes) return Promise.resolve({ proceed: true });
+  if (!stdin.isTTY) {
+    return Promise.resolve({ proceed: false, reason: 'refusing to start: no TTY to confirm; pass --yes to run unattended' });
+  }
+  return new Promise(resolve => {
+    const rl = readline.createInterface({ input: stdin, output: stderr });
+    let answered = false;
+    // End of input (Ctrl-D) before an answer counts as "no".
+    rl.on('close', () => { if (!answered) resolve({ proceed: false, reason: 'aborted by user' }); });
+    rl.question('Proceed? [y/N] ', answer => {
+      answered = true;
+      rl.close();
+      const ok = /^y(es)?$/i.test(answer.trim());
+      resolve(ok ? { proceed: true } : { proceed: false, reason: 'aborted by user' });
+    });
+  });
+}
+
+module.exports = { PRICES, ASSUMED_TOKENS, estimateCost, formatEstimate, confirm };
