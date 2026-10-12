@@ -13,7 +13,7 @@ teardown() {
 # stub has been called, and leaves the runner's pid in BENCH_PID.
 start_sleeping_run() {
   export STUB_SLEEP=30
-  node "$BENCH_DIR/run.js" --results-dir "$RESULTS" --kind single-turn --seeds 1 --yes \
+  node "$BENCH_DIR/run.js" --results-dir "$RESULTS" --research-dir "$RESEARCH" --kind single-turn --seeds 1 --yes \
     < /dev/null > "$TEST_ROOT/bench.out" 2>&1 &
   BENCH_PID=$!
   for _ in $(seq 1 100); do
