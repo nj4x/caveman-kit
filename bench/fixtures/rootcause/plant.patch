@@ -1,0 +1,13 @@
+diff --git a/anthrouter/request_text.py b/anthrouter/request_text.py
+index e16be79..0fab119 100644
+--- a/anthrouter/request_text.py
++++ b/anthrouter/request_text.py
+@@ -167,7 +167,7 @@ def strip_reminders(text: str) -> str:
+     """
+     text = _TRANSCRIPT_RE.sub('', text)
+     text = _SYSTEM_REMINDER_RE.sub('', text)
+-    return _LOCAL_COMMAND_WRAPPER_RE.sub('', text).strip()
++    return _LOCAL_COMMAND_WRAPPER_RE.sub('', text)
+ 
+ 
+ def last_transcript_user_turn(text: str) -> str:
