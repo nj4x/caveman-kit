@@ -16,7 +16,7 @@
 // STUB_RESULT_ERROR=1 ends it with subtype error_during_execution, is_error;
 // STUB_EXIT=<n> sets the exit code; STUB_SELF_KILL=1 SIGKILLs itself after the
 // stream; STUB_LEAK=1 puts ANTHROPIC_API_KEY in the stream, result, stderr and
-// cwd/leak.txt.
+// cwd/leak.txt; STUB_STDERR_PAD=<n> appends n chars after the key on stderr.
 'use strict';
 
 if (process.env.STUB_IGNORE_TERM === '1') {
@@ -93,7 +93,7 @@ function finish() {
       type: 'result', subtype, is_error: maxTurns || resultError, result: leak ? `leaked ${leak}` : 'done', num_turns: 7, total_cost_usd: 0.5,
       usage: { input_tokens: 10, cache_creation_input_tokens: 1000, cache_read_input_tokens: 2000, output_tokens: abase + count },
     }) + '\n';
-    if (leak) process.stderr.write(`stub stderr ${leak}\n`);
+    if (leak) process.stderr.write(`stub stderr ${leak}${'p'.repeat(Number(process.env.STUB_STDERR_PAD || 0))}\n`);
     // Like the real CLI, a --max-turns stop exits 1. STUB_EXIT overrides the code.
     process.exitCode = process.env.STUB_EXIT !== undefined ? Number(process.env.STUB_EXIT) : (maxTurns ? 1 : 0);
     process.stdout.write(last, () => {

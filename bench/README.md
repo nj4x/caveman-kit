@@ -60,8 +60,8 @@ another model or kind is stale and rerun). Each agentic cell also records
 and printed `FAIL` lines. The gate is not computed here.
 
 **Turn cap.** Each agent run is capped at 40 turns (`MAX_TURNS` in
-`lib/agentic.js`); this cap is a harness choice, not in ADR 0008. The CLI exits
-non-zero when the cap stops a run. When the final result event has subtype
+`lib/agentic.js`); this cap is a harness choice, not in ADR 0008. The `claude` CLI
+(not `bench/run.js`) exits non-zero when the cap stops a run. When the final result event has subtype
 `error_max_turns` and carries `usage`, the harness still counts the run as a
 completed cell: the hidden test runs and the record has `hitMaxTurns: true`
 (otherwise `false`). A capped run usually leaves a half-edited tree, so its
@@ -70,7 +70,7 @@ capped cells per arm. Any other non-zero exit, error result or signal fails the
 cell: no file is written and a rerun retries it.
 
 Fixture format (`bench/fixtures/<name>/`; the real fixtures arrive with a later
-ticket, so until then the default dir is empty and the run stops with "no
+ticket, so until then the default dir does not exist and the run stops with "no
 fixtures found" — point `--fixtures-dir` at your own fixtures): `fixture.json` (`source`, `sha`,
 `testCommand`, optional `plantPatch`/`prompt` file names), `plant.patch`,
 `prompt.md`, `hidden/` (copied over the repo root after the run). Before any

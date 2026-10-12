@@ -94,8 +94,9 @@ function offlineEnv(base = process.env) {
   return env;
 }
 
-// Copies the hidden test in and runs testCommand. pass = exit 0.
-function runHiddenTest(fixture, workDir, env = process.env) {
+// Copies the hidden test in and runs testCommand. pass = exit 0. redact is
+// applied to the full output before it is cut to the tail.
+function runHiddenTest(fixture, workDir, env = process.env, redact = text => text) {
   try {
     fs.cpSync(fixture.hiddenDir, workDir, { recursive: true, force: true });
   } catch (e) {
@@ -109,7 +110,7 @@ function runHiddenTest(fixture, workDir, env = process.env) {
     pass: res.status === 0 && !res.error,
     exitCode: res.status,
     timedOut,
-    tail: `${res.stdout || ''}${res.stderr || ''}`.slice(-1000),
+    tail: redact(`${res.stdout || ''}${res.stderr || ''}`).slice(-1000),
   };
 }
 

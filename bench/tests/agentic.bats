@@ -361,6 +361,13 @@ teardown() { bench_teardown; }
   [[ "$output" == *"stub stderr [redacted]"* ]] || false
   [[ "$output" != *"test-key"* ]] || false
 
+  # The 500-char cut falls inside the key: redaction must happen first, so no
+  # fragment ("t-key") survives.
+  STUB_LEAK=1 STUB_EXIT=2 STUB_STDERR_PAD=495 run run_agentic --seeds 1 --run-id leak-cut
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"FAIL bare--tiny--s1: exit 2: cted]ppp"* ]] || false
+  [[ "$output" != *"t-keyppp"* ]] || false
+
   stream="$(ls -d "$RESULTS"/agentic-*)/bare--tiny--s1.stream.jsonl"
   grep -q '\[redacted\]' "$stream"
   ! grep -q 'test-key' "$stream" || false

@@ -71,28 +71,29 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   const res = await cells.invoke(claudePath, args, armConfig, timeoutMs);
   const durationMs = Date.now() - started;
   // Cell files, raw streams and printed errors must never hold the API key.
-  // Diagnostics are parsed from the unredacted stream.
+  // Diagnostics are parsed from the unredacted stream. Redact before any
+  // truncation, so a cut never leaves a key fragment split() cannot match.
   const secret = armConfig.env.ANTHROPIC_API_KEY;
   const redact = text => (secret && typeof text === 'string' ? text.split(secret).join('[redacted]') : text);
   if (res.timedOut) {
     return { ok: false, error: `timed out after ${timeoutMs / 1000}s (${res.signal ? `killed by ${res.signal}` : `exit ${res.status}`})` };
   }
   if (res.signal || res.status === null) {
-    return { ok: false, error: redact(`${res.signal ? `killed by ${res.signal}` : 'did not run'}: ${res.stderr.trim().slice(-500)}`) };
+    return { ok: false, error: `${res.signal ? `killed by ${res.signal}` : 'did not run'}: ${redact(res.stderr).trim().slice(-500)}` };
   }
   // Parsed before the exit check: the CLI exits non-zero when --max-turns
   // stops the run, and that run is still a completed cell.
   const { result, diagnostics } = stream.analyze(res.stdout);
   const hitMaxTurns = Boolean(result && result.subtype === MAX_TURNS_SUBTYPE && result.usage);
   if (res.status !== 0 && !hitMaxTurns) {
-    return { ok: false, error: redact(`exit ${res.status}: ${res.stderr.trim().slice(-500)}`) };
+    return { ok: false, error: `exit ${res.status}: ${redact(res.stderr).trim().slice(-500)}` };
   }
   if (!result || !result.usage || (result.is_error && !hitMaxTurns)) {
-    return { ok: false, error: redact(`no usable result event: ${JSON.stringify(result).slice(0, 300)}`) };
+    return { ok: false, error: `no usable result event: ${redact(JSON.stringify(result) || 'none').slice(0, 300)}` };
   }
 
   // The agent is done: only now does the hidden test enter the work dir.
-  const hidden = fixtures.runHiddenTest(fixture, armConfig.workDir, testEnv);
+  const hidden = fixtures.runHiddenTest(fixture, armConfig.workDir, testEnv, redact);
 
   const record = {
     runId, kind: 'agentic', model,
@@ -103,7 +104,7 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
     totalCostUsd: typeof result.total_cost_usd === 'number' ? result.total_cost_usd : null,
     result: redact(result.result),
     hitMaxTurns,
-    hiddenTest: { pass: hidden.pass, exitCode: hidden.exitCode, timedOut: hidden.timedOut, tail: redact(hidden.tail) },
+    hiddenTest: { pass: hidden.pass, exitCode: hidden.exitCode, timedOut: hidden.timedOut, tail: hidden.tail },
     diagnostics,
   };
   writeTextAtomic(streamPath(runDir, cell), redact(res.stdout));
