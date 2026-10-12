@@ -153,4 +153,29 @@ function writeNote(dir, name, text) {
   return file;
 }
 
-module.exports = { summarize, formatTable, formatGate, summaryNote, writeNote };
+// Agentic raw totals per arm: hidden-test passes, turn-cap hits and the
+// stream diagnostics. No statistics: the agentic gate is a separate step.
+function summarizeAgentic(cells, armOrder = []) {
+  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
+  const byArm = new Map(armOrder.map(name => [name, blank(name)]));
+  for (const cell of cells) {
+    if (!byArm.has(cell.arm)) byArm.set(cell.arm, blank(cell.arm));
+    const row = byArm.get(cell.arm);
+    const d = cell.diagnostics || {};
+    row.cells += 1;
+    if (cell.hiddenTest && cell.hiddenTest.pass) row.passed += 1;
+    if (cell.hitMaxTurns) row.hitMaxTurns += 1;
+    for (const k of ['readChars', 'reReads', 'turns', 'outputTokens']) row[k] += Number(d[k]) || 0;
+  }
+  return [...byArm.values()];
+}
+
+function formatAgenticTable(rows) {
+  const header = ['arm', 'cells', 'hidden_pass', 'max_turns', 'read_chars', 're_reads', 'turns', 'output'];
+  const body = rows.map(r => [
+    r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns), String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens),
+  ]);
+  return alignTable(header, body);
+}
+
+module.exports = { summarize, formatTable, formatGate, summaryNote, writeNote, summarizeAgentic, formatAgenticTable };

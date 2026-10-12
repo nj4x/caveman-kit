@@ -18,19 +18,26 @@ const FALLBACK_MODEL = 'claude-sonnet-5-5';
 // billed as uncached input (upper bound), and a medium-length answer.
 const ASSUMED_TOKENS = { input: 25000, output: 1000 };
 
-function estimateCost({ model, pendingCalls }) {
+// Per agentic run: a multi-turn tool loop. Rough upper bound, uncached input.
+const ASSUMED_AGENTIC_TOKENS = { input: 300000, output: 12000 };
+
+function assumed(kind) {
+  return kind === 'agentic' ? ASSUMED_AGENTIC_TOKENS : ASSUMED_TOKENS;
+}
+
+function estimateCost({ model, pendingCalls, kind = 'single-turn' }) {
   const known = Object.prototype.hasOwnProperty.call(PRICES, model);
   const price = PRICES[known ? model : FALLBACK_MODEL];
-  const perCall = (ASSUMED_TOKENS.input * price.input + ASSUMED_TOKENS.output * price.output) / 1e6;
+  const perCall = (assumed(kind).input * price.input + assumed(kind).output * price.output) / 1e6;
   return { perCall, total: perCall * pendingCalls, knownModel: known };
 }
 
-function formatEstimate({ model, pendingCalls, doneCalls }) {
-  const e = estimateCost({ model, pendingCalls });
+function formatEstimate({ model, pendingCalls, doneCalls, kind = 'single-turn' }) {
+  const e = estimateCost({ model, pendingCalls, kind });
   const lines = [
     `Estimated cost: ${pendingCalls} call(s) x ~$${e.perCall.toFixed(3)} = ~$${e.total.toFixed(2)} ` +
     `(${doneCalls} cell(s) already done, skipped)`,
-    `  assumes ~${ASSUMED_TOKENS.input} uncached input + ~${ASSUMED_TOKENS.output} output tokens per call at ` +
+    `  assumes ~${assumed(kind).input} uncached input + ~${assumed(kind).output} output tokens per call at ` +
     `${e.knownModel ? model : `${FALLBACK_MODEL} prices (unknown model ${model})`} list price`,
   ];
   return lines.join('\n');
@@ -56,4 +63,4 @@ function confirm({ yes, stdin = process.stdin, stderr = process.stderr }) {
   });
 }
 
-module.exports = { PRICES, ASSUMED_TOKENS, estimateCost, formatEstimate, confirm };
+module.exports = { PRICES, ASSUMED_TOKENS, ASSUMED_AGENTIC_TOKENS, estimateCost, formatEstimate, confirm };

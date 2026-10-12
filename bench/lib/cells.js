@@ -159,6 +159,7 @@ module.exports = {
   readCell,
   readCells,
   resolveClaude,
+  invoke,
   runCell,
   stopActive,
   writeJsonAtomic,

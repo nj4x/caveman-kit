@@ -14,14 +14,16 @@ node bench/run.js --kind single-turn --yes      # unattended
 
 | Flag | Default | Meaning |
 |------|---------|---------|
-| `--kind single-turn\|agentic` | required | harness kind (`agentic` is not implemented yet) |
-| `--seeds <n>` | `3` | repeats per arm × task; never passed to `claude` |
+| `--kind single-turn\|agentic` | required | harness kind |
+| `--seeds <n>` | `3` | repeats per arm × task (or fixture); never passed to `claude` |
+| `--fixtures <a,b>` | all | agentic only: fixture names to run |
+| `--fixtures-dir <dir>` | `bench/fixtures` | agentic only: dir holding `<name>/fixture.json` |
 | `--model <id>` | `claude-sonnet-5-5` | passed to `claude --model` |
 | `--kit-dir <path>` | repo root | kit checkout whose `hooks/` are measured |
 | `--run-id <id>` | `<kind>-<model>-<kit-dir HEAD short SHA>` | results subdirectory |
 | `--results-dir <dir>` | `bench/results` | parent of run directories |
 | `--research-dir <dir>` | `docs/research` | where the summary note is written |
-| `--cell-timeout <s>` | `600` | seconds before one `claude` call is stopped (SIGTERM, SIGKILL 5 s later) and the cell fails |
+| `--cell-timeout <s>` | `600` (agentic: `1800`) | seconds before one `claude` call is stopped (SIGTERM, SIGKILL 5 s later) and the cell fails |
 | `--yes` | off | start without asking; required when there is no TTY |
 
 Single-turn arms: `bare`, `bare-control`, `lite`, `full`, `ultra`,
@@ -36,6 +38,47 @@ from the copied `caveman-mode-tracker.js`; the arm runs that copy with the flag
 seeded to `ultra`. The shipped hooks are only read. If the clause is not found,
 the run exits non-zero before the cost estimate and before any `claude` call
 (`lib/nofocus.js`).
+
+## Agentic kind
+
+`node bench/run.js --kind agentic --kit-dir <context-diet checkout>` runs arms
+`bare`, `full` (`CAVEMAN_CONTEXT_DIET=0`) and `full-diet` (variable unset)
+against fixture repos (needs `git`, `python3` and `pytest` or `uv` on the
+machine; a run is budgeted at ~300k input + ~12k output tokens, see
+`lib/estimate.js`). Per cell: clone at the pinned SHA, drop the clone's
+history, apply the plant patch, record the tree as one root commit, run
+`claude -p ... --output-format stream-json --verbose --permission-mode
+bypassPermissions --max-turns 40` in the clone (only the throwaway work dir is
+writable by intent, but the permission bypass is real: the agent could read or
+edit files elsewhere, including `hidden/` and the hooks, by absolute path), and
+only after it exits copy the hidden test in and run it. Cells use the same
+format as single-turn cells (`kind: "agentic"`, `model`, `usage`; a cell from
+another model or kind is stale and rerun). Each agentic cell also records
+`hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`, `turns`,
+`outputTokens`); the raw stream sits beside it as `<cell>.stream.jsonl`.
+`ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
+and printed `FAIL` lines. The gate is not computed here.
+
+**Turn cap.** Each agent run is capped at 40 turns (`MAX_TURNS` in
+`lib/agentic.js`); this cap is a harness choice, not in ADR 0008. The `claude` CLI
+(not `bench/run.js`) exits non-zero when the cap stops a run. When the final result event has subtype
+`error_max_turns` and carries `usage`, the harness still counts the run as a
+completed cell: the hidden test runs and the record has `hitMaxTurns: true`
+(otherwise `false`). A capped run usually leaves a half-edited tree, so its
+hidden test tends to fail; the agentic gate should read `hitMaxTurns` and report
+capped cells per arm. Any other non-zero exit, error result or signal fails the
+cell: no file is written and a rerun retries it.
+
+Fixture format (`bench/fixtures/<name>/`; the real fixtures arrive with a later
+ticket, so until then the default dir does not exist and the run stops with "no
+fixtures found" — point `--fixtures-dir` at your own fixtures): `fixture.json` (`source`, `sha`,
+`testCommand`, optional `plantPatch`/`prompt` file names), `plant.patch`,
+`prompt.md`, `hidden/` (copied over the repo root after the run). Before any
+paid call each fixture's hidden test must pass twice on the unpatched tree and
+fail twice on the planted tree (run with `UV_OFFLINE=1`, `PIP_NO_INDEX=1`);
+otherwise the fixture is dropped and printed as `DROPPED fixture ...`.
+Preflight needs `<kit-dir>/hooks/caveman-context-diet.md`: its text (HTML
+comments stripped) must appear in the `full-diet` context and not in `full`.
 
 ## Resuming
 
@@ -78,7 +121,8 @@ with the run's cells under `bench/results/<run-id>/`.
 Each call gets a fresh temp config dir (`0700`, removed on exit, error and
 SIGINT/SIGTERM/SIGHUP) holding only the kit's three hooks, the seeded flag, a copy of
 the caveman `SKILL.md`, and auth. Your own `CLAUDE.md`, settings, plugins and
-hooks are never used, and `claude` runs in an empty temp working directory.
+hooks are never used, and single-turn `claude` calls run in an empty temp
+working directory (agentic calls run in a fixture clone, see above).
 
 - Auth: `ANTHROPIC_API_KEY` from the environment; otherwise a readable
   `<config dir>/.credentials.json` is copied in; otherwise the run stops.
