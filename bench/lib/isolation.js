@@ -255,6 +255,7 @@ module.exports = {
   BenchError,
   VALID_MODES,
   createTempRoot,
+  getDefaultRoot,
   cleanupTempRoots,
   realConfigDir,
   resolveAuth,

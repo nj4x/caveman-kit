@@ -23,9 +23,18 @@ node bench/run.js --kind single-turn --yes      # unattended
 | `--research-dir <dir>` | `docs/research` | where the summary note is written |
 | `--yes` | off | start without asking; required when there is no TTY |
 
-Single-turn arms: `bare`, `bare-control`, `lite`, `full`, `ultra`, over the six
-prompts in `tasks/single-turn.js`. The bare arms register the same hooks with
-the flag seeded to `off` and `CAVEMAN_DEFAULT_MODE=off`.
+Single-turn arms: `bare`, `bare-control`, `lite`, `full`, `ultra`,
+`ultra-no-focus`, over the six prompts in `tasks/single-turn.js`. The bare
+arms register the same hooks with the flag seeded to `off` and
+`CAVEMAN_DEFAULT_MODE=off`.
+
+`ultra-no-focus` measures the focus directive in the per-turn reminder
+(commit `e11e665`). The runner copies `--kit-dir`'s `hooks/` into the temp
+dir and removes the focus clause (the text after `— session ruleset applies.`)
+from the copied `caveman-mode-tracker.js`; the arm runs that copy with the flag
+seeded to `ultra`. The shipped hooks are only read. If the clause is not found,
+the run exits non-zero before the cost estimate and before any `claude` call
+(`lib/nofocus.js`).
 
 ## Resuming
 

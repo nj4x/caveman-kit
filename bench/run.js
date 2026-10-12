@@ -20,6 +20,7 @@ const cells = require('./lib/cells');
 const estimate = require('./lib/estimate');
 const report = require('./lib/report');
 const stats = require('./lib/stats');
+const nofocus = require('./lib/nofocus');
 const { SINGLE_TURN_ARMS } = require('./lib/arms');
 const SINGLE_TURN_TASKS = require('./tasks/single-turn');
 
@@ -122,10 +123,20 @@ async function main() {
   const runDir = path.join(opts.resultsDir, runId);
   const armOptions = { kitDir: opts.kitDir, env, auth, skillRoot };
 
+  // ultra-no-focus: patch a temp copy of the hooks before any paid call; a
+  // missing focus clause throws here, before the estimate. The copy lives in
+  // the arms' own 0700 temp root, removed on every exit path.
+  let noFocus = null;
+  if (arms.some(a => a.patch === 'no-focus')) {
+    noFocus = nofocus.patchNoFocus(path.join(opts.kitDir, 'hooks'), isolation.getDefaultRoot());
+  }
+  const optionsFor = arm => (arm.patch === 'no-focus' ? { ...armOptions, hooksDir: noFocus.hooksDir } : armOptions);
+
   for (const arm of arms) {
-    const armConfig = isolation.buildArmConfig(arm, armOptions);
+    const armConfig = isolation.buildArmConfig(arm, optionsFor(arm));
     try {
       isolation.preflight(armConfig);
+      if (arm.patch === 'no-focus') nofocus.checkReminder(armConfig, noFocus.clause);
     } finally {
       isolation.disposeArmConfig(armConfig);
     }
@@ -151,7 +162,7 @@ async function main() {
       return 1;
     }
     for (const p of pending) {
-      const armConfig = isolation.buildArmConfig(p.arm, armOptions);
+      const armConfig = isolation.buildArmConfig(p.arm, optionsFor(p.arm));
       try {
         const res = await cells.runCell({
           claudePath, armConfig, cell: p.cell, prompt: p.task.prompt,

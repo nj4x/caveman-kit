@@ -35,7 +35,7 @@ start_sleeping_run() {
 @test "tempdir-lifecycle: temp root is gone after a failing claude" {
   STUB_FAIL=1 run run_bench --kind single-turn --seeds 1 --yes
   [ "$status" -ne 0 ]
-  [ "$(stub_calls)" -eq 30 ]
+  [ "$(stub_calls)" -eq 36 ]
   [ "$(find "$RESULTS" -name '*.json' 2>/dev/null | wc -l | tr -d ' ')" -eq 0 ]
   [ "$(leftover_temp_dirs)" -eq 0 ]
 }
