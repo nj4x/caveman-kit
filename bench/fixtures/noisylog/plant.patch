@@ -1,0 +1,13 @@
+diff --git a/anthrouter/http_util.py b/anthrouter/http_util.py
+index 3baed01..1fb5e59 100644
+--- a/anthrouter/http_util.py
++++ b/anthrouter/http_util.py
+@@ -117,7 +117,7 @@ def parse_retry_after(resp) -> float | None:
+ 
+ 
+ _RATELIMIT_HEADERS = (
+-    ('requests_remaining', 'anthropic-ratelimit-requests-remaining'),
++    ('requests_remaining', 'anthropic-ratelimit-request-remaining'),
+     ('tokens_remaining', 'anthropic-ratelimit-tokens-remaining'),
+     ('input_tokens_remaining', 'anthropic-ratelimit-input-tokens-remaining'),
+     ('output_tokens_remaining', 'anthropic-ratelimit-output-tokens-remaining'),
