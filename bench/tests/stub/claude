@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+// Stub `claude` for bench tests: never calls the API. Appends one JSON line
+// per call to $STUB_LOG (args, env, cwd, a snapshot of the isolated config
+// dir), then prints canned JSON usage keyed by arm and per-arm call count.
+//
+// Knobs: STUB_FAIL=1 fails every call; STUB_FAIL_ARM=<arm> fails that arm's
+// calls; STUB_SLEEP=<seconds> sleeps after logging (signal tests);
+// STUB_MARK=<file> appends a "STUB CALL" line (ordering tests).
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const configDir = process.env.CLAUDE_CONFIG_DIR || '';
+const armDir = path.dirname(configDir);
+const arm = path.basename(armDir).split('.')[0];
+const tempRoot = path.dirname(armDir);
+
+const readOr = (p, fallback) => { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return fallback; } };
+const modeOf = p => { try { return (fs.statSync(p).mode & 0o777).toString(8); } catch (e) { return null; } };
+
+const logDir = process.env.STUB_LOG ? path.dirname(process.env.STUB_LOG) : null;
+let count = 0;
+if (logDir) {
+  const counter = path.join(logDir, `stub-count-${arm}`);
+  count = Number(readOr(counter, '0')) + 1;
+  fs.writeFileSync(counter, String(count));
+}
+
+const entry = {
+  pid: process.pid,
+  argv: process.argv.slice(2),
+  env: process.env,
+  cwd: process.cwd(),
+  arm,
+  configDir,
+  tempRoot,
+  tempRootMode: modeOf(tempRoot),
+  settings: readOr(path.join(configDir, 'settings.json'), null),
+  flag: readOr(path.join(configDir, '.caveman-active'), null),
+  skill: readOr(path.join(process.env.CLAUDE_PLUGIN_ROOT || '/nonexistent', 'skills', 'caveman', 'SKILL.md'), null),
+  credentialsCopied: fs.existsSync(path.join(configDir, '.credentials.json')),
+};
+if (process.env.STUB_LOG) fs.appendFileSync(process.env.STUB_LOG, JSON.stringify(entry) + '\n');
+if (process.env.STUB_MARK) fs.appendFileSync(process.env.STUB_MARK, 'STUB CALL\n');
+
+function finish() {
+  if (process.env.STUB_FAIL === '1' || process.env.STUB_FAIL_ARM === arm) {
+    process.stderr.write('stub: simulated failure\n');
+    process.exit(1);
+  }
+  const base = { bare: 500, 'bare-control': 505, lite: 400, full: 300, ultra: 200 }[arm] || 100;
+  process.stdout.write(JSON.stringify({
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    result: `stub answer for ${arm} #${count}`,
+    total_cost_usd: 0.01,
+    usage: {
+      input_tokens: 10,
+      cache_creation_input_tokens: 1000,
+      cache_read_input_tokens: 2000,
+      output_tokens: base + count,
+    },
+  }));
+}
+
+const sleep = Number(process.env.STUB_SLEEP || 0);
+if (sleep > 0) setTimeout(finish, sleep * 1000);
+else finish();
