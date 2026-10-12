@@ -57,7 +57,7 @@ another model or kind is stale and rerun). Each agentic cell also records
 `hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`, `turns`,
 `outputTokens`); the raw stream sits beside it as `<cell>.stream.jsonl`.
 `ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
-and printed `FAIL` lines. The gate is not computed here.
+and printed `FAIL` lines. The agentic gate is described under "Agentic gate".
 
 **Turn cap.** Each agent run is capped at 40 turns (`MAX_TURNS` in
 `lib/agentic.js`); this cap is a harness choice, not in ADR 0008. The `claude` CLI
@@ -65,7 +65,7 @@ and printed `FAIL` lines. The gate is not computed here.
 `error_max_turns` and carries `usage`, the harness still counts the run as a
 completed cell: the hidden test runs and the record has `hitMaxTurns: true`
 (otherwise `false`). A capped run usually leaves a half-edited tree, so its
-hidden test tends to fail; the agentic gate should read `hitMaxTurns` and report
+hidden test tends to fail; the agentic gate reads `hitMaxTurns` and reports
 capped cells per arm. Any other non-zero exit, error result or signal fails the
 cell: no file is written and a rerun retries it.
 
@@ -189,6 +189,41 @@ When every planned cell exists, the runner writes
 `<research-dir>/<YYYY-MM-DD>-bench-<run-id>.md` with the run parameters
 (model, seeds, kit-dir commit), the gate table and the raw totals. Commit it
 with the run's cells under `bench/results/<run-id>/`.
+
+### Agentic gate
+
+For `--kind agentic` the gate judges `full-diet` against `full` on
+cache-weighted input cost (lower is better), with the hidden-test pass rate as
+a guardrail (ADR 0008, ADR 0009). The `bare` arm is reported for reference and
+feeds no verdict.
+
+- Pairing: by fixture and seed. A pair counts only when both cells completed
+  (usage and a hidden-test result). Unpaired cells (a failed cell, an
+  incomplete cell file, or cells of a fixture dropped after some were paid for)
+  are excluded and listed in the report. Pass rates use paired cells only, so
+  both arms share a denominator.
+- `ship`: the 95% t-interval of the paired cost difference excludes zero below
+  and the `full-diet` pass rate is not lower than `full`'s.
+- `no-ship` at once: the interval excludes zero above, or the pass rate is
+  lower. No extra seeds are run.
+- Escalation: if the interval includes zero after `--seeds` N seeds (default
+  3), the runner prints a new estimate, asks again (unless `--yes`) and runs
+  seeds N+1..2N, skipping cells that exist, then recomputes. If the interval
+  still includes zero the verdict is `no-ship`. This happens at most once; a
+  rerun with the same run id re-derives the same verdict without new calls.
+  `--no-escalate` skips it. Failed cells block escalation and make the run
+  exit non-zero; an interval that includes zero then stays `pending` (no note)
+  until a rerun retries them. A resumed run runs the offline reliability check
+  for escalation seeds too, before the first paid call.
+- `inconclusive` (counts as no-ship): fewer than 3 fixtures remain. Checked
+  after the offline reliability check, before the estimate and any paid call
+  (exit 1), and again on the paired data. `--min-fixtures <n>` lowers the floor
+  for tests only; a gate run that way is not valid.
+- Turn cap: capped cells (`hitMaxTurns`) are counted per arm in the report.
+- Output: raw per-arm table (hidden-test passes, capped cells, Read chars,
+  re-reads, turns, output tokens), then the gate lines and a `Verdict:` line.
+  Once all planned cells exist, the summary note goes to `docs/research/` as
+  for single-turn.
 
 ## Isolation and auth
 
