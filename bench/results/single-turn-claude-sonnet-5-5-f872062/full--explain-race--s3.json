@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "explain-race",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:29:40.707Z",
+  "durationMs": 8380,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6910,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 510,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6910
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.025810200000000002,
+  "result": "Load-only race need load-shaped tools. Debugger pauses kill the timing, so avoid stepping.\n\n1. **Reproduce cheaply.** Run load tests locally (k6, wrk, JMeter). Add CPU contention (`stress-ng`). Pin to fewer cores or add random sleeps/yields near suspect code to widen the race window.\n2. **Run race detectors.** Go: `-race`. C/C++/Rust: ThreadSanitizer (`-fsanitize=thread`). Java: jcstress for suspect classes. Detectors catch unsynchronized access even when the run doesn't fail.\n3. **Log without locks.** Use structured logs with thread ID, request ID, and monotonic timestamp. Prefer ring buffers or async loggers, because a synchronized logger can hide the bug.\n4. **Capture state at failure.** Take thread dumps (`jstack`, `py-spy dump`, `gdb thread apply all bt`). Enable core dumps. Assert invariants and crash early, close to the cause.\n5. **Audit shared mutable state.** Look for check-then-act, lazy init, non-atomic counters, unsafe collections, unsafe publication, and caches. Check lock ordering for deadlocks.\n6. **Fix at the root.** Remove sharing first: immutability, confinement, message passing. If sharing must stay, use atomics or locks. Never fix with sleeps.\n7. **Verify.** Rerun the load test many times, with the detector on. One green run proves nothing.",
+  "output": {
+    "duration_api_ms": 8115,
+    "stop_reason": "end_turn",
+    "session_id": "4ce9f83d-a043-48de-a71a-8f97b8f0c63b",
+    "total_cost_usd": 0.025810200000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6910,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 510,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6910
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 510,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6910,
+        "webSearchRequests": 0,
+        "costUSD": 0.025810200000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Load-only race need load-shaped tools. Debugger pauses kill the timing, so avoid stepping.\n\n1. **Reproduce cheaply.** Run load tests locally (k6, wrk, JMeter). Add CPU contention (`stress-ng`). Pin to fewer cores or add random sleeps/yields near suspect code to widen the race window.\n2. **Run race detectors.** Go: `-race`. C/C++/Rust: ThreadSanitizer (`-fsanitize=thread`). Java: jcstress for suspect classes. Detectors catch unsynchronized access even when the run doesn't fail.\n3. **Log without locks.** Use structured logs with thread ID, request ID, and monotonic timestamp. Prefer ring buffers or async loggers, because a synchronized logger can hide the bug.\n4. **Capture state at failure.** Take thread dumps (`jstack`, `py-spy dump`, `gdb thread apply all bt`). Enable core dumps. Assert invariants and crash early, close to the cause.\n5. **Audit shared mutable state.** Look for check-then-act, lazy init, non-atomic counters, unsafe collections, unsafe publication, and caches. Check lock ordering for deadlocks.\n6. **Fix at the root.** Remove sharing first: immutability, confinement, message passing. If sharing must stay, use atomics or locks. Never fix with sleeps.\n7. **Verify.** Rerun the load test many times, with the detector on. One green run proves nothing.",
+    "ttft_ms": 8156,
+    "type": "result",
+    "duration_ms": 8166,
+    "uuid": "5f925658-bba4-4390-9f6f-d59020b5d9a1",
+    "ttft_stream_ms": 3655,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3656,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "git-rebase-merge",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:21:34.820Z",
+  "durationMs": 8446,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5148,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 609,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5148
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0223952,
+  "result": "On a shared branch, the default should be **merge**. Rebase rewrites commit history, which causes trouble when other people have already based work on those commits. There are a few cases where rebase is still the right choice.\n\n**Rebase is reasonable when:**\n\n- **Nobody else has pulled the commits yet.** If you've only committed locally, or pushed but no one has fetched, rewriting is harmless.\n- **You're cleaning up your own local work before pushing.** Squashing fixups or reordering commits (`git rebase -i`) is safe on unpublished commits.\n- **Your team has agreed to a rebase workflow.** Everyone knows to run `git pull --rebase`, and force pushes are coordinated, ideally with `--force-with-lease`.\n- **You're updating a short-lived topic branch onto `main`.** If you're the only one working on it, rebasing keeps the history linear before the PR is merged.\n- **You want a linear history.** Some teams value `git bisect` and `git log` readability enough to enforce rebase or squash merges into `main`.\n\n**Stick with merge when:**\n\n- Multiple people are pushing to the branch.\n- Others may have already fetched or branched off it.\n- You want to preserve the true history, including when and how integration happened.\n- You'd rather avoid force pushes, which can overwrite teammates' work.\n\n**Rule of thumb:** don't rebase commits that exist outside your own repository. If you do rebase a shared branch, tell everyone first. Teammates then need to run `git fetch` followed by `git rebase --onto` or `git reset` to realign. A plain `git pull` would re-introduce the old commits and create duplicates.\n\nA common compromise is to use `git pull --rebase` to keep your local commits on top of the shared branch's latest changes. Then merge, or squash-merge, the feature branch into `main` when it's done.",
+  "output": {
+    "duration_api_ms": 8189,
+    "stop_reason": "end_turn",
+    "session_id": "f4c3c5e5-7ea7-4ea5-94cc-0b854e88750b",
+    "total_cost_usd": 0.0223952,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5148,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 609,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5148
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 609,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5148,
+        "webSearchRequests": 0,
+        "costUSD": 0.0223952,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "On a shared branch, the default should be **merge**. Rebase rewrites commit history, which causes trouble when other people have already based work on those commits. There are a few cases where rebase is still the right choice.\n\n**Rebase is reasonable when:**\n\n- **Nobody else has pulled the commits yet.** If you've only committed locally, or pushed but no one has fetched, rewriting is harmless.\n- **You're cleaning up your own local work before pushing.** Squashing fixups or reordering commits (`git rebase -i`) is safe on unpublished commits.\n- **Your team has agreed to a rebase workflow.** Everyone knows to run `git pull --rebase`, and force pushes are coordinated, ideally with `--force-with-lease`.\n- **You're updating a short-lived topic branch onto `main`.** If you're the only one working on it, rebasing keeps the history linear before the PR is merged.\n- **You want a linear history.** Some teams value `git bisect` and `git log` readability enough to enforce rebase or squash merges into `main`.\n\n**Stick with merge when:**\n\n- Multiple people are pushing to the branch.\n- Others may have already fetched or branched off it.\n- You want to preserve the true history, including when and how integration happened.\n- You'd rather avoid force pushes, which can overwrite teammates' work.\n\n**Rule of thumb:** don't rebase commits that exist outside your own repository. If you do rebase a shared branch, tell everyone first. Teammates then need to run `git fetch` followed by `git rebase --onto` or `git reset` to realign. A plain `git pull` would re-introduce the old commits and create duplicates.\n\nA common compromise is to use `git pull --rebase` to keep your local commits on top of the shared branch's latest changes. Then merge, or squash-merge, the feature branch into `main` when it's done.",
+    "ttft_ms": 8232,
+    "type": "result",
+    "duration_ms": 8242,
+    "uuid": "b352e4ea-d417-4897-a732-4c1b072c049f",
+    "ttft_stream_ms": 3846,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3847,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

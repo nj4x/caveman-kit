@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "explain-race",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:33:12.072Z",
+  "durationMs": 14363,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6831,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1098,
+    "output_tokens_details": {
+      "thinking_tokens": 25
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6831
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.031492700000000005,
+  "result": "**Approach:** make the bug reproducible, then find the shared state, then prove the fix.\n\n**1. Reproduce under load**\n- Use a load tool like `wrk`, `k6`, `ghz`, or `locust`. Raise concurrency until it fails reliably.\n- Shrink the scenario to the fewest endpoints and the smallest payload that still fail.\n- Add more contention to widen the race window: more threads than cores, CPU pinning (`taskset`), or `stress-ng` alongside.\n- Inject jitter at suspect points with `sleep(rand)` or `Thread.yield()`. If the failure rate jumps, you are near the race.\n\n**2. Use race detectors** (fastest win)\n- Go: `go test -race`, or a `-race` build under load.\n- C/C++/Rust: ThreadSanitizer (`-fsanitize=thread`). Helgrind or DRD as fallback.\n- Java: `jcstress` for small primitives. Also check thread dumps (`jstack`) taken during the failure.\n- Rust: `loom` checks every interleaving of small concurrent units.\n- .NET: Coyote does controlled scheduling.\n\n**3. Observe without hiding the bug**\n- Heavy logging adds synchronization and can make the race disappear (a heisenbug).\n- Log into a lock-free per-thread ring buffer. Dump it on failure.\n- Tag each record with a monotonic timestamp, thread ID, request ID, and object ID/version.\n- Rebuild the interleaving from the failing request backward.\n- Hangs: take thread dumps or `gdb thread apply all bt` while it is stuck. Look for lock-order cycles.\n\n**4. Find the suspects**\n- Shared mutable state: caches, singletons, static fields, lazy init, connection pools.\n- Check-then-act: `if !map.contains(k) { map.put(k, ...) }`.\n- Read-modify-write on non-atomic values, e.g. counters.\n- Double-checked locking without `volatile` or acquire/release ordering.\n- Iterating a collection while another thread mutates it.\n- Objects that escape before construction finishes.\n- Non-thread-safe libraries such as `SimpleDateFormat` or some DB clients.\n- Async callbacks that run on a different thread than you assume.\n- Clue: data corruption suggests a missing lock. A hang suggests lock ordering. Crashes suggest use-after-free or lifetime bugs.\n\n**5. Confirm the hypothesis**\n- Write a test that forces the bad interleaving with latches or barriers, e.g. `CountDownLatch` or a channel gate. It should fail every time.\n- A test that cannot fail does not prove the fix.\n\n**6. Fix**\n- Best: remove the sharing with immutability, thread confinement, or message passing.\n- Next: atomic operations (`computeIfAbsent`, CAS, `AtomicLong`).\n- Last: locks. Keep the scope small and the lock order consistent.\n\n**7. Verify**\n- Run the forced-interleaving test and the race detector.\n- Run a load soak several times longer than the old time-to-failure.\n- Ship with metrics or assertions on the invariant, so a regression shows up early.",
+  "output": {
+    "duration_api_ms": 14094,
+    "stop_reason": "end_turn",
+    "session_id": "46bc0747-9281-4bcd-8c08-0982e0289a17",
+    "total_cost_usd": 0.031492700000000005,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6831,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1098,
+      "output_tokens_details": {
+        "thinking_tokens": 25
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6831
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1098,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6831,
+        "webSearchRequests": 0,
+        "costUSD": 0.031492700000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 25,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Approach:** make the bug reproducible, then find the shared state, then prove the fix.\n\n**1. Reproduce under load**\n- Use a load tool like `wrk`, `k6`, `ghz`, or `locust`. Raise concurrency until it fails reliably.\n- Shrink the scenario to the fewest endpoints and the smallest payload that still fail.\n- Add more contention to widen the race window: more threads than cores, CPU pinning (`taskset`), or `stress-ng` alongside.\n- Inject jitter at suspect points with `sleep(rand)` or `Thread.yield()`. If the failure rate jumps, you are near the race.\n\n**2. Use race detectors** (fastest win)\n- Go: `go test -race`, or a `-race` build under load.\n- C/C++/Rust: ThreadSanitizer (`-fsanitize=thread`). Helgrind or DRD as fallback.\n- Java: `jcstress` for small primitives. Also check thread dumps (`jstack`) taken during the failure.\n- Rust: `loom` checks every interleaving of small concurrent units.\n- .NET: Coyote does controlled scheduling.\n\n**3. Observe without hiding the bug**\n- Heavy logging adds synchronization and can make the race disappear (a heisenbug).\n- Log into a lock-free per-thread ring buffer. Dump it on failure.\n- Tag each record with a monotonic timestamp, thread ID, request ID, and object ID/version.\n- Rebuild the interleaving from the failing request backward.\n- Hangs: take thread dumps or `gdb thread apply all bt` while it is stuck. Look for lock-order cycles.\n\n**4. Find the suspects**\n- Shared mutable state: caches, singletons, static fields, lazy init, connection pools.\n- Check-then-act: `if !map.contains(k) { map.put(k, ...) }`.\n- Read-modify-write on non-atomic values, e.g. counters.\n- Double-checked locking without `volatile` or acquire/release ordering.\n- Iterating a collection while another thread mutates it.\n- Objects that escape before construction finishes.\n- Non-thread-safe libraries such as `SimpleDateFormat` or some DB clients.\n- Async callbacks that run on a different thread than you assume.\n- Clue: data corruption suggests a missing lock. A hang suggests lock ordering. Crashes suggest use-after-free or lifetime bugs.\n\n**5. Confirm the hypothesis**\n- Write a test that forces the bad interleaving with latches or barriers, e.g. `CountDownLatch` or a channel gate. It should fail every time.\n- A test that cannot fail does not prove the fix.\n\n**6. Fix**\n- Best: remove the sharing with immutability, thread confinement, or message passing.\n- Next: atomic operations (`computeIfAbsent`, CAS, `AtomicLong`).\n- Last: locks. Keep the scope small and the lock order consistent.\n\n**7. Verify**\n- Run the forced-interleaving test and the race detector.\n- Run a load soak several times longer than the old time-to-failure.\n- Ship with metrics or assertions on the invariant, so a regression shows up early.",
+    "ttft_ms": 3279,
+    "type": "result",
+    "duration_ms": 14149,
+    "uuid": "c32328fd-1f18-4d1d-9410-ebef636eea97",
+    "ttft_stream_ms": 3277,
+    "time_to_request_ms": 53,
+    "first_content_frame_ms": 3278,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "explain-race",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:20:41.706Z",
+  "durationMs": 22568,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 22305,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 1655,
+    "output_tokens_details": {
+      "thinking_tokens": 22
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22305
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.07231649999999999,
+  "result": "Debugging a race that only shows up under load works best as a loop: make it fail more often, collect evidence without changing the timing much, form a guess about which operations are interleaving, then prove it.\n\n## 1. Make it reproducible\nYou can't fix what you can't trigger, so first raise the failure rate.\n- **Load-test locally** with wrk, k6, Gatling or locust, using the same concurrency pattern as production. Many concurrent requests on the *same* entity, such as one user ID or cache key, usually matter more than total requests per second.\n- **Widen the race window.** Add short random sleeps or `Thread.yield()` around shared-state access you suspect. A failure that happened once a day often starts happening every minute.\n- **Add contention.** Run with more threads than cores, pin the process to fewer CPUs (`taskset`, cgroup limits), or run a CPU hog alongside to push the scheduler into odd interleavings.\n- **Write a stress test**: N threads hit the suspect code in a tight loop, then check invariants. Run it 10,000 times in CI.\n\n## 2. Use race-detection tools\nThese find many races without you ever reproducing the failure:\n- **Go:** `go test -race` / `go build -race`\n- **C/C++/Rust:** ThreadSanitizer (`-fsanitize=thread`), Helgrind or DRD (Valgrind)\n- **Java:** jcstress for concurrency tests, plus static analysis (ErrorProne, SpotBugs)\n- **Rust:** `loom` to explore interleavings systematically\n- **Deterministic simulation:** rr with chaos mode (`rr record --chaos`) records a failing run so you can replay it exactly and step backwards.\n\n## 3. Instrument without hiding the bug\nNormal logging adds locks and I/O, which changes timing and often makes the bug disappear.\n- Write to a **lock-free in-memory ring buffer** with timestamps and thread IDs, and dump it when an invariant fails.\n- Include **correlation IDs** and, for shared objects, a **version or generation counter**, so you can see the order of operations.\n- **Assert invariants aggressively** (e.g. \"balance never negative\", \"state goes from A to B, never A to C\"). Failing at the point of corruption beats finding out three calls later.\n- Capture **thread dumps or core dumps** at failure time (`jstack`, `gdb`, `dotnet-dump`, `SIGQUIT` in Go).\n\n## 4. Form a hypothesis\nLook for the classic patterns:\n- **Check-then-act:** `if (!map.contains(k)) map.put(k, v)` without atomicity\n- **Read-modify-write:** `counter++` on shared state\n- **Lazy init or double-checked locking** without proper memory barriers or `volatile`\n- **Iterating a collection** while another thread modifies it\n- **Publishing an object** before its constructor finishes, so `this` escapes\n- **Inconsistent lock ordering**, which causes deadlocks under load\n- **Connection pool or resource exhaustion** that looks like a race but is really starvation\n- **Distributed races:** two instances hit the same DB row or cache key (lost updates, no optimistic locking)\n- **Async pitfalls:** shared mutable state across `await` points, or non-thread-safe clients (some HTTP or DB clients, `SimpleDateFormat`, etc.)\n\nAsk what shared mutable state this code path touches, and who else can touch it at the same time.\n\n## 5. Prove it, then fix it\n- Write a test that forces the specific interleaving, using latches, barriers or a deterministic scheduler. Confirm it fails before the fix and passes after.\n- Prefer fixes that **remove sharing** over fixes that add locking:\n  1. Immutability or thread confinement (each thread owns its own data)\n  2. Atomic primitives or concurrent collections (`computeIfAbsent`, CAS, `AtomicLong`)\n  3. Locks with a clear, narrow scope and consistent ordering\n  4. At the DB level: transactions with the right isolation, `SELECT ... FOR UPDATE`, or optimistic version columns\n- Re-run the load test well past the old failure rate. A race that stopped reproducing isn't necessarily fixed; it may just have become rarer.\n\n## Practical tips\n- **Heisenbugs:** if adding a log line makes the bug go away, that strongly suggests a timing-dependent race near that line.\n- **Bisect** with the stress test if the bug is a regression.\n- **Check memory visibility**, not just atomicity. Without proper synchronization, one thread may never see another thread's write.\n- **Compare environments.** Production may have more cores, a different GC, or different pool sizes that change the timing.\n\nIf you share the language or runtime and the symptom (corrupted data, deadlock, crash, wrong response), I can suggest more specific tools and likely causes.",
+  "output": {
+    "duration_api_ms": 22300,
+    "stop_reason": "end_turn",
+    "session_id": "1c91726f-c300-4880-a73d-35c3900f29d2",
+    "total_cost_usd": 0.07231649999999999,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 22305,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 1655,
+      "output_tokens_details": {
+        "thinking_tokens": 22
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 22305
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1655,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 22305,
+        "webSearchRequests": 0,
+        "costUSD": 0.07231649999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 22,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Debugging a race that only shows up under load works best as a loop: make it fail more often, collect evidence without changing the timing much, form a guess about which operations are interleaving, then prove it.\n\n## 1. Make it reproducible\nYou can't fix what you can't trigger, so first raise the failure rate.\n- **Load-test locally** with wrk, k6, Gatling or locust, using the same concurrency pattern as production. Many concurrent requests on the *same* entity, such as one user ID or cache key, usually matter more than total requests per second.\n- **Widen the race window.** Add short random sleeps or `Thread.yield()` around shared-state access you suspect. A failure that happened once a day often starts happening every minute.\n- **Add contention.** Run with more threads than cores, pin the process to fewer CPUs (`taskset`, cgroup limits), or run a CPU hog alongside to push the scheduler into odd interleavings.\n- **Write a stress test**: N threads hit the suspect code in a tight loop, then check invariants. Run it 10,000 times in CI.\n\n## 2. Use race-detection tools\nThese find many races without you ever reproducing the failure:\n- **Go:** `go test -race` / `go build -race`\n- **C/C++/Rust:** ThreadSanitizer (`-fsanitize=thread`), Helgrind or DRD (Valgrind)\n- **Java:** jcstress for concurrency tests, plus static analysis (ErrorProne, SpotBugs)\n- **Rust:** `loom` to explore interleavings systematically\n- **Deterministic simulation:** rr with chaos mode (`rr record --chaos`) records a failing run so you can replay it exactly and step backwards.\n\n## 3. Instrument without hiding the bug\nNormal logging adds locks and I/O, which changes timing and often makes the bug disappear.\n- Write to a **lock-free in-memory ring buffer** with timestamps and thread IDs, and dump it when an invariant fails.\n- Include **correlation IDs** and, for shared objects, a **version or generation counter**, so you can see the order of operations.\n- **Assert invariants aggressively** (e.g. \"balance never negative\", \"state goes from A to B, never A to C\"). Failing at the point of corruption beats finding out three calls later.\n- Capture **thread dumps or core dumps** at failure time (`jstack`, `gdb`, `dotnet-dump`, `SIGQUIT` in Go).\n\n## 4. Form a hypothesis\nLook for the classic patterns:\n- **Check-then-act:** `if (!map.contains(k)) map.put(k, v)` without atomicity\n- **Read-modify-write:** `counter++` on shared state\n- **Lazy init or double-checked locking** without proper memory barriers or `volatile`\n- **Iterating a collection** while another thread modifies it\n- **Publishing an object** before its constructor finishes, so `this` escapes\n- **Inconsistent lock ordering**, which causes deadlocks under load\n- **Connection pool or resource exhaustion** that looks like a race but is really starvation\n- **Distributed races:** two instances hit the same DB row or cache key (lost updates, no optimistic locking)\n- **Async pitfalls:** shared mutable state across `await` points, or non-thread-safe clients (some HTTP or DB clients, `SimpleDateFormat`, etc.)\n\nAsk what shared mutable state this code path touches, and who else can touch it at the same time.\n\n## 5. Prove it, then fix it\n- Write a test that forces the specific interleaving, using latches, barriers or a deterministic scheduler. Confirm it fails before the fix and passes after.\n- Prefer fixes that **remove sharing** over fixes that add locking:\n  1. Immutability or thread confinement (each thread owns its own data)\n  2. Atomic primitives or concurrent collections (`computeIfAbsent`, CAS, `AtomicLong`)\n  3. Locks with a clear, narrow scope and consistent ordering\n  4. At the DB level: transactions with the right isolation, `SELECT ... FOR UPDATE`, or optimistic version columns\n- Re-run the load test well past the old failure rate. A race that stopped reproducing isn't necessarily fixed; it may just have become rarer.\n\n## Practical tips\n- **Heisenbugs:** if adding a log line makes the bug go away, that strongly suggests a timing-dependent race near that line.\n- **Bisect** with the stress test if the bug is a regression.\n- **Check memory visibility**, not just atomicity. Without proper synchronization, one thread may never see another thread's write.\n- **Compare environments.** Production may have more cores, a different GC, or different pool sizes that change the timing.\n\nIf you share the language or runtime and the symptom (corrupted data, deadlock, crash, wrong response), I can suggest more specific tools and likely causes.",
+    "ttft_ms": 4869,
+    "type": "result",
+    "duration_ms": 22354,
+    "uuid": "36425e8f-861c-476d-ba88-4f638c46f8c5",
+    "ttft_stream_ms": 4867,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 4868,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

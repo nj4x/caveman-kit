@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "bigfile",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:43:42.511Z",
+  "durationMs": 13681,
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 25700,
+    "cache_read_input_tokens": 124261,
+    "output_tokens": 706,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25700
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0961862,
+  "result": "Fixed. The plain-text score parser in `anthrouter/model_router.py` (line [redacted]3) rejected any value that wasn't `< 100`, so a reply of `100` was treated as unparseable. I changed the check to `0 <= value <= 100`. The JSON parser's docstring already says the valid range is [0, 100], so the two parsers now agree.\n\nI haven't run the tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "turns": 6,
+    "outputTokens": 706
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "error-explain",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:21:53.986Z",
+  "durationMs": 10267,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5186,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 868,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5186
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0250802,
+  "result": "**What's going on**\n\nPython's `json` parser (both the C and pure-Python versions) is recursive: each nested `[` or `{` adds stack frames. CPython caps recursion at 1000 by default. A file nested a few hundred levels deep (or more) exceeds that, so you get `RecursionError`.\n\nOften the nesting isn't intentional. It can come from a serializer bug, a self-referencing structure that got flattened badly, or a deliberately malicious payload. Check that first.\n\n**Fixes, in order of preference**\n\n1. **Raise the limit** (quick fix for moderately deep data):\n   ```python\n   import sys, json\n   sys.setrecursionlimit(10_000)\n   with open(\"data.json\") as f:\n       data = json.load(f)\n   ```\n   Going very high can overflow the C stack and segfault the interpreter, not just raise an exception.\n\n2. **Run in a thread with a bigger stack** (safer when you need a high limit):\n   ```python\n   import sys, json, threading\n\n   def load(path, out):\n       with open(path) as f:\n           out.append(json.load(f))\n\n   sys.setrecursionlimit(100_000)\n   threading.stack_size(512 * 1024 * 1024)\n   out = []\n   t = threading.Thread(target=load, args=(\"data.json\", out))\n   t.start(); t.join()\n   data = out[0]\n   ```\n\n3. **Use a non-recursive or streaming parser**, which is the robust option for very deep or huge files:\n   - `ijson` streams events and doesn't recurse per level during parsing: `ijson.items(f, \"path.to.items\")`.\n   - `orjson` or `msgspec` are faster, but orjson has its own fixed depth limit (about 255 on dumps), so test them on your data.\n\n4. **Watch for the same problem downstream.** Even if parsing succeeds, your own code that walks the structure recursively, and `copy.deepcopy`, `json.dumps`, `pprint` and so on, will hit the limit too. Rewrite your traversals with an explicit stack:\n   ```python\n   stack = [data]\n   while stack:\n       node = stack.pop()\n       if isinstance(node, dict):\n           stack.extend(node.values())\n       elif isinstance(node, list):\n           stack.extend(node)\n   ```\n\n**To pinpoint where it fails**\n\nCheck the traceback. If the frames are in `json/decoder.py` or `scanner.py`, the parser is the problem (fixes 1–3). If they're in your own functions, convert those to iteration (fix 4). If you can share the traceback, or roughly how deep the file nests, I can say which applies.",
+  "output": {
+    "duration_api_ms": 10024,
+    "stop_reason": "end_turn",
+    "session_id": "232151e1-a623-4ab0-8198-ed03d88c6bb9",
+    "total_cost_usd": 0.0250802,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5186,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 868,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5186
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 868,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5186,
+        "webSearchRequests": 0,
+        "costUSD": 0.0250802,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**What's going on**\n\nPython's `json` parser (both the C and pure-Python versions) is recursive: each nested `[` or `{` adds stack frames. CPython caps recursion at 1000 by default. A file nested a few hundred levels deep (or more) exceeds that, so you get `RecursionError`.\n\nOften the nesting isn't intentional. It can come from a serializer bug, a self-referencing structure that got flattened badly, or a deliberately malicious payload. Check that first.\n\n**Fixes, in order of preference**\n\n1. **Raise the limit** (quick fix for moderately deep data):\n   ```python\n   import sys, json\n   sys.setrecursionlimit(10_000)\n   with open(\"data.json\") as f:\n       data = json.load(f)\n   ```\n   Going very high can overflow the C stack and segfault the interpreter, not just raise an exception.\n\n2. **Run in a thread with a bigger stack** (safer when you need a high limit):\n   ```python\n   import sys, json, threading\n\n   def load(path, out):\n       with open(path) as f:\n           out.append(json.load(f))\n\n   sys.setrecursionlimit(100_000)\n   threading.stack_size(512 * 1024 * 1024)\n   out = []\n   t = threading.Thread(target=load, args=(\"data.json\", out))\n   t.start(); t.join()\n   data = out[0]\n   ```\n\n3. **Use a non-recursive or streaming parser**, which is the robust option for very deep or huge files:\n   - `ijson` streams events and doesn't recurse per level during parsing: `ijson.items(f, \"path.to.items\")`.\n   - `orjson` or `msgspec` are faster, but orjson has its own fixed depth limit (about 255 on dumps), so test them on your data.\n\n4. **Watch for the same problem downstream.** Even if parsing succeeds, your own code that walks the structure recursively, and `copy.deepcopy`, `json.dumps`, `pprint` and so on, will hit the limit too. Rewrite your traversals with an explicit stack:\n   ```python\n   stack = [data]\n   while stack:\n       node = stack.pop()\n       if isinstance(node, dict):\n           stack.extend(node.values())\n       elif isinstance(node, list):\n           stack.extend(node)\n   ```\n\n**To pinpoint where it fails**\n\nCheck the traceback. If the frames are in `json/decoder.py` or `scanner.py`, the parser is the problem (fixes 1–3). If they're in your own functions, convert those to iteration (fix 4). If you can share the traceback, or roughly how deep the file nests, I can say which applies.",
+    "ttft_ms": 10064,
+    "type": "result",
+    "duration_ms": 10075,
+    "uuid": "222b66fd-9fe8-4b01-a3d0-b5c3f04e69ec",
+    "ttft_stream_ms": 4439,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 4440,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "bigfile",
+  "seed": 6,
+  "finishedAt": "2026-10-13T02:01:48.816Z",
+  "durationMs": 14781,
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 11035,
+    "cache_read_input_tokens": 148109,
+    "output_tokens": 699,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 11035
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.06422330000000001,
+  "result": "Fixed in `anthrouter/model_router.py`. `parse_classifier_score` rejected any value of 100 or more, because its range check was `0 <= value < 100`. It now reads `0 <= value <= 100`, which matches its docstring and the JSON parser next to it. I haven't run the tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "turns": 6,
+    "outputTokens": 699
+  }
+}

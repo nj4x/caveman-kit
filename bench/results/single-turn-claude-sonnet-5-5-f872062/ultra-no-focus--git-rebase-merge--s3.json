@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "git-rebase-merge",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:34:11.298Z",
+  "durationMs": 5829,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6830,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 323,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6830
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0237402,
+  "result": "Rarely. Shared branch = others have its commits. Rebase rewrites history, so their copies diverge.\n\n**Use rebase when:**\n- Branch is yours alone, not yet pushed or not yet pulled by others. Clean up before sharing.\n- Team agrees to force-push on that branch and everyone knows to `git pull --rebase` or reset.\n- Syncing a private topic branch with `main` before opening a PR: `git rebase main`.\n- You want linear history and squash or reorder messy commits via `git rebase -i` before merge.\n\n**Use merge when:**\n- Others already pulled or based work on the branch. Default for shared.\n- You want to preserve true history and avoid force-push.\n- Conflict resolution should be recorded once, not replayed per commit.\n\n**Rule:** never rebase commits others have. If you must, coordinate first and use `git push --force-with-lease`, not `--force`.\n\n**Practical split:** rebase locally before pushing. Merge once shared.",
+  "output": {
+    "duration_api_ms": 5573,
+    "stop_reason": "end_turn",
+    "session_id": "5edc8473-d02c-42fe-95b3-14699a524f2d",
+    "total_cost_usd": 0.0237402,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6830,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 323,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6830
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 323,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6830,
+        "webSearchRequests": 0,
+        "costUSD": 0.0237402,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rarely. Shared branch = others have its commits. Rebase rewrites history, so their copies diverge.\n\n**Use rebase when:**\n- Branch is yours alone, not yet pushed or not yet pulled by others. Clean up before sharing.\n- Team agrees to force-push on that branch and everyone knows to `git pull --rebase` or reset.\n- Syncing a private topic branch with `main` before opening a PR: `git rebase main`.\n- You want linear history and squash or reorder messy commits via `git rebase -i` before merge.\n\n**Use merge when:**\n- Others already pulled or based work on the branch. Default for shared.\n- You want to preserve true history and avoid force-push.\n- Conflict resolution should be recorded once, not replayed per commit.\n\n**Rule:** never rebase commits others have. If you must, coordinate first and use `git push --force-with-lease`, not `--force`.\n\n**Practical split:** rebase locally before pushing. Merge once shared.",
+    "ttft_ms": 5609,
+    "type": "result",
+    "duration_ms": 5626,
+    "uuid": "0fae9253-9ed2-476f-8856-de43309a04d0",
+    "ttft_stream_ms": 3663,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 3664,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

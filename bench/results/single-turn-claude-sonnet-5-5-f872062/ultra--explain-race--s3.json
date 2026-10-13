@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "explain-race",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:31:31.725Z",
+  "durationMs": 7353,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6883,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 482,
+    "output_tokens_details": {
+      "thinking_tokens": 15
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6883
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0254627,
+  "result": "1. **Make it fail more often.** Run a load test (`wrk`, `k6`, `ghz`) with more threads than cores. Add random `sleep`/`yield` near shared state to widen the race window.\n2. **Run race detectors under load.** Use `-race` in Go, TSan (`-fsanitize=thread`) in C/C++/Rust, and Helgrind or DRD under Valgrind. They catch unsynchronized access even when the run doesn't crash.\n3. **Log without changing timing.** Use lock-free ring buffers and record thread ID, a monotonic timestamp, and object ID. A blocking logger serializes threads and hides the bug.\n4. **Capture state when it fails.** Take a core dump or thread dump (`jstack`, `gdb thread apply all bt`). Look for two threads on the same object.\n5. **Check the usual causes:**\n   - Check-then-act without a lock.\n   - Lazy init or double-checked locking without a memory barrier.\n   - Shared mutable caches.\n   - Non-thread-safe collections.\n   - Inconsistent lock order, which causes deadlocks.\n6. **Prove the fix.** Use `rr` record/replay or a deterministic scheduler (Loom in Java, `loom` in Rust) to replay the interleaving. Fix with a lock, an atomic, or immutable or thread-local state. Rerun the load test many times.",
+  "output": {
+    "duration_api_ms": 7094,
+    "stop_reason": "end_turn",
+    "session_id": "8749efc1-b516-4d56-a60f-0e7d6655401f",
+    "total_cost_usd": 0.0254627,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6883,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 482,
+      "output_tokens_details": {
+        "thinking_tokens": 15
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6883
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 482,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6883,
+        "webSearchRequests": 0,
+        "costUSD": 0.0254627,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 15,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "1. **Make it fail more often.** Run a load test (`wrk`, `k6`, `ghz`) with more threads than cores. Add random `sleep`/`yield` near shared state to widen the race window.\n2. **Run race detectors under load.** Use `-race` in Go, TSan (`-fsanitize=thread`) in C/C++/Rust, and Helgrind or DRD under Valgrind. They catch unsynchronized access even when the run doesn't crash.\n3. **Log without changing timing.** Use lock-free ring buffers and record thread ID, a monotonic timestamp, and object ID. A blocking logger serializes threads and hides the bug.\n4. **Capture state when it fails.** Take a core dump or thread dump (`jstack`, `gdb thread apply all bt`). Look for two threads on the same object.\n5. **Check the usual causes:**\n   - Check-then-act without a lock.\n   - Lazy init or double-checked locking without a memory barrier.\n   - Shared mutable caches.\n   - Non-thread-safe collections.\n   - Inconsistent lock order, which causes deadlocks.\n6. **Prove the fix.** Use `rr` record/replay or a deterministic scheduler (Loom in Java, `loom` in Rust) to replay the interleaving. Fix with a lock, an atomic, or immutable or thread-local state. Rerun the load test many times.",
+    "ttft_ms": 3036,
+    "type": "result",
+    "duration_ms": 7148,
+    "uuid": "fb6f4824-3b62-4a79-899e-48fe31e86f3e",
+    "ttft_stream_ms": 3034,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3035,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

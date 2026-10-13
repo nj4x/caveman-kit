@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "git-rebase-merge",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:30:02.870Z",
+  "durationMs": 4964,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6909,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 223,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6909
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0229377,
+  "result": "Rebase almost never on a truly shared branch. Rebase rewrites commit history, so anyone who already pulled it ends up with diverged copies and painful force-push recovery.\n\nRebase OK when:\n- Only you have commits on the branch, nobody else has based work on it.\n- You're updating your feature branch with latest `main` before opening or merging a PR: `git rebase main`.\n- You're cleaning up local, unpushed commits (squash, reword).\n\nUse merge when:\n- Others pull from or push to the branch.\n- You want to preserve true history and avoid force-push.\n\nIf you rebase a pushed branch, use `git push --force-with-lease`, and tell teammates first.",
+  "output": {
+    "duration_api_ms": 4694,
+    "stop_reason": "end_turn",
+    "session_id": "de467b77-4935-4436-a28d-312f64f97ee9",
+    "total_cost_usd": 0.0229377,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6909,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 223,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6909
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 223,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6909,
+        "webSearchRequests": 0,
+        "costUSD": 0.0229377,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebase almost never on a truly shared branch. Rebase rewrites commit history, so anyone who already pulled it ends up with diverged copies and painful force-push recovery.\n\nRebase OK when:\n- Only you have commits on the branch, nobody else has based work on it.\n- You're updating your feature branch with latest `main` before opening or merging a PR: `git rebase main`.\n- You're cleaning up local, unpushed commits (squash, reword).\n\nUse merge when:\n- Others pull from or push to the branch.\n- You want to preserve true history and avoid force-push.\n\nIf you rebase a pushed branch, use `git push --force-with-lease`, and tell teammates first.",
+    "ttft_ms": 4737,
+    "type": "result",
+    "duration_ms": 4748,
+    "uuid": "62d7b828-3fd6-4f0b-947d-58e28d5465f5",
+    "ttft_stream_ms": 3721,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3721,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

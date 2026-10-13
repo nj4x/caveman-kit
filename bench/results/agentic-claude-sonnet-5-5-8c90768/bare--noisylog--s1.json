@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:49:07.645Z",
+  "durationMs": 294571,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 28616,
+    "cache_read_input_tokens": 208839,
+    "output_tokens": 2262,
+    "output_tokens_details": {
+      "thinking_tokens": 81
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 28616
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.13596380000000002,
+  "result": "I found and fixed the regression: a misspelled header name in `anthrouter/http_util.py:120`. The table that maps upstream rate-limit headers looked for `anthropic-ratelimit-request-remaining`, but Anthropic sends `anthropic-ratelimit-requests-remaining` (with an \"s\"). The lookup never matched, so `ratelimit_requests_remaining` was always saved as NULL. That's why the admin view and `/status` showed tokens remaining but no requests remaining. I corrected the name in that one line.\n\nI re-ran the full suite. Before the fix it showed 6 failed and 1122 passed; after, 3 failed, 1125 passed and 1 skipped. These three tests now pass:\n- `test_handlers.py::test_successful_request_records_usage_and_the_rate_limit_window`\n- `test_handlers.py::test_status_reports_the_last_rate_limit_window`\n- `test_admin.py::test_admin_requests_reflects_a_dispatched_request`\n\nThe other 3 failures look unrelated to rate limits, so I left them alone as you asked:\n- **`test_config.py::test_editable_fields_live_editable_fields`:** the code has an extra editable field, `oauth_usage_poll_interval`, that the test doesn't list.\n- **`test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`** and **`test_locked_baseline_scopes_the_tier_slot_by_the_lock`:** both expect the routing reason `session_cached_tier` but get `classifier_rules_trivial`. That's a session-cache routing issue.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 414,
+    "reReads": 0,
+    "turns": 11,
+    "outputTokens": 2262
+  }
+}

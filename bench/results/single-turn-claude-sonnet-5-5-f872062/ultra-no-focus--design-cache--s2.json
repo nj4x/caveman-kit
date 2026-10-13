@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "design-cache",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:35:17.873Z",
+  "durationMs": 12630,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6853,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 971,
+    "output_tokens_details": {
+      "thinking_tokens": 55
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6853
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.030277699999999998,
+  "result": "**Use cache-aside with a short TTL. Also delete the key on profile write, if you control the write path.** TTL is the safety net. Explicit delete gives freshness.\n\n**Options:**\n\n- **TTL only.** Easiest to build. Data can be stale for up to the TTL, and you need no hooks into writes. Best when the API is third-party or writes are invisible to you. Profiles change rarely, so 5–15 min is often fine.\n- **Write-path invalidation (delete on update).** Data is fresh almost at once. You need every write path to call `DEL user:{id}`. If one path is missed, data stays stale until the TTL. So keep the TTL as a backstop.\n- **Event-driven (CDC/pub-sub, e.g. Kafka, DB triggers).** Works across many services and writers. Needs more infrastructure. Events can arrive late or out of order, so use a version or `updated_at` check.\n- **Write-through (update cache on write).** Reads are always warm. Writes get slower. A failed write can leave the DB and cache out of sync. Delete is safer than update: concurrent writes cannot race and leave an old value in the cache.\n- **Stale-while-revalidate.** Serve the stale entry and refresh it in the background. Latency stays low even when the API is slow. Users may briefly see old data. Good fit for a slow upstream.\n- **HTTP validation (ETag / `If-None-Match`).** Works only if the API supports it. A 304 response saves bandwidth but still costs a round trip, so it helps less when the API itself is slow.\n\n**Pitfalls:**\n\n- **Stampede.** A hot key expires and many requests hit the slow API at once. Fix with a lock or single-flight per key, TTL jitter, or early probabilistic refresh.\n- **Negative caching.** Cache 404s with a short TTL, around 30s. Otherwise lookups for missing users hammer the API.\n- **Delete/read race.** A reader fetches the old value, a writer deletes the key, then the reader stores the old value. Fix with a delayed second delete, or by storing a version and rejecting older ones.\n- **PII.** Profiles are personal data. Encrypt or restrict access to the cache. Account deletion must also purge the cache, including for GDPR.\n- **Per-viewer fields.** If the response changes by caller (permissions, privacy settings), include those in the cache key or cache only the shared fields.\n\n**Default recipe:** Redis, cache-aside, key `user:{id}:v1`, TTL 10 min ± jitter, `DEL` on update, single-flight on miss, stale-while-revalidate if the upstream p99 is very bad. If writes are hidden from you, use TTL plus stale-while-revalidate and accept the staleness window.",
+  "output": {
+    "duration_api_ms": 12381,
+    "stop_reason": "end_turn",
+    "session_id": "31d620d4-a453-47d2-b823-8920c87b39c8",
+    "total_cost_usd": 0.030277699999999998,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6853,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 971,
+      "output_tokens_details": {
+        "thinking_tokens": 55
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6853
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 971,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6853,
+        "webSearchRequests": 0,
+        "costUSD": 0.030277699999999998,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 55,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Use cache-aside with a short TTL. Also delete the key on profile write, if you control the write path.** TTL is the safety net. Explicit delete gives freshness.\n\n**Options:**\n\n- **TTL only.** Easiest to build. Data can be stale for up to the TTL, and you need no hooks into writes. Best when the API is third-party or writes are invisible to you. Profiles change rarely, so 5–15 min is often fine.\n- **Write-path invalidation (delete on update).** Data is fresh almost at once. You need every write path to call `DEL user:{id}`. If one path is missed, data stays stale until the TTL. So keep the TTL as a backstop.\n- **Event-driven (CDC/pub-sub, e.g. Kafka, DB triggers).** Works across many services and writers. Needs more infrastructure. Events can arrive late or out of order, so use a version or `updated_at` check.\n- **Write-through (update cache on write).** Reads are always warm. Writes get slower. A failed write can leave the DB and cache out of sync. Delete is safer than update: concurrent writes cannot race and leave an old value in the cache.\n- **Stale-while-revalidate.** Serve the stale entry and refresh it in the background. Latency stays low even when the API is slow. Users may briefly see old data. Good fit for a slow upstream.\n- **HTTP validation (ETag / `If-None-Match`).** Works only if the API supports it. A 304 response saves bandwidth but still costs a round trip, so it helps less when the API itself is slow.\n\n**Pitfalls:**\n\n- **Stampede.** A hot key expires and many requests hit the slow API at once. Fix with a lock or single-flight per key, TTL jitter, or early probabilistic refresh.\n- **Negative caching.** Cache 404s with a short TTL, around 30s. Otherwise lookups for missing users hammer the API.\n- **Delete/read race.** A reader fetches the old value, a writer deletes the key, then the reader stores the old value. Fix with a delayed second delete, or by storing a version and rejecting older ones.\n- **PII.** Profiles are personal data. Encrypt or restrict access to the cache. Account deletion must also purge the cache, including for GDPR.\n- **Per-viewer fields.** If the response changes by caller (permissions, privacy settings), include those in the cache key or cache only the shared fields.\n\n**Default recipe:** Redis, cache-aside, key `user:{id}:v1`, TTL 10 min ± jitter, `DEL` on update, single-flight on miss, stale-while-revalidate if the upstream p99 is very bad. If writes are hidden from you, use TTL plus stale-while-revalidate and accept the staleness window.",
+    "ttft_ms": 3439,
+    "type": "result",
+    "duration_ms": 12433,
+    "uuid": "5a6d835f-7bf0-4b37-9ee5-807873d0dacf",
+    "ttft_stream_ms": 3437,
+    "time_to_request_ms": 53,
+    "first_content_frame_ms": 3437,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

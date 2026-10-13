@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "error-explain",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:32:16.399Z",
+  "durationMs": 7560,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6920,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 580,
+    "output_tokens_details": {
+      "thinking_tokens": 110
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6920
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0265352,
+  "result": "**Cause:** Python's `json` parser recurses once per nesting level of `[`/`{`. CPython's default recursion limit is about 1000 frames, so very deep JSON overflows it. Your own recursive code that walks the parsed data can hit the same limit.\n\n**Fixes:**\n\n1. **Raise the limit and the thread stack.** Do both, or a C stack overflow can segfault the process:\n```python\nimport sys, threading, json\n\ndef main():\n    with open(\"data.json\") as f:\n        data = json.load(f)\n    ...\n\nsys.setrecursionlimit(100_000)\nthreading.stack_size(512 * 1024 * 1024)\nt = threading.Thread(target=main); t.start(); t.join()\n```\n\n2. **Use a streaming parser.** `ijson` parses without recursing per nesting level:\n```python\nimport ijson\nwith open(\"data.json\", \"rb\") as f:\n    for prefix, event, value in ijson.parse(f):\n        ...\n```\n\n3. **Make your own traversal iterative.** Use an explicit stack if the error comes from your walker, not from `json.load`:\n```python\nstack = [data]\nwhile stack:\n    node = stack.pop()\n    if isinstance(node, dict): stack.extend(node.values())\n    elif isinstance(node, list): stack.extend(node)\n```\n\nCheck the traceback to see which one is recursing: `json/decoder.py` means the parser, your function names mean your walker.",
+  "output": {
+    "duration_api_ms": 7307,
+    "stop_reason": "end_turn",
+    "session_id": "1ccea666-1eb9-4092-88f1-251fdd08761b",
+    "total_cost_usd": 0.0265352,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6920,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 580,
+      "output_tokens_details": {
+        "thinking_tokens": 110
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6920
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 580,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6920,
+        "webSearchRequests": 0,
+        "costUSD": 0.0265352,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 110,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Cause:** Python's `json` parser recurses once per nesting level of `[`/`{`. CPython's default recursion limit is about 1000 frames, so very deep JSON overflows it. Your own recursive code that walks the parsed data can hit the same limit.\n\n**Fixes:**\n\n1. **Raise the limit and the thread stack.** Do both, or a C stack overflow can segfault the process:\n```python\nimport sys, threading, json\n\ndef main():\n    with open(\"data.json\") as f:\n        data = json.load(f)\n    ...\n\nsys.setrecursionlimit(100_000)\nthreading.stack_size(512 * 1024 * 1024)\nt = threading.Thread(target=main); t.start(); t.join()\n```\n\n2. **Use a streaming parser.** `ijson` parses without recursing per nesting level:\n```python\nimport ijson\nwith open(\"data.json\", \"rb\") as f:\n    for prefix, event, value in ijson.parse(f):\n        ...\n```\n\n3. **Make your own traversal iterative.** Use an explicit stack if the error comes from your walker, not from `json.load`:\n```python\nstack = [data]\nwhile stack:\n    node = stack.pop()\n    if isinstance(node, dict): stack.extend(node.values())\n    elif isinstance(node, list): stack.extend(node)\n```\n\nCheck the traceback to see which one is recursing: `json/decoder.py` means the parser, your function names mean your walker.",
+    "ttft_ms": 3712,
+    "type": "result",
+    "duration_ms": 7359,
+    "uuid": "5ede6fa4-7f66-4854-a1b6-71c248d95a73",
+    "ttft_stream_ms": 3709,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3710,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

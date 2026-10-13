@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "write-function",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:22:19.665Z",
+  "durationMs": 7070,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5163,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 545,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5163
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.021792699999999998,
+  "result": "```python\ndef merge_intervals(intervals):\n    \"\"\"Merge overlapping (start, end) intervals.\n\n    Intervals that touch (e.g. (1, 3) and (3, 5)) are merged too.\n    \"\"\"\n    if not intervals:\n        return []\n\n    merged = []\n    for start, end in sorted(intervals):\n        if merged and start <= merged[-1][1]:\n            # Overlaps with the last merged interval: extend it if needed\n            merged[-1] = (merged[-1][0], max(merged[-1][1], end))\n        else:\n            merged.append((start, end))\n    return merged\n```\n\nExample:\n\n```python\nmerge_intervals([(8, 10), (1, 3), (2, 6), (15, 18), (17, 20)])\n# [(1, 6), (8, 10), (15, 20)]\n```\n\n**How it works:** Sort by start. Then each interval either overlaps the last merged one, which happens when its start is at most that interval's end. In that case the end is extended to the larger of the two ends. Otherwise it begins a new merged interval. Taking the `max` matters because an interval can be fully contained in the previous one, like (1, 10) followed by (2, 5).\n\n**Time complexity:**\n- Sorting takes **O(n log n)**, and it dominates.\n- The single pass over the sorted list takes **O(n)**.\n- Total: **O(n log n)**.\n\n**Space complexity:** O(n) for the output list. Python's `sorted` also makes an O(n) copy. If you sorted in place with `intervals.sort()`, the extra space would be only the output.\n\nIf you want intervals that merely touch to stay separate, change `<=` to `<`.",
+  "output": {
+    "duration_api_ms": 6822,
+    "stop_reason": "end_turn",
+    "session_id": "09741e6e-1ed2-42d4-940d-ec97fedcfb0a",
+    "total_cost_usd": 0.021792699999999998,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5163,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 545,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5163
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 545,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5163,
+        "webSearchRequests": 0,
+        "costUSD": 0.021792699999999998,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "```python\ndef merge_intervals(intervals):\n    \"\"\"Merge overlapping (start, end) intervals.\n\n    Intervals that touch (e.g. (1, 3) and (3, 5)) are merged too.\n    \"\"\"\n    if not intervals:\n        return []\n\n    merged = []\n    for start, end in sorted(intervals):\n        if merged and start <= merged[-1][1]:\n            # Overlaps with the last merged interval: extend it if needed\n            merged[-1] = (merged[-1][0], max(merged[-1][1], end))\n        else:\n            merged.append((start, end))\n    return merged\n```\n\nExample:\n\n```python\nmerge_intervals([(8, 10), (1, 3), (2, 6), (15, 18), (17, 20)])\n# [(1, 6), (8, 10), (15, 20)]\n```\n\n**How it works:** Sort by start. Then each interval either overlaps the last merged one, which happens when its start is at most that interval's end. In that case the end is extended to the larger of the two ends. Otherwise it begins a new merged interval. Taking the `max` matters because an interval can be fully contained in the previous one, like (1, 10) followed by (2, 5).\n\n**Time complexity:**\n- Sorting takes **O(n log n)**, and it dominates.\n- The single pass over the sorted list takes **O(n)**.\n- Total: **O(n log n)**.\n\n**Space complexity:** O(n) for the output list. Python's `sorted` also makes an O(n) copy. If you sorted in place with `intervals.sort()`, the extra space would be only the output.\n\nIf you want intervals that merely touch to stay separate, change `<=` to `<`.",
+    "ttft_ms": 6866,
+    "type": "result",
+    "duration_ms": 6875,
+    "uuid": "ec33976e-57f7-4cc1-9497-d5b76810a815",
+    "ttft_stream_ms": 3981,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3981,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

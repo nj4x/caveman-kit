@@ -23,6 +23,8 @@ echo '{"source":"startup","cwd":"'$PWD'"}' | CLAUDE_PLUGIN_ROOT=~/.claude node h
 echo '{"prompt":"/caveman ultra","cwd":"'$PWD'"}' | node hooks/caveman-mode-tracker.js
 ```
 
+`bench/` is a maintainer-only live benchmark harness (ADR 0008): `install.sh`/`update.sh` never copy it, CI never runs it, and every `node bench/run.js` run spends real API quota. Its stub-based tests run with `bats bench/tests/` (not picked up by `bats tests/`). See `bench/README.md`.
+
 ## Architecture
 
 Two lifecycles that must stay symmetric:

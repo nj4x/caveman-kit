@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "rootcause",
+  "seed": 4,
+  "finishedAt": "2026-10-13T03:03:59.351Z",
+  "durationMs": 198992,
+  "usage": {
+    "input_tokens": 20,
+    "cache_creation_input_tokens": 17479,
+    "cache_read_input_tokens": 295932,
+    "output_tokens": 2196,
+    "output_tokens_details": {
+      "thinking_tokens": 121
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 17479
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.12488389999999999,
+  "result": "Fixed: the bug was in `strip_reminders()` in `anthrouter/request_text.py`.\n\n**Root cause:** the docstring for `strip_reminders()` says it trims outer whitespace, but it never did. Removing `<system-reminder>…</system-reminder>` left the `\\n` that came after it. So the activity-label check, a `startswith` match, failed.\n\n**Fix:** one line, so `strip_reminders()` now trims as its docstring says:\n```python\n    return _LOCAL_COMMAND_WRAPPER_RE.sub('', text).strip()\n```\nEvery caller of `strip_reminders()` now gets trimmed text. That covers the handlers' local-command and activity-label detection and the model router's classifier input.\n\n**Tests:** the full suite gives 1125 passed, 3 failed. Before the fix, 3 activity-label tests failed, and they now pass. The 3 remaining failures also fail on unmodified code, so this change did not cause them:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\n`python` is not on PATH here, so `make test` fails to start. I ran the suite with `uv run --with pytest ...` instead.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 11,
+    "outputTokens": 2196
+  }
+}

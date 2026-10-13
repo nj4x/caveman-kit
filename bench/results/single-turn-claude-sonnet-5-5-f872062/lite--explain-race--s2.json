@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "explain-race",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:27:37.301Z",
+  "durationMs": 8542,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7033,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 626,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7033
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.027277700000000002,
+  "result": "Reproduce, observe, narrow, fix, prove.\n\n1. **Reproduce under load.** Use a load generator at production concurrency. Run it in a loop until it fails. Lower core count or add CPU contention (`stress-ng`, `taskset`) to widen timing windows. A failure rate you can measure is the goal.\n\n2. **Capture evidence without changing timing.** Heavy logging hides races. Use low-overhead tools instead:\n   - Thread sanitizer: `-fsanitize=thread` (C/C++/Go `-race`/Rust), Java `jcstress` or a data-race detector.\n   - Ring-buffer or per-thread event logs with timestamps and thread IDs. Dump on failure.\n   - Core dump or thread dump (`jstack`, `gdb thread apply all bt`) at the moment of failure.\n\n3. **Form a hypothesis from the symptom.** Find shared mutable state touched by multiple threads. Look for check-then-act, unsynchronized lazy init, non-atomic read-modify-write, and iteration over a collection while another thread mutates it. Also look for lock-order inversions and missing memory visibility (`volatile`, atomics, happens-before).\n\n4. **Inject delays to confirm.** Add `sleep` or `yield` between the suspect check and act. If the failure rate jumps, you found the window. Tools like `rr` chaos mode or Java's `Thread.yield` fuzzing do this systematically.\n\n5. **Fix at the right level.** Prefer removing shared state (immutability, confinement, message passing). Otherwise use one lock or atomic with clear ownership. Avoid sprinkling extra locks. They hide the bug and add deadlocks.\n\n6. **Prove the fix.** Rerun the same load loop for many more iterations than it took to fail before. Keep the sanitizer on. Add a stress test to CI.",
+  "output": {
+    "duration_api_ms": 8294,
+    "stop_reason": "end_turn",
+    "session_id": "8e0ab2c6-6210-43f2-936c-f7dd1a5618ca",
+    "total_cost_usd": 0.027277700000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7033,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 626,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7033
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 626,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7033,
+        "webSearchRequests": 0,
+        "costUSD": 0.027277700000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Reproduce, observe, narrow, fix, prove.\n\n1. **Reproduce under load.** Use a load generator at production concurrency. Run it in a loop until it fails. Lower core count or add CPU contention (`stress-ng`, `taskset`) to widen timing windows. A failure rate you can measure is the goal.\n\n2. **Capture evidence without changing timing.** Heavy logging hides races. Use low-overhead tools instead:\n   - Thread sanitizer: `-fsanitize=thread` (C/C++/Go `-race`/Rust), Java `jcstress` or a data-race detector.\n   - Ring-buffer or per-thread event logs with timestamps and thread IDs. Dump on failure.\n   - Core dump or thread dump (`jstack`, `gdb thread apply all bt`) at the moment of failure.\n\n3. **Form a hypothesis from the symptom.** Find shared mutable state touched by multiple threads. Look for check-then-act, unsynchronized lazy init, non-atomic read-modify-write, and iteration over a collection while another thread mutates it. Also look for lock-order inversions and missing memory visibility (`volatile`, atomics, happens-before).\n\n4. **Inject delays to confirm.** Add `sleep` or `yield` between the suspect check and act. If the failure rate jumps, you found the window. Tools like `rr` chaos mode or Java's `Thread.yield` fuzzing do this systematically.\n\n5. **Fix at the right level.** Prefer removing shared state (immutability, confinement, message passing). Otherwise use one lock or atomic with clear ownership. Avoid sprinkling extra locks. They hide the bug and add deadlocks.\n\n6. **Prove the fix.** Rerun the same load loop for many more iterations than it took to fail before. Keep the sanitizer on. Add a stress test to CI.",
+    "ttft_ms": 8334,
+    "type": "result",
+    "duration_ms": 8344,
+    "uuid": "332c9c8a-af6f-4731-b307-c073d4351f46",
+    "ttft_stream_ms": 3802,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 3803,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

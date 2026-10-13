@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "design-cache",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:35:05.240Z",
+  "durationMs": 12457,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6853,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 921,
+    "output_tokens_details": {
+      "thinking_tokens": 25
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6853
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0297777,
+  "result": "**Recommendation:** use cache-aside with a short TTL. If your service owns profile writes, also delete the cache entry on each write. This suits most profile workloads, which read far more than they write.\n\n**Strategies:**\n\n1. **TTL only.** Each entry expires after N seconds.\n   - Pro: simplest. Works even when the API is not yours.\n   - Con: data can be stale for up to N seconds. Short TTL means more misses on the slow API.\n\n2. **Delete on write + TTL backstop.** Your write path runs `DEL user:{id}` after the DB commit.\n   - Pro: data is fresh almost at once. The TTL catches deletes that fail.\n   - Con: only works if every write goes through code you control.\n   - Race: a concurrent read can put old data back after the delete. Fix with a second delete a few hundred ms later, or a version check.\n\n3. **Event-driven.** CDC, webhooks, or a message bus (Kafka/SNS) tell the cache which keys changed.\n   - Pro: fresh data even when other services write profiles.\n   - Con: more infrastructure. Events can be lost or arrive out of order. Still keep a TTL as backstop.\n\n4. **Write-through.** Each write updates the cache and the DB together.\n   - Pro: cache stays warm and fresh.\n   - Con: slower writes. Cache and DB can disagree if one write fails. Caches profiles nobody reads.\n\n5. **Stale-while-revalidate.** Serve the expired entry and refresh it in the background.\n   - Pro: users never wait on the slow API after the first load.\n   - Con: some responses are stale by design.\n\n**Choose by staleness tolerance:**\n- Seconds to minutes is fine: TTL + stale-while-revalidate.\n- Must be near-instant and you own writes: delete on write + TTL.\n- Must be near-instant and other systems write: event-driven + TTL.\n\n**Common pitfalls:**\n- **Stampede:** many requests miss the same hot key at once and all hit the slow API. Fix with a per-key lock or request coalescing (singleflight).\n- **Synchronized expiry:** many entries expire together. Add ±10–20% random jitter to TTLs.\n- **Repeated misses for missing users:** cache 404s with a short TTL.\n- **Mixed-sensitivity data:** permissions or email feed security decisions, so stale values are risky. Cache them separately with a short TTL, or don't cache them.\n- **Format changes:** put a version in the key, e.g. `user:v2:{id}`. A schema change then needs no flush.\n\n**Next step:** pick how stale a profile may be, e.g. 60s. Then check whether all profile writes go through your service.",
+  "output": {
+    "duration_api_ms": 12197,
+    "stop_reason": "end_turn",
+    "session_id": "80488488-c7b3-4d06-96e1-0dcb17178612",
+    "total_cost_usd": 0.0297777,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6853,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 921,
+      "output_tokens_details": {
+        "thinking_tokens": 25
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6853
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 921,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6853,
+        "webSearchRequests": 0,
+        "costUSD": 0.0297777,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 25,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Recommendation:** use cache-aside with a short TTL. If your service owns profile writes, also delete the cache entry on each write. This suits most profile workloads, which read far more than they write.\n\n**Strategies:**\n\n1. **TTL only.** Each entry expires after N seconds.\n   - Pro: simplest. Works even when the API is not yours.\n   - Con: data can be stale for up to N seconds. Short TTL means more misses on the slow API.\n\n2. **Delete on write + TTL backstop.** Your write path runs `DEL user:{id}` after the DB commit.\n   - Pro: data is fresh almost at once. The TTL catches deletes that fail.\n   - Con: only works if every write goes through code you control.\n   - Race: a concurrent read can put old data back after the delete. Fix with a second delete a few hundred ms later, or a version check.\n\n3. **Event-driven.** CDC, webhooks, or a message bus (Kafka/SNS) tell the cache which keys changed.\n   - Pro: fresh data even when other services write profiles.\n   - Con: more infrastructure. Events can be lost or arrive out of order. Still keep a TTL as backstop.\n\n4. **Write-through.** Each write updates the cache and the DB together.\n   - Pro: cache stays warm and fresh.\n   - Con: slower writes. Cache and DB can disagree if one write fails. Caches profiles nobody reads.\n\n5. **Stale-while-revalidate.** Serve the expired entry and refresh it in the background.\n   - Pro: users never wait on the slow API after the first load.\n   - Con: some responses are stale by design.\n\n**Choose by staleness tolerance:**\n- Seconds to minutes is fine: TTL + stale-while-revalidate.\n- Must be near-instant and you own writes: delete on write + TTL.\n- Must be near-instant and other systems write: event-driven + TTL.\n\n**Common pitfalls:**\n- **Stampede:** many requests miss the same hot key at once and all hit the slow API. Fix with a per-key lock or request coalescing (singleflight).\n- **Synchronized expiry:** many entries expire together. Add ±10–20% random jitter to TTLs.\n- **Repeated misses for missing users:** cache 404s with a short TTL.\n- **Mixed-sensitivity data:** permissions or email feed security decisions, so stale values are risky. Cache them separately with a short TTL, or don't cache them.\n- **Format changes:** put a version in the key, e.g. `user:v2:{id}`. A schema change then needs no flush.\n\n**Next step:** pick how stale a profile may be, e.g. 60s. Then check whether all profile writes go through your service.",
+    "ttft_ms": 3491,
+    "type": "result",
+    "duration_ms": 12248,
+    "uuid": "bb8d9642-a080-4db4-8c4e-0232413484fc",
+    "ttft_stream_ms": 3489,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 3490,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

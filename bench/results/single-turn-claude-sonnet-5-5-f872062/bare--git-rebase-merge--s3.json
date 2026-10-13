@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "git-rebase-merge",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:21:43.716Z",
+  "durationMs": 8891,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5148,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 680,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5148
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0231052,
+  "result": "**Short answer:** On a shared branch, rebase only when you can coordinate a history rewrite. Otherwise, merge.\n\n**Why shared branches are the problem**\n\nRebase rewrites commits, giving them new hashes. If teammates have already pulled the old commits, their local branches diverge from the rewritten remote. That forces them to reconcile, and it often produces duplicate commits or messy conflicts.\n\n**Cases where rebase is reasonable**\n\n- **Before anyone else has based work on your commits.** Rebase your own unpushed or private commits onto the latest base branch (`git pull --rebase`) to keep history linear.\n- **The team has agreed to it.** Everyone knows the branch gets force-pushed, and they rebase their local work after each rewrite. Use `git push --force-with-lease`, never plain `--force`.\n- **Cleaning up before merging to main.** Squash or reorder WIP commits (`git rebase -i`) once, at a coordinated point, such as when the feature is ready for review and no one else is committing to it.\n- **Syncing the feature branch with main.** Do this when only one person is working on the branch, or when collaborators have agreed on a freeze window.\n- **Your team prefers linear history.** Some teams rebase or squash when merging into main. That rewrites the feature branch's commits, not the shared history.\n\n**Cases where merge is better**\n\n- Multiple people are actively pushing to the branch.\n- You want an accurate record of when and how integration happened.\n- You'd rather resolve conflicts once, in a single merge commit, than commit by commit.\n- You can't guarantee everyone will handle a force-push correctly.\n\n**Practical rule of thumb**\n\n- Rebase local, unshared work freely.\n- Once commits are pushed and others depend on them, don't rewrite them. Merge main into the branch instead.\n- If you do need a coordinated rebase, announce it, have everyone push their work first, rebase, force-push with lease, and have teammates run `git fetch` and `git rebase --onto` (or re-clone or reset) to realign.",
+  "output": {
+    "duration_api_ms": 8636,
+    "stop_reason": "end_turn",
+    "session_id": "541504bd-61ea-47cb-98a4-cb82cb1111ae",
+    "total_cost_usd": 0.0231052,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5148,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 680,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5148
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 680,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5148,
+        "webSearchRequests": 0,
+        "costUSD": 0.0231052,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Short answer:** On a shared branch, rebase only when you can coordinate a history rewrite. Otherwise, merge.\n\n**Why shared branches are the problem**\n\nRebase rewrites commits, giving them new hashes. If teammates have already pulled the old commits, their local branches diverge from the rewritten remote. That forces them to reconcile, and it often produces duplicate commits or messy conflicts.\n\n**Cases where rebase is reasonable**\n\n- **Before anyone else has based work on your commits.** Rebase your own unpushed or private commits onto the latest base branch (`git pull --rebase`) to keep history linear.\n- **The team has agreed to it.** Everyone knows the branch gets force-pushed, and they rebase their local work after each rewrite. Use `git push --force-with-lease`, never plain `--force`.\n- **Cleaning up before merging to main.** Squash or reorder WIP commits (`git rebase -i`) once, at a coordinated point, such as when the feature is ready for review and no one else is committing to it.\n- **Syncing the feature branch with main.** Do this when only one person is working on the branch, or when collaborators have agreed on a freeze window.\n- **Your team prefers linear history.** Some teams rebase or squash when merging into main. That rewrites the feature branch's commits, not the shared history.\n\n**Cases where merge is better**\n\n- Multiple people are actively pushing to the branch.\n- You want an accurate record of when and how integration happened.\n- You'd rather resolve conflicts once, in a single merge commit, than commit by commit.\n- You can't guarantee everyone will handle a force-push correctly.\n\n**Practical rule of thumb**\n\n- Rebase local, unshared work freely.\n- Once commits are pushed and others depend on them, don't rewrite them. Merge main into the branch instead.\n- If you do need a coordinated rebase, announce it, have everyone push their work first, rebase, force-push with lease, and have teammates run `git fetch` and `git rebase --onto` (or re-clone or reset) to realign.",
+    "ttft_ms": 8679,
+    "type": "result",
+    "duration_ms": 8684,
+    "uuid": "2f58822b-6757-46ba-844d-4bad8ee208d8",
+    "ttft_stream_ms": 3448,
+    "time_to_request_ms": 47,
+    "first_content_frame_ms": 3449,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

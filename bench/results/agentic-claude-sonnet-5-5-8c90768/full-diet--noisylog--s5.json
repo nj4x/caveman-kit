@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 5,
+  "finishedAt": "2026-10-13T02:52:36.985Z",
+  "durationMs": 157389,
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 13795,
+    "cache_read_input_tokens": 218386,
+    "output_tokens": 1988,
+    "output_tokens_details": {
+      "thinking_tokens": 238
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 13795
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.09807670000000002,
+  "result": "I fixed the regression: a typo in a header name at `anthrouter/http_util.py:120`. The proxy was looking for `anthropic-ratelimit-request-remaining`, but the upstream header is `anthropic-ratelimit-requests-remaining`. Because the names didn't match, the remaining-requests count was never read, so it was never recorded.\n\n```python\n    ('requests_remaining', 'anthropic-ratelimit-requests-remaining'),\n```\n\n**Tests:**\n- **Rate-limit tests:** these two fail without the fix and pass with it:\n  - `test_successful_request_records_usage_and_the_rate_limit_window`\n  - `test_status_reports_the_last_rate_limit_window`\n- **Full suite after the fix:** 1125 passed, 3 failed, 1 skipped.\n- **The 3 remaining failures:** they also fail without my change, so they predate this regression. I left them alone:\n  - `test_config.py::test_editable_fields_live_editable_fields`\n  - `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n  - `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 1791,
+    "reReads": 0,
+    "turns": 10,
+    "outputTokens": 1988
+  }
+}

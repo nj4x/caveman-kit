@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "design-cache",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:26:44.426Z",
+  "durationMs": 18536,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5177,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1488,
+    "output_tokens_details": {
+      "thinking_tokens": 20
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5177
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0312577,
+  "result": "**My recommendation:** use cache-aside with a TTL as the baseline. If you control the code that writes profiles, also delete the cache entry whenever a profile changes. That gives you fast reads, a hard limit on how stale data can get, and fresh data in the common case.\n\n## The main strategies\n\n### 1. TTL (time-based expiry)\nEach cached entry expires after a fixed time, for example 5–15 minutes.\n- **Pros:** Simplest option. You don't need to know when data changes. The TTL caps how stale data can get. Works even if you can't see writes (for example, a third-party API).\n- **Cons:** Users can see stale data for up to the full TTL. It's a direct trade-off: a short TTL means more cache misses and more load on the slow API, while a long TTL means staler data. When a popular key expires, many requests can hit the API at once (a \"thundering herd\").\n- **Use when:** you don't own the write path, or some staleness is acceptable.\n\n### 2. Invalidate on write (event-driven)\nWhen a profile is updated, delete its cache key directly or via an event or message bus. The next read fetches fresh data.\n- **Pros:** Data is almost always fresh. Entries can live a long time, so you get a high hit rate.\n- **Cons:** You need a hook into every write path, and a missed path means data stays stale indefinitely. There are race conditions: a read that started before the write can put the old value back after the delete. It's more operational work if it goes through a queue.\n- **Use when:** you own the service that updates profiles.\n\n### 3. Write-through / write-behind\nWrites update the cache and the backing store together. Write-behind updates the store later, asynchronously.\n- **Pros:** The cache is always populated and fresh.\n- **Cons:** Only works if all writes go through your cache layer. That's usually not true when you're putting a cache in front of someone else's REST API. Write-behind can lose data if the cache fails.\n- **Use when:** your service is the only writer. This is rarely the case in a \"cache in front of an API\" setup.\n\n### 4. Stale-while-revalidate\nServe the cached value immediately, even if slightly expired, and refresh it in the background.\n- **Pros:** Users almost never wait on the slow API. This is a big improvement when the upstream is slow.\n- **Cons:** Users always see data that's one refresh behind. Background refreshes need their own concurrency control.\n- **Use when:** latency matters more than strict freshness, which is often the case for profile reads.\n\n### 5. Conditional validation (ETag / `If-None-Match`)\nCheck with the API whether the cached copy is still valid.\n- **Pros:** Responses are always correct, and a 304 response saves bandwidth.\n- **Cons:** Every request still makes a round trip to the slow API. That doesn't help much if the slowness is latency rather than payload size.\n\n## Practical setup for user profiles\n\n1. **Cache-aside with a TTL** (e.g. 5–10 min), plus **jitter** (±10–20%) so entries don't all expire at once.\n2. **Delete the key on update** if you can see writes. Delete it rather than overwriting it, so concurrent writes don't race to set different values.\n3. **Collapse duplicate requests** (single-flight, or a short lock per key) so only one request per key refetches from the API on a miss.\n4. **Stale-while-revalidate** if the API is slow enough that cache misses hurt users.\n5. **Negative caching** of 404s for a short TTL, so lookups for nonexistent users don't keep hitting the API.\n6. **Bypass the cache in read-your-own-writes paths.** When users view their own profile right after editing it, read from the source or the freshly written value so they don't see the old one.\n\n## Other things to consider\n- **Personal data:** profiles are often PII. Encrypt the cache or restrict access to it, and make sure deleting an account also clears its cache entries (GDPR-style deletion).\n- **Key design:** include the API version and any fields or locale variants in the key, e.g. `profile:v2:{userId}`.\n- **Where to cache:** an in-process cache (fastest, but each instance has its own copy and they can drift apart) or Redis/Memcached (shared and consistent, but adds a network hop). A common pattern is a small in-process cache with a short TTL in front of Redis.\n\nIf you tell me whether you control the write path, how stale data can acceptably be, and your stack, I can sketch the actual implementation.",
+  "output": {
+    "duration_api_ms": 18277,
+    "stop_reason": "end_turn",
+    "session_id": "7404dc6b-a97c-4de4-8e23-fddc5f472eac",
+    "total_cost_usd": 0.0312577,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5177,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1488,
+      "output_tokens_details": {
+        "thinking_tokens": 20
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5177
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1488,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5177,
+        "webSearchRequests": 0,
+        "costUSD": 0.0312577,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 20,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**My recommendation:** use cache-aside with a TTL as the baseline. If you control the code that writes profiles, also delete the cache entry whenever a profile changes. That gives you fast reads, a hard limit on how stale data can get, and fresh data in the common case.\n\n## The main strategies\n\n### 1. TTL (time-based expiry)\nEach cached entry expires after a fixed time, for example 5–15 minutes.\n- **Pros:** Simplest option. You don't need to know when data changes. The TTL caps how stale data can get. Works even if you can't see writes (for example, a third-party API).\n- **Cons:** Users can see stale data for up to the full TTL. It's a direct trade-off: a short TTL means more cache misses and more load on the slow API, while a long TTL means staler data. When a popular key expires, many requests can hit the API at once (a \"thundering herd\").\n- **Use when:** you don't own the write path, or some staleness is acceptable.\n\n### 2. Invalidate on write (event-driven)\nWhen a profile is updated, delete its cache key directly or via an event or message bus. The next read fetches fresh data.\n- **Pros:** Data is almost always fresh. Entries can live a long time, so you get a high hit rate.\n- **Cons:** You need a hook into every write path, and a missed path means data stays stale indefinitely. There are race conditions: a read that started before the write can put the old value back after the delete. It's more operational work if it goes through a queue.\n- **Use when:** you own the service that updates profiles.\n\n### 3. Write-through / write-behind\nWrites update the cache and the backing store together. Write-behind updates the store later, asynchronously.\n- **Pros:** The cache is always populated and fresh.\n- **Cons:** Only works if all writes go through your cache layer. That's usually not true when you're putting a cache in front of someone else's REST API. Write-behind can lose data if the cache fails.\n- **Use when:** your service is the only writer. This is rarely the case in a \"cache in front of an API\" setup.\n\n### 4. Stale-while-revalidate\nServe the cached value immediately, even if slightly expired, and refresh it in the background.\n- **Pros:** Users almost never wait on the slow API. This is a big improvement when the upstream is slow.\n- **Cons:** Users always see data that's one refresh behind. Background refreshes need their own concurrency control.\n- **Use when:** latency matters more than strict freshness, which is often the case for profile reads.\n\n### 5. Conditional validation (ETag / `If-None-Match`)\nCheck with the API whether the cached copy is still valid.\n- **Pros:** Responses are always correct, and a 304 response saves bandwidth.\n- **Cons:** Every request still makes a round trip to the slow API. That doesn't help much if the slowness is latency rather than payload size.\n\n## Practical setup for user profiles\n\n1. **Cache-aside with a TTL** (e.g. 5–10 min), plus **jitter** (±10–20%) so entries don't all expire at once.\n2. **Delete the key on update** if you can see writes. Delete it rather than overwriting it, so concurrent writes don't race to set different values.\n3. **Collapse duplicate requests** (single-flight, or a short lock per key) so only one request per key refetches from the API on a miss.\n4. **Stale-while-revalidate** if the API is slow enough that cache misses hurt users.\n5. **Negative caching** of 404s for a short TTL, so lookups for nonexistent users don't keep hitting the API.\n6. **Bypass the cache in read-your-own-writes paths.** When users view their own profile right after editing it, read from the source or the freshly written value so they don't see the old one.\n\n## Other things to consider\n- **Personal data:** profiles are often PII. Encrypt the cache or restrict access to it, and make sure deleting an account also clears its cache entries (GDPR-style deletion).\n- **Key design:** include the API version and any fields or locale variants in the key, e.g. `profile:v2:{userId}`.\n- **Where to cache:** an in-process cache (fastest, but each instance has its own copy and they can drift apart) or Redis/Memcached (shared and consistent, but adds a network hop). A common pattern is a small in-process cache with a short TTL in front of Redis.\n\nIf you tell me whether you control the write path, how stale data can acceptably be, and your stack, I can sketch the actual implementation.",
+    "ttft_ms": 3227,
+    "type": "result",
+    "duration_ms": 18331,
+    "uuid": "145fc610-bee3-4d36-826e-9fc47c52c25f",
+    "ttft_stream_ms": 3226,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3226,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

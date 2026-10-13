@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "design-cache",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:29:17.647Z",
+  "durationMs": 7670,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7055,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 523,
+    "output_tokens_details": {
+      "thinking_tokens": 37
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7055
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.026302700000000002,
+  "result": "**Recommendation:** use TTL plus event-driven invalidation. Set a short TTL (e.g. 5–15 min) as a safety net. Delete the cache key whenever a profile is written (cache-aside pattern).\n\n**Trade-offs by strategy:**\n\n- **TTL only:** Simplest to build. Reads can be stale for up to the TTL. Fine if profiles change rarely and brief staleness is acceptable.\n- **Explicit invalidation on write:** Data stays fresh. Every write path must delete the key, or that path serves stale data. Use delete, not update, to avoid race conditions between concurrent writers.\n- **Write-through:** The cache always matches the source. Writes get slower, and the cache fills with profiles nobody reads.\n- **Stale-while-revalidate:** Users never wait on the slow API, because stale data is served while a background refresh runs. Reads may still return outdated data briefly.\n\n**Pitfalls:**\n\n- **Cache stampede:** a popular key expires and many requests hit the slow API at once. Fix it with request coalescing (one fetch per key) or jittered TTLs.\n- **Writes outside your service:** if other services can change profiles, you cannot invalidate on write. Use TTL with stale-while-revalidate, or subscribe to change events (CDC or a message queue).\n- **Private fields:** if profiles contain per-user private data, include the auth scope in the cache key. Otherwise one user's data can leak to another.",
+  "output": {
+    "duration_api_ms": 7416,
+    "stop_reason": "end_turn",
+    "session_id": "b11fd904-d557-4a10-bb82-00ec4c604141",
+    "total_cost_usd": 0.026302700000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7055,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 523,
+      "output_tokens_details": {
+        "thinking_tokens": 37
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7055
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 523,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7055,
+        "webSearchRequests": 0,
+        "costUSD": 0.026302700000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 37,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Recommendation:** use TTL plus event-driven invalidation. Set a short TTL (e.g. 5–15 min) as a safety net. Delete the cache key whenever a profile is written (cache-aside pattern).\n\n**Trade-offs by strategy:**\n\n- **TTL only:** Simplest to build. Reads can be stale for up to the TTL. Fine if profiles change rarely and brief staleness is acceptable.\n- **Explicit invalidation on write:** Data stays fresh. Every write path must delete the key, or that path serves stale data. Use delete, not update, to avoid race conditions between concurrent writers.\n- **Write-through:** The cache always matches the source. Writes get slower, and the cache fills with profiles nobody reads.\n- **Stale-while-revalidate:** Users never wait on the slow API, because stale data is served while a background refresh runs. Reads may still return outdated data briefly.\n\n**Pitfalls:**\n\n- **Cache stampede:** a popular key expires and many requests hit the slow API at once. Fix it with request coalescing (one fetch per key) or jittered TTLs.\n- **Writes outside your service:** if other services can change profiles, you cannot invalidate on write. Use TTL with stale-while-revalidate, or subscribe to change events (CDC or a message queue).\n- **Private fields:** if profiles contain per-user private data, include the auth scope in the cache key. Otherwise one user's data can leak to another.",
+    "ttft_ms": 3377,
+    "type": "result",
+    "duration_ms": 7470,
+    "uuid": "2e9a021d-f7ef-45ad-a7ae-f7c89cf0fa5b",
+    "ttft_stream_ms": 3376,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3376,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

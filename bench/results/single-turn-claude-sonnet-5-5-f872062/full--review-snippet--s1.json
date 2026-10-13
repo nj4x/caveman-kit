@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "review-snippet",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:29:45.783Z",
+  "durationMs": 5071,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6983,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 335,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6983
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.024242700000000002,
+  "result": "Main bug: `forEach` ignores async callbacks. It doesn't await them, so `return users` runs immediately and returns `[]`. Pushes happen later.\n\nSecondary bugs:\n- No `res.ok` check. A 404 or 500 still goes to `res.json()`, which may throw or push an error body as a user.\n- Errors in the callbacks become unhandled rejections. The caller can't catch them.\n- Push order follows completion order, not `ids` order.\n\nFix:\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(ids.map(async id => {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) throw new Error(`User ${id}: HTTP ${res.status}`);\n    return res.json();\n  }));\n}\n```\n\n`Promise.all` runs the requests in parallel, keeps `ids` order, and rejects on the first failure. For large `ids`, batch the requests or use `Promise.allSettled` to tolerate partial failures.",
+  "output": {
+    "duration_api_ms": 4806,
+    "stop_reason": "end_turn",
+    "session_id": "8b1c3150-f160-46cc-ad1a-3ffbaf75540c",
+    "total_cost_usd": 0.024242700000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6983,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 335,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6983
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 335,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6983,
+        "webSearchRequests": 0,
+        "costUSD": 0.024242700000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Main bug: `forEach` ignores async callbacks. It doesn't await them, so `return users` runs immediately and returns `[]`. Pushes happen later.\n\nSecondary bugs:\n- No `res.ok` check. A 404 or 500 still goes to `res.json()`, which may throw or push an error body as a user.\n- Errors in the callbacks become unhandled rejections. The caller can't catch them.\n- Push order follows completion order, not `ids` order.\n\nFix:\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(ids.map(async id => {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) throw new Error(`User ${id}: HTTP ${res.status}`);\n    return res.json();\n  }));\n}\n```\n\n`Promise.all` runs the requests in parallel, keeps `ids` order, and rejects on the first failure. For large `ids`, batch the requests or use `Promise.allSettled` to tolerate partial failures.",
+    "ttft_ms": 4849,
+    "type": "result",
+    "duration_ms": 4860,
+    "uuid": "838250e0-d30f-4bd2-99cd-45c0a3de1149",
+    "ttft_stream_ms": 3516,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3517,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

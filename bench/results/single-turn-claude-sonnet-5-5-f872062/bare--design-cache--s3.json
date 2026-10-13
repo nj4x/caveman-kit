@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "design-cache",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:23:28.809Z",
+  "durationMs": 20018,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5171,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1495,
+    "output_tokens_details": {
+      "thinking_tokens": 19
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5171
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0313127,
+  "result": "My recommendation is **cache-aside with a TTL, plus explicit invalidation when a profile is written**. If you can't hook into writes, use TTL alone, and add stale-while-revalidate if the API's latency spikes are the main problem.\n\n## The main options\n\n### 1. TTL only (time-based expiry)\nEach cache entry expires after N seconds.\n- **Pros:** Easiest to build. It needs no connection to whatever writes the data, and it repairs itself: any staleness lasts at most N seconds.\n- **Cons:** You trade freshness against load. A short TTL means more cache misses and more traffic to the slow API. A long TTL means users see old data, such as a renamed user or a changed avatar.\n- **Use when:** You don't own or can't observe the write path (for example, a third-party API), or seconds to minutes of staleness is fine.\n\n### 2. Explicit invalidation on write (delete or update the key when the profile changes)\n- **Pros:** Data is close to fresh, so you can use a long TTL and get a high hit rate.\n- **Cons:** It only works if you see every write: your own service, admin tools, batch jobs, other services. Any write you miss leaves stale data until the TTL runs out. There are also race conditions. For example, a read that misses can fetch the old value and write it back to the cache *after* the invalidation ran. Delete the key rather than updating it in place, or use versioning or compare-and-set.\n- **Use when:** You control the writes, or the source can publish change events (webhooks, CDC, a message bus).\n\n### 3. Event-driven invalidation (pub/sub or CDC)\nThis is a scaled-up version of #2: the source publishes \"profile X changed\" and every cache node evicts that key.\n- **Pros:** Works across many services and cache instances.\n- **Cons:** More infrastructure. Events can be delayed or lost, so you still need a TTL as a backstop.\n\n### 4. Stale-while-revalidate\nOnce the soft TTL passes, keep serving the cached value and refresh it in the background.\n- **Pros:** Users almost never wait on the slow API, which is a good fit for your case. It also spreads out refresh load.\n- **Cons:** Users may briefly see stale data, and you need a background refresh mechanism. Add a hard TTL so data can't stay stale forever.\n\n### 5. Write-through / write-behind\nWrites go through the cache to the store.\n- **Pros:** The cache always stays consistent with your own writes.\n- **Cons:** Only possible if all writes go through your layer. Write-behind can lose data if the cache crashes. This is usually overkill for an API you only read from.\n\n## Pitfalls to handle whichever strategy you pick\n- **Cache stampede:** a popular key expires and hundreds of requests hit the slow API at once. Fixes: request coalescing (single-flight, so one fetch serves all waiters), a per-key lock, or random jitter added to TTLs.\n- **Negative caching:** cache \"user not found\" for a short time so repeated lookups for missing IDs don't hammer the API.\n- **Mixed freshness needs:** a user viewing their own profile right after editing it should see the change (read-your-writes). Bypass or invalidate the cache for that user's own reads even if everyone else gets TTL-cached data.\n- **Sensitive fields:** if profiles include private data, make sure cache keys include auth or tenant scope, and consider shorter TTLs or no caching for those fields.\n- **Where the cache lives:** an in-process cache (like an LRU) is fastest but each instance can return different data and invalidation is harder. A shared cache (Redis or Memcached) is consistent across instances and makes invalidation simple. Many setups use both: a small local cache with a short TTL in front of Redis.\n\n## A sensible starting setup\n1. Redis with cache-aside, keyed `user:{id}:v1`.\n2. A TTL of about 5–15 minutes with ±10% jitter.\n3. Delete the key on every profile write you control.\n4. Single-flight coalescing on misses.\n5. Negative caching for 404s with a TTL of about 30–60 seconds.\n6. Add stale-while-revalidate later if p99 latency after cache misses still matters.\n\nTo narrow this down, tell me two things: do you control the writes to these profiles, and how stale can the data be (seconds, minutes, or hours)? Those answers pick between TTL only and invalidation plus TTL, and set the TTL value.",
+  "output": {
+    "duration_api_ms": 19761,
+    "stop_reason": "end_turn",
+    "session_id": "3232d3da-cd22-40b1-bcdd-3af8ce21b965",
+    "total_cost_usd": 0.0313127,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5171,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1495,
+      "output_tokens_details": {
+        "thinking_tokens": 19
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5171
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1495,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5171,
+        "webSearchRequests": 0,
+        "costUSD": 0.0313127,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 19,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "My recommendation is **cache-aside with a TTL, plus explicit invalidation when a profile is written**. If you can't hook into writes, use TTL alone, and add stale-while-revalidate if the API's latency spikes are the main problem.\n\n## The main options\n\n### 1. TTL only (time-based expiry)\nEach cache entry expires after N seconds.\n- **Pros:** Easiest to build. It needs no connection to whatever writes the data, and it repairs itself: any staleness lasts at most N seconds.\n- **Cons:** You trade freshness against load. A short TTL means more cache misses and more traffic to the slow API. A long TTL means users see old data, such as a renamed user or a changed avatar.\n- **Use when:** You don't own or can't observe the write path (for example, a third-party API), or seconds to minutes of staleness is fine.\n\n### 2. Explicit invalidation on write (delete or update the key when the profile changes)\n- **Pros:** Data is close to fresh, so you can use a long TTL and get a high hit rate.\n- **Cons:** It only works if you see every write: your own service, admin tools, batch jobs, other services. Any write you miss leaves stale data until the TTL runs out. There are also race conditions. For example, a read that misses can fetch the old value and write it back to the cache *after* the invalidation ran. Delete the key rather than updating it in place, or use versioning or compare-and-set.\n- **Use when:** You control the writes, or the source can publish change events (webhooks, CDC, a message bus).\n\n### 3. Event-driven invalidation (pub/sub or CDC)\nThis is a scaled-up version of #2: the source publishes \"profile X changed\" and every cache node evicts that key.\n- **Pros:** Works across many services and cache instances.\n- **Cons:** More infrastructure. Events can be delayed or lost, so you still need a TTL as a backstop.\n\n### 4. Stale-while-revalidate\nOnce the soft TTL passes, keep serving the cached value and refresh it in the background.\n- **Pros:** Users almost never wait on the slow API, which is a good fit for your case. It also spreads out refresh load.\n- **Cons:** Users may briefly see stale data, and you need a background refresh mechanism. Add a hard TTL so data can't stay stale forever.\n\n### 5. Write-through / write-behind\nWrites go through the cache to the store.\n- **Pros:** The cache always stays consistent with your own writes.\n- **Cons:** Only possible if all writes go through your layer. Write-behind can lose data if the cache crashes. This is usually overkill for an API you only read from.\n\n## Pitfalls to handle whichever strategy you pick\n- **Cache stampede:** a popular key expires and hundreds of requests hit the slow API at once. Fixes: request coalescing (single-flight, so one fetch serves all waiters), a per-key lock, or random jitter added to TTLs.\n- **Negative caching:** cache \"user not found\" for a short time so repeated lookups for missing IDs don't hammer the API.\n- **Mixed freshness needs:** a user viewing their own profile right after editing it should see the change (read-your-writes). Bypass or invalidate the cache for that user's own reads even if everyone else gets TTL-cached data.\n- **Sensitive fields:** if profiles include private data, make sure cache keys include auth or tenant scope, and consider shorter TTLs or no caching for those fields.\n- **Where the cache lives:** an in-process cache (like an LRU) is fastest but each instance can return different data and invalidation is harder. A shared cache (Redis or Memcached) is consistent across instances and makes invalidation simple. Many setups use both: a small local cache with a short TTL in front of Redis.\n\n## A sensible starting setup\n1. Redis with cache-aside, keyed `user:{id}:v1`.\n2. A TTL of about 5–15 minutes with ±10% jitter.\n3. Delete the key on every profile write you control.\n4. Single-flight coalescing on misses.\n5. Negative caching for 404s with a TTL of about 30–60 seconds.\n6. Add stale-while-revalidate later if p99 latency after cache misses still matters.\n\nTo narrow this down, tell me two things: do you control the writes to these profiles, and how stale can the data be (seconds, minutes, or hours)? Those answers pick between TTL only and invalidation plus TTL, and set the TTL value.",
+    "ttft_ms": 5091,
+    "type": "result",
+    "duration_ms": 19813,
+    "uuid": "4a2997f6-f7e0-4f6c-b2f2-6fa0e0774cfb",
+    "ttft_stream_ms": 5090,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 5090,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

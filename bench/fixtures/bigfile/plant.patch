@@ -1,0 +1,13 @@
+diff --git a/anthrouter/model_router.py b/anthrouter/model_router.py
+index a01ebbb..b1d2971 100644
+--- a/anthrouter/model_router.py
++++ b/anthrouter/model_router.py
+@@ -1230,7 +1230,7 @@ def parse_classifier_score(
+         return None
+ 
+     value = int(matches[0])
+-    if not (0 <= value <= 100):
++    if not (0 <= value < 100):
+         return None
+ 
+     return value

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "explain-race",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:29:25.306Z",
+  "durationMs": 7654,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6910,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 467,
+    "output_tokens_details": {
+      "thinking_tokens": 20
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6910
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.025380200000000002,
+  "result": "Make race reproducible first, then narrow which shared state is unsynchronized.\n\n1. **Reproduce:** Run a load test such as `wrk`, `k6` or `ghz`. Raise concurrency until the failure shows up reliably. Add random `sleep`/yield calls near suspect code to widen the timing window.\n2. **Use race detectors:** Try Go `-race`, ThreadSanitizer (`-fsanitize=thread`) for C/C++/Rust, or Java with JCStress or VMLens. These catch races that never fire in testing.\n3. **Log without changing timing:** Write lock-free, per-thread buffered logs with thread ID, request ID and monotonic timestamp. Heavy logging can serialize threads and hide the bug.\n4. **Capture state at failure:** Take thread dumps (`jstack`, `py-spy dump`, `gdb thread apply all bt`) or a core dump when an invariant breaks. Add `assert`s on invariants so it fails fast near the cause.\n5. **Find the shared mutable state:** Common culprits are check-then-act, lazy init, non-atomic counters, unsafe collections, connection or object pools, and caches.\n6. **Fix and verify:** Use locks, atomics, immutability or thread confinement. Rerun the same load test many times. One clean run proves nothing.",
+  "output": {
+    "duration_api_ms": 7390,
+    "stop_reason": "end_turn",
+    "session_id": "3a6e9935-9856-4333-9339-1524917d1d72",
+    "total_cost_usd": 0.025380200000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6910,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 467,
+      "output_tokens_details": {
+        "thinking_tokens": 20
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6910
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 467,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6910,
+        "webSearchRequests": 0,
+        "costUSD": 0.025380200000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 20,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Make race reproducible first, then narrow which shared state is unsynchronized.\n\n1. **Reproduce:** Run a load test such as `wrk`, `k6` or `ghz`. Raise concurrency until the failure shows up reliably. Add random `sleep`/yield calls near suspect code to widen the timing window.\n2. **Use race detectors:** Try Go `-race`, ThreadSanitizer (`-fsanitize=thread`) for C/C++/Rust, or Java with JCStress or VMLens. These catch races that never fire in testing.\n3. **Log without changing timing:** Write lock-free, per-thread buffered logs with thread ID, request ID and monotonic timestamp. Heavy logging can serialize threads and hide the bug.\n4. **Capture state at failure:** Take thread dumps (`jstack`, `py-spy dump`, `gdb thread apply all bt`) or a core dump when an invariant breaks. Add `assert`s on invariants so it fails fast near the cause.\n5. **Find the shared mutable state:** Common culprits are check-then-act, lazy init, non-atomic counters, unsafe collections, connection or object pools, and caches.\n6. **Fix and verify:** Use locks, atomics, immutability or thread confinement. Rerun the same load test many times. One clean run proves nothing.",
+    "ttft_ms": 3242,
+    "type": "result",
+    "duration_ms": 7442,
+    "uuid": "622173f1-2ad9-4b4c-ad87-765d04ad0326",
+    "ttft_stream_ms": 3240,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3241,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

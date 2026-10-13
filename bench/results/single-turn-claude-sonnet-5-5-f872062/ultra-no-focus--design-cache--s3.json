@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "design-cache",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:35:29.558Z",
+  "durationMs": 11682,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6853,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 916,
+    "output_tokens_details": {
+      "thinking_tokens": 19
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6853
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0297277,
+  "result": "**Use TTL plus event-driven invalidation on writes, with stale-while-revalidate for reads.** Profiles are read often and change rarely, so this fits.\n\n**Strategies:**\n\n1. **TTL only.** Entry expires after N seconds.\n   - Pro: simplest. No coupling to the write path.\n   - Con: data stays stale up to the full TTL. Short TTL means more misses on the slow API.\n   - Fit: you don't own the write path (third-party API).\n\n2. **Write-through / explicit invalidate.** On profile update, delete or overwrite the cache key.\n   - Pro: data is fresh right after the write.\n   - Con: every write path must call it. A missed path leaves stale data forever, so keep a TTL as backstop.\n   - Race: if a reader fills the cache with old data after the delete, stale data persists. Fix with delete-after-write, versioned keys, or a short TTL.\n\n3. **Event-driven (pub/sub, CDC, webhook).** Writer emits `user.updated`. Cache consumers evict the key.\n   - Pro: decoupled. Works across services and multiple cache nodes.\n   - Con: more infra. Lost or late events leave stale data. Still needs a TTL backstop.\n\n4. **Stale-while-revalidate.** Serve the stale entry and refresh it in the background.\n   - Pro: the slow API is never on the hot path after the first fill. Smooth latency.\n   - Con: users briefly see old data. Refresh logic adds complexity.\n\n5. **Versioned keys** (`user:123:v7`). Bump the version on write.\n   - Pro: no delete race. Old entries age out.\n   - Con: version must be stored somewhere you can read fast.\n\n**Pitfalls:**\n- **Stampede:** a hot key expires and many requests hit the slow API at once. Fix with request coalescing (single-flight), lock-on-miss, or TTL jitter.\n- **Negative caching:** cache 404s briefly, or missing users will hammer the API.\n- **Size:** use an LRU cap for in-process caches. Use Redis for a shared cache across instances.\n- **Privacy:** profiles hold PII. Scope keys per tenant, and never put per-user data in a shared or CDN cache without auth-aware keys.\n\n**Pick by staleness tolerance:**\n- Minutes OK: TTL (5–15 min) + SWR + jitter.\n- Must be fresh after an edit: explicit invalidate on write + TTL backstop (1h).\n- Multi-service writers: event-driven + TTL backstop.\n\nBefore you choose, answer three questions: Do you own the write path? How stale can a profile be? Is the cache single-node or distributed?",
+  "output": {
+    "duration_api_ms": 11436,
+    "stop_reason": "end_turn",
+    "session_id": "e49abca1-a468-42fc-9841-6cd44f7a756a",
+    "total_cost_usd": 0.0297277,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6853,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 916,
+      "output_tokens_details": {
+        "thinking_tokens": 19
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6853
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 916,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6853,
+        "webSearchRequests": 0,
+        "costUSD": 0.0297277,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 19,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Use TTL plus event-driven invalidation on writes, with stale-while-revalidate for reads.** Profiles are read often and change rarely, so this fits.\n\n**Strategies:**\n\n1. **TTL only.** Entry expires after N seconds.\n   - Pro: simplest. No coupling to the write path.\n   - Con: data stays stale up to the full TTL. Short TTL means more misses on the slow API.\n   - Fit: you don't own the write path (third-party API).\n\n2. **Write-through / explicit invalidate.** On profile update, delete or overwrite the cache key.\n   - Pro: data is fresh right after the write.\n   - Con: every write path must call it. A missed path leaves stale data forever, so keep a TTL as backstop.\n   - Race: if a reader fills the cache with old data after the delete, stale data persists. Fix with delete-after-write, versioned keys, or a short TTL.\n\n3. **Event-driven (pub/sub, CDC, webhook).** Writer emits `user.updated`. Cache consumers evict the key.\n   - Pro: decoupled. Works across services and multiple cache nodes.\n   - Con: more infra. Lost or late events leave stale data. Still needs a TTL backstop.\n\n4. **Stale-while-revalidate.** Serve the stale entry and refresh it in the background.\n   - Pro: the slow API is never on the hot path after the first fill. Smooth latency.\n   - Con: users briefly see old data. Refresh logic adds complexity.\n\n5. **Versioned keys** (`user:123:v7`). Bump the version on write.\n   - Pro: no delete race. Old entries age out.\n   - Con: version must be stored somewhere you can read fast.\n\n**Pitfalls:**\n- **Stampede:** a hot key expires and many requests hit the slow API at once. Fix with request coalescing (single-flight), lock-on-miss, or TTL jitter.\n- **Negative caching:** cache 404s briefly, or missing users will hammer the API.\n- **Size:** use an LRU cap for in-process caches. Use Redis for a shared cache across instances.\n- **Privacy:** profiles hold PII. Scope keys per tenant, and never put per-user data in a shared or CDN cache without auth-aware keys.\n\n**Pick by staleness tolerance:**\n- Minutes OK: TTL (5–15 min) + SWR + jitter.\n- Must be fresh after an edit: explicit invalidate on write + TTL backstop (1h).\n- Multi-service writers: event-driven + TTL backstop.\n\nBefore you choose, answer three questions: Do you own the write path? How stale can a profile be? Is the cache single-node or distributed?",
+    "ttft_ms": 3253,
+    "type": "result",
+    "duration_ms": 11490,
+    "uuid": "cca6b39a-9d3d-4a97-94a3-f9a236845188",
+    "ttft_stream_ms": 3252,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 3252,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

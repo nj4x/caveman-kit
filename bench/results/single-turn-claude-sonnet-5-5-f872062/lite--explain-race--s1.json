@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "explain-race",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:27:28.755Z",
+  "durationMs": 8101,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7033,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 534,
+    "output_tokens_details": {
+      "thinking_tokens": 27
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7033
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0263577,
+  "result": "First make it reproduce, then narrow down where it happens. Heavy logging and debuggers change timing and often hide the bug.\n\n1. **Reproduce on purpose.** Run a load test with more threads than cores, or pin the service to fewer cores. Add random `sleep`/`yield` calls at points where threads touch shared state. This widens the race window.\n2. **Run a race detector.** Use ThreadSanitizer (`-fsanitize=thread`) for C/C++/Rust, `go test -race` for Go, or Java's jcstress. These tools report the two conflicting accesses even when the run doesn't fail.\n3. **Log cheaply.** Write events to a per-thread ring buffer with thread ID and a monotonic timestamp. Dump the buffers when the failure happens. Ordinary synchronous logging adds locks and can hide the race.\n4. **Look for the usual causes.** Check for check-then-act, unsynchronized lazy init, non-atomic read-modify-write, and shared caches or collections. Also check objects that escape before construction finishes, and lock-order inversions.\n5. **Confirm the cause.** Inject a delay at the suspected spot. If it fails reliably, you found it. Fix it with a lock, an atomic, immutability, or ownership confinement. Then run the load test again many times.\n\nFor deadlocks or hangs, take thread dumps during the failure (`jstack`, `gdb thread apply all bt`, `py-spy dump`). Look for a cycle of threads waiting on each other's locks.",
+  "output": {
+    "duration_api_ms": 7859,
+    "stop_reason": "end_turn",
+    "session_id": "adc3bc76-c430-4d91-87c7-af2f55aec068",
+    "total_cost_usd": 0.0263577,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7033,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 534,
+      "output_tokens_details": {
+        "thinking_tokens": 27
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7033
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 534,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7033,
+        "webSearchRequests": 0,
+        "costUSD": 0.0263577,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 27,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "First make it reproduce, then narrow down where it happens. Heavy logging and debuggers change timing and often hide the bug.\n\n1. **Reproduce on purpose.** Run a load test with more threads than cores, or pin the service to fewer cores. Add random `sleep`/`yield` calls at points where threads touch shared state. This widens the race window.\n2. **Run a race detector.** Use ThreadSanitizer (`-fsanitize=thread`) for C/C++/Rust, `go test -race` for Go, or Java's jcstress. These tools report the two conflicting accesses even when the run doesn't fail.\n3. **Log cheaply.** Write events to a per-thread ring buffer with thread ID and a monotonic timestamp. Dump the buffers when the failure happens. Ordinary synchronous logging adds locks and can hide the race.\n4. **Look for the usual causes.** Check for check-then-act, unsynchronized lazy init, non-atomic read-modify-write, and shared caches or collections. Also check objects that escape before construction finishes, and lock-order inversions.\n5. **Confirm the cause.** Inject a delay at the suspected spot. If it fails reliably, you found it. Fix it with a lock, an atomic, immutability, or ownership confinement. Then run the load test again many times.\n\nFor deadlocks or hangs, take thread dumps during the failure (`jstack`, `gdb thread apply all bt`, `py-spy dump`). Look for a cycle of threads waiting on each other's locks.",
+    "ttft_ms": 3080,
+    "type": "result",
+    "duration_ms": 7908,
+    "uuid": "9f9e432a-badf-43f3-a06b-468d493a68f5",
+    "ttft_stream_ms": 3079,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3079,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

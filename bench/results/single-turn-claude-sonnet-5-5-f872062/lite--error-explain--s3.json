@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "error-explain",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:28:37.129Z",
+  "durationMs": 7225,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7070,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 367,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7070
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.024780200000000002,
+  "result": "Python's `json` parser is recursive. Each nesting level of `[` or `{` uses stack frames. Default limit is 1000 (`sys.getrecursionlimit()`), so JSON nested a few hundred levels deep overflows it.\n\nFixes, simplest first:\n\n1. Raise the limit:\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(f)\n```\nVery deep nesting can still crash the interpreter with a real C stack overflow. Raising the limit is only safe up to a point.\n\n2. Run in a thread with a bigger stack:\n```python\nimport threading, sys\nsys.setrecursionlimit(100_000)\nthreading.stack_size(256 * 1024 * 1024)\nt = threading.Thread(target=main)\nt.start(); t.join()\n```\n\n3. Use an iterative parser such as `ijson`, which streams events instead of recursing. Your own code that walks the result must also be iterative (explicit stack), or it will hit the same error.\n\nAlso check the traceback: if the recursion is in your own walker function and not in `json`, fix that function first.",
+  "output": {
+    "duration_api_ms": 6971,
+    "stop_reason": "end_turn",
+    "session_id": "bfc1436d-208f-4b19-933a-336b65663f3e",
+    "total_cost_usd": 0.024780200000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7070,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 367,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7070
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 367,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7070,
+        "webSearchRequests": 0,
+        "costUSD": 0.024780200000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Python's `json` parser is recursive. Each nesting level of `[` or `{` uses stack frames. Default limit is 1000 (`sys.getrecursionlimit()`), so JSON nested a few hundred levels deep overflows it.\n\nFixes, simplest first:\n\n1. Raise the limit:\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(f)\n```\nVery deep nesting can still crash the interpreter with a real C stack overflow. Raising the limit is only safe up to a point.\n\n2. Run in a thread with a bigger stack:\n```python\nimport threading, sys\nsys.setrecursionlimit(100_000)\nthreading.stack_size(256 * 1024 * 1024)\nt = threading.Thread(target=main)\nt.start(); t.join()\n```\n\n3. Use an iterative parser such as `ijson`, which streams events instead of recursing. Your own code that walks the result must also be iterative (explicit stack), or it will hit the same error.\n\nAlso check the traceback: if the recursion is in your own walker function and not in `json`, fix that function first.",
+    "ttft_ms": 7013,
+    "type": "result",
+    "duration_ms": 7021,
+    "uuid": "fd71a820-bfb3-4820-a1d5-d9f72f58a111",
+    "ttft_stream_ms": 5407,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 5407,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

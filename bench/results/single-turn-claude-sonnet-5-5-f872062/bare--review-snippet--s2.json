@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "review-snippet",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:21:10.999Z",
+  "durationMs": 7616,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5222,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 605,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5222
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0225402,
+  "result": "**Main bug: `forEach` doesn't await async callbacks.**\n\n`forEach` ignores the promises returned by the `async` callback. The function reaches `return users` right after starting the fetches, so it returns an empty array (`[]`) before any request completes. The pushes happen later, after the caller already has the array.\n\n**Related problems:**\n\n1. **Result order isn't guaranteed.** Even if you did wait, `push` happens in completion order, not `ids` order. A fast request for the last ID can land first.\n2. **Errors are unhandled.** If `fetch` or `res.json()` throws, the rejection happens inside a detached promise. The caller's `try/catch` can't catch it, and it becomes an unhandled rejection (which crashes Node by default).\n3. **No `res.ok` check.** `fetch` only rejects on network failure. A 404 or 500 still resolves, and `res.json()` then either throws on a non-JSON body or pushes an error payload as if it were a user.\n4. **Unbounded concurrency.** With a large `ids` array, this fires every request at once. That's not an issue with small lists, but it can hit browser connection limits or server rate limits.\n\n**Fix:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`map` returns the promises, `Promise.all` waits for them, and the results come back in input order. The first failure rejects the whole call, so the caller can handle it. If you'd rather get partial results, use `Promise.allSettled`. For large lists, process the IDs in chunks or use a limiter such as `p-limit`.",
+  "output": {
+    "duration_api_ms": 7350,
+    "stop_reason": "end_turn",
+    "session_id": "917a879f-c2be-4808-8885-9b8d2375dca2",
+    "total_cost_usd": 0.0225402,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5222,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 605,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5222
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 605,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5222,
+        "webSearchRequests": 0,
+        "costUSD": 0.0225402,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Main bug: `forEach` doesn't await async callbacks.**\n\n`forEach` ignores the promises returned by the `async` callback. The function reaches `return users` right after starting the fetches, so it returns an empty array (`[]`) before any request completes. The pushes happen later, after the caller already has the array.\n\n**Related problems:**\n\n1. **Result order isn't guaranteed.** Even if you did wait, `push` happens in completion order, not `ids` order. A fast request for the last ID can land first.\n2. **Errors are unhandled.** If `fetch` or `res.json()` throws, the rejection happens inside a detached promise. The caller's `try/catch` can't catch it, and it becomes an unhandled rejection (which crashes Node by default).\n3. **No `res.ok` check.** `fetch` only rejects on network failure. A 404 or 500 still resolves, and `res.json()` then either throws on a non-JSON body or pushes an error payload as if it were a user.\n4. **Unbounded concurrency.** With a large `ids` array, this fires every request at once. That's not an issue with small lists, but it can hit browser connection limits or server rate limits.\n\n**Fix:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`map` returns the promises, `Promise.all` waits for them, and the results come back in input order. The first failure rejects the whole call, so the caller can handle it. If you'd rather get partial results, use `Promise.allSettled`. For large lists, process the IDs in chunks or use a limiter such as `p-limit`.",
+    "ttft_ms": 7389,
+    "type": "result",
+    "duration_ms": 7402,
+    "uuid": "cf9821d6-38a5-4ee5-8004-cafc9753552c",
+    "ttft_stream_ms": 3995,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 3996,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

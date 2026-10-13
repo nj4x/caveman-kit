@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "explain-race",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:33:35.549Z",
+  "durationMs": 8827,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6831,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 735,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6831
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.027862700000000004,
+  "result": "Load exposes race by shifting timing. Goal: make it reproducible, then observe, then prove fix.\n\n**1. Reproduce**\n- Stress test: more threads than cores, tight loops, small payloads. Run 1000s of iterations.\n- Inject jitter: `sleep(0)`/yield at suspect points, random delays. Widens race window.\n- Pin CPU count (`taskset`, container limits) to vary scheduling.\n- Run in CI loop until fail. Record seed and config.\n\n**2. Detect with tools**\n- C/C++/Rust/Go: ThreadSanitizer (`-fsanitize=thread`, `go test -race`).\n- Java: jcstress, `-XX:+UnlockDiagnosticVMOptions`, thread dumps via `jstack`.\n- Helgrind/DRD (Valgrind) for native code.\n- Slows execution, so may shift timing. Still finds unsynchronized access even when no failure occurs.\n\n**3. Observe without disturbing**\n- Log thread ID, monotonic timestamp, and operation at shared-state access. Use lock-free or per-thread buffers. Printf-style logging adds locks and hides the race.\n- Capture state on failure: core dump, thread dump, invariant-check assertions.\n- Record-and-replay: `rr` (Linux), Go execution tracer, eBPF.\n\n**4. Reason about code**\n- List all shared mutable state. For each: who writes, who reads, which lock guards it.\n- Look for check-then-act, read-modify-write without atomics, lazy init, double-checked locking, iterator invalidation, publish-before-construct.\n- Check lock ordering for deadlocks. Check non-thread-safe libraries and caches.\n\n**5. Fix**\n- Prefer eliminating sharing: immutability, thread confinement, message passing.\n- Otherwise: lock, atomic, or concurrent data structure. Keep critical sections small.\n- Don't fix with sleeps or retries. They move the window.\n\n**6. Verify**\n- Write regression test that fails reliably before fix (with jitter injection).\n- Run same stress load many times after fix, with sanitizer on.\n- Watch production metrics for the original symptom.",
+  "output": {
+    "duration_api_ms": 8574,
+    "stop_reason": "end_turn",
+    "session_id": "218f48f4-7053-4d18-b0c4-8850405bc193",
+    "total_cost_usd": 0.027862700000000004,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6831,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 735,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6831
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 735,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6831,
+        "webSearchRequests": 0,
+        "costUSD": 0.027862700000000004,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Load exposes race by shifting timing. Goal: make it reproducible, then observe, then prove fix.\n\n**1. Reproduce**\n- Stress test: more threads than cores, tight loops, small payloads. Run 1000s of iterations.\n- Inject jitter: `sleep(0)`/yield at suspect points, random delays. Widens race window.\n- Pin CPU count (`taskset`, container limits) to vary scheduling.\n- Run in CI loop until fail. Record seed and config.\n\n**2. Detect with tools**\n- C/C++/Rust/Go: ThreadSanitizer (`-fsanitize=thread`, `go test -race`).\n- Java: jcstress, `-XX:+UnlockDiagnosticVMOptions`, thread dumps via `jstack`.\n- Helgrind/DRD (Valgrind) for native code.\n- Slows execution, so may shift timing. Still finds unsynchronized access even when no failure occurs.\n\n**3. Observe without disturbing**\n- Log thread ID, monotonic timestamp, and operation at shared-state access. Use lock-free or per-thread buffers. Printf-style logging adds locks and hides the race.\n- Capture state on failure: core dump, thread dump, invariant-check assertions.\n- Record-and-replay: `rr` (Linux), Go execution tracer, eBPF.\n\n**4. Reason about code**\n- List all shared mutable state. For each: who writes, who reads, which lock guards it.\n- Look for check-then-act, read-modify-write without atomics, lazy init, double-checked locking, iterator invalidation, publish-before-construct.\n- Check lock ordering for deadlocks. Check non-thread-safe libraries and caches.\n\n**5. Fix**\n- Prefer eliminating sharing: immutability, thread confinement, message passing.\n- Otherwise: lock, atomic, or concurrent data structure. Keep critical sections small.\n- Don't fix with sleeps or retries. They move the window.\n\n**6. Verify**\n- Write regression test that fails reliably before fix (with jitter injection).\n- Run same stress load many times after fix, with sanitizer on.\n- Watch production metrics for the original symptom.",
+    "ttft_ms": 8622,
+    "type": "result",
+    "duration_ms": 8626,
+    "uuid": "f94f7095-5d68-4ba0-8739-794c31aaa320",
+    "ttft_stream_ms": 3614,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3614,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

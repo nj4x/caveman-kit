@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "design-cache",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:32:51.008Z",
+  "durationMs": 6166,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6905,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 323,
+    "output_tokens_details": {
+      "thinking_tokens": 22
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6905
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0239277,
+  "result": "**Pick: TTL plus event-driven invalidation (delete key on profile write).** Write events give freshness. TTL catches missed events.\n\nTrade-offs:\n- **TTL only:** simplest. Data stays stale up to TTL. Short TTL means more API hits.\n- **Event invalidation (delete on write):** fresh data. You need write hooks or a message bus. A missed event leaves stale data forever, unless TTL also set.\n- **Write-through:** cache always warm. Writes get slower. Cache can drift from DB if a write fails partway.\n- **Stale-while-revalidate:** fast reads. Serves stale data briefly while refreshing in background. Good fit for a slow API.\n\nAdd jitter to TTL to avoid stampede. Use request coalescing so one miss makes one API call. Pick TTL by how much stale data users tolerate. Profiles usually tolerate 1-5 min.",
+  "output": {
+    "duration_api_ms": 5912,
+    "stop_reason": "end_turn",
+    "session_id": "b3110409-431a-4480-b72a-b57b7258c659",
+    "total_cost_usd": 0.0239277,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6905,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 323,
+      "output_tokens_details": {
+        "thinking_tokens": 22
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6905
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 323,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6905,
+        "webSearchRequests": 0,
+        "costUSD": 0.0239277,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 22,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Pick: TTL plus event-driven invalidation (delete key on profile write).** Write events give freshness. TTL catches missed events.\n\nTrade-offs:\n- **TTL only:** simplest. Data stays stale up to TTL. Short TTL means more API hits.\n- **Event invalidation (delete on write):** fresh data. You need write hooks or a message bus. A missed event leaves stale data forever, unless TTL also set.\n- **Write-through:** cache always warm. Writes get slower. Cache can drift from DB if a write fails partway.\n- **Stale-while-revalidate:** fast reads. Serves stale data briefly while refreshing in background. Good fit for a slow API.\n\nAdd jitter to TTL to avoid stampede. Use request coalescing so one miss makes one API call. Pick TTL by how much stale data users tolerate. Profiles usually tolerate 1-5 min.",
+    "ttft_ms": 3640,
+    "type": "result",
+    "duration_ms": 5964,
+    "uuid": "e5caf128-959a-40dc-9d76-067a7284e44c",
+    "ttft_stream_ms": 3638,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3639,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

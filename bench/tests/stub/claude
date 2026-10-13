@@ -1,0 +1,123 @@
+#!/usr/bin/env node
+// Stub `claude` for bench tests: never calls the API. Appends one JSON line
+// per call to $STUB_LOG (args, env, cwd, a snapshot of the isolated config
+// dir), then prints canned JSON usage keyed by arm and per-arm call count.
+//
+// Knobs: STUB_FAIL=1 fails every call; STUB_FAIL_ARM=<arm> fails that arm's
+// calls; STUB_SLEEP=<seconds> sleeps after logging (signal tests);
+// STUB_MARK=<file> appends a "STUB CALL" line (ordering tests);
+// STUB_FLAT=1 gives every arm the same usage (no effect anywhere);
+// STUB_IGNORE_TERM=1 ignores SIGTERM, SIGINT and SIGHUP (SIGKILL tests).
+// Agentic (--output-format stream-json): STUB_ABSENT=<rel,rel> records whether
+// those paths exist in cwd (hidden-test check); STUB_FIX_ARMS=<arm,arm> makes
+// those arms write "good" to cwd/value.txt (a passing hidden test); output is
+// a canned stream with 5 Read results (370 chars), 2 re-reads, 7 turns.
+// full-diet reads less cache (1000 vs 2000), so its cost is lower, unless STUB_FLAT=1.
+// STUB_MAX_TURNS=1 ends it with subtype error_max_turns, is_error, exit 1;
+// STUB_RESULT_ERROR=1 ends it with subtype error_during_execution, is_error;
+// STUB_EXIT=<n> sets the exit code; STUB_SELF_KILL=1 SIGKILLs itself after the
+// stream; STUB_LEAK=1 puts ANTHROPIC_API_KEY in the stream, result, stderr and
+// cwd/leak.txt; STUB_STDERR_PAD=<n> appends n chars after the key on stderr.
+'use strict';
+
+if (process.env.STUB_IGNORE_TERM === '1') {
+  for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.on(sig, () => {});
+}
+
+const fs = require('fs');
+const path = require('path');
+
+const configDir = process.env.CLAUDE_CONFIG_DIR || '';
+const armDir = path.dirname(configDir);
+const arm = path.basename(armDir).split('.')[0];
+const tempRoot = path.dirname(armDir);
+
+const readOr = (p, fallback) => { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return fallback; } };
+const modeOf = p => { try { return (fs.statSync(p).mode & 0o777).toString(8); } catch (e) { return null; } };
+
+const logDir = process.env.STUB_LOG ? path.dirname(process.env.STUB_LOG) : null;
+let count = 0;
+if (logDir) {
+  const counter = path.join(logDir, `stub-count-${arm}`);
+  count = Number(readOr(counter, '0')) + 1;
+  fs.writeFileSync(counter, String(count));
+}
+
+const entry = {
+  pid: process.pid,
+  argv: process.argv.slice(2),
+  env: process.env,
+  cwd: process.cwd(),
+  arm,
+  configDir,
+  tempRoot,
+  tempRootMode: modeOf(tempRoot),
+  settings: readOr(path.join(configDir, 'settings.json'), null),
+  flag: readOr(path.join(configDir, '.caveman-active'), null),
+  skill: readOr(path.join(process.env.CLAUDE_PLUGIN_ROOT || '/nonexistent', 'skills', 'caveman', 'SKILL.md'), null),
+  value: readOr(path.join(process.cwd(), 'value.txt'), null),
+  present: Object.fromEntries((process.env.STUB_ABSENT || '').split(',').filter(Boolean)
+    .map(rel => [rel, fs.existsSync(path.join(process.cwd(), rel))])),
+  credentialsCopied: fs.existsSync(path.join(configDir, '.credentials.json')),
+};
+if (process.env.STUB_LOG) fs.appendFileSync(process.env.STUB_LOG, JSON.stringify(entry) + '\n');
+if (process.env.STUB_MARK) fs.appendFileSync(process.env.STUB_MARK, 'STUB CALL\n');
+
+function finish() {
+  if (process.env.STUB_FAIL === '1' || process.env.STUB_FAIL_ARM === arm) {
+    process.stderr.write('stub: simulated failure\n');
+    process.exit(1);
+  }
+  if (process.argv.includes('stream-json')) {
+    if ((process.env.STUB_FIX_ARMS || '').split(',').includes(arm)) fs.writeFileSync(path.join(process.cwd(), 'value.txt'), 'good\n');
+    const out = ev => process.stdout.write(JSON.stringify(ev) + '\n');
+    const use = (id, name, input) => out({ type: 'assistant', message: { id: 'm-' + id, content: [{ type: 'tool_use', id, name, input }] } });
+    const res = (id, content) => out({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: id, content }] } });
+    out({ type: 'system', subtype: 'init' });
+    use('t1', 'Read', { file_path: '/w/a.py' }); res('t1', 'x'.repeat(100));
+    use('t2', 'Read', { file_path: '/w/a.py' }); res('t2', 'x'.repeat(100));
+    use('t3', 'Edit', { file_path: '/w/a.py' }); res('t3', 'edited');
+    use('t4', 'Read', { file_path: '/w/a.py' }); res('t4', [{ type: 'text', text: 'y'.repeat(120) }]);
+    use('t5', 'Read', { file_path: '/w/b.py', offset: 1, limit: 10 }); res('t5', 'z'.repeat(30));
+    use('t6', 'Read', { file_path: '/w/b.py', offset: 3, limit: 5 }); res('t6', 'z'.repeat(20));
+    use('t7', 'Bash', { command: 'ls' }); res('t7', 'q'.repeat(999));
+    const maxTurns = process.env.STUB_MAX_TURNS === '1';
+    const resultError = process.env.STUB_RESULT_ERROR === '1';
+    const leak = process.env.STUB_LEAK ? process.env.ANTHROPIC_API_KEY : '';
+    if (leak) {
+      out({ type: 'system', note: leak });
+      fs.writeFileSync(path.join(process.cwd(), 'leak.txt'), `${leak}\n`);
+    }
+    const abase = { bare: 500, full: 300, 'full-diet': 200 }[arm] || 100;
+    const subtype = maxTurns ? 'error_max_turns' : (resultError ? 'error_during_execution' : 'success');
+    const last = JSON.stringify({
+      type: 'result', subtype, is_error: maxTurns || resultError, result: leak ? `leaked ${leak}` : 'done', num_turns: 7, total_cost_usd: 0.5,
+      usage: { input_tokens: 10, cache_creation_input_tokens: 1000, cache_read_input_tokens: arm === 'full-diet' && process.env.STUB_FLAT !== '1' ? 1000 : 2000, output_tokens: abase + count },
+    }) + '\n';
+    if (leak) process.stderr.write(`stub stderr ${leak}${'p'.repeat(Number(process.env.STUB_STDERR_PAD || 0))}\n`);
+    // Like the real CLI, a --max-turns stop exits 1. STUB_EXIT overrides the code.
+    process.exitCode = process.env.STUB_EXIT !== undefined ? Number(process.env.STUB_EXIT) : (maxTurns ? 1 : 0);
+    process.stdout.write(last, () => {
+      if (process.env.STUB_SELF_KILL === '1') process.kill(process.pid, 'SIGKILL');
+    });
+    return;
+  }
+  const base = process.env.STUB_FLAT === '1' ? 500 : { bare: 500, 'bare-control': 505, lite: 400, full: 300, ultra: 200, 'ultra-no-focus': 250 }[arm] || 100;
+  process.stdout.write(JSON.stringify({
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    result: `stub answer for ${arm} #${count}`,
+    total_cost_usd: 0.01,
+    usage: {
+      input_tokens: 10,
+      cache_creation_input_tokens: 1000,
+      cache_read_input_tokens: 2000,
+      output_tokens: base + count,
+    },
+  }));
+}
+
+const sleep = Number(process.env.STUB_SLEEP || 0);
+if (sleep > 0) setTimeout(finish, sleep * 1000);
+else finish();

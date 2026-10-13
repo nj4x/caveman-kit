@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "design-cache",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:31:02.763Z",
+  "durationMs": 8062,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6932,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 527,
+    "output_tokens_details": {
+      "thinking_tokens": 37
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6932
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.026035199999999998,
+  "result": "**Recommendation:** use TTL plus event-driven invalidation. Give each entry a TTL, for example 5–15 min. When a profile changes, delete its cache key. The TTL is a safety net for any delete event that gets missed.\n\n**Trade-offs of each strategy:**\n- **TTL only:** simplest, and needs no hooks into your write path. Data can be stale for up to the full TTL. Short TTLs raise load on the slow API.\n- **Delete on write (cache-aside):** data is fresh soon after changes. You need a hook or event, such as a webhook or queue, for every write path. If an event is missed, stale data stays until the TTL expires. Delete the key rather than updating it, so concurrent writes can't race each other.\n- **Write-through:** the cache is always fresh. This only works if all writes go through your service. Writes made directly to the API bypass it.\n- **Stale-while-revalidate:** serve the cached entry and refresh it in the background. This hides the slow API's latency from users, but they can briefly see old data. It suits profiles well.\n\n**Watch out for:**\n- **Stampede:** many requests miss on the same hot key and all hit the API at once. Fix it with request coalescing (single-flight) or a lock per key.\n- **Synchronized expiry:** add jitter to TTLs so entries don't all expire at the same moment.\n- **Sensitive fields:** use a short TTL or don't cache fields like permissions and email. Stale auth data is a security risk.",
+  "output": {
+    "duration_api_ms": 7809,
+    "stop_reason": "end_turn",
+    "session_id": "97ab32c6-7ebd-4c30-b1c9-591b8384e9d6",
+    "total_cost_usd": 0.026035199999999998,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6932,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 527,
+      "output_tokens_details": {
+        "thinking_tokens": 37
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6932
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 527,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6932,
+        "webSearchRequests": 0,
+        "costUSD": 0.026035199999999998,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 37,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Recommendation:** use TTL plus event-driven invalidation. Give each entry a TTL, for example 5–15 min. When a profile changes, delete its cache key. The TTL is a safety net for any delete event that gets missed.\n\n**Trade-offs of each strategy:**\n- **TTL only:** simplest, and needs no hooks into your write path. Data can be stale for up to the full TTL. Short TTLs raise load on the slow API.\n- **Delete on write (cache-aside):** data is fresh soon after changes. You need a hook or event, such as a webhook or queue, for every write path. If an event is missed, stale data stays until the TTL expires. Delete the key rather than updating it, so concurrent writes can't race each other.\n- **Write-through:** the cache is always fresh. This only works if all writes go through your service. Writes made directly to the API bypass it.\n- **Stale-while-revalidate:** serve the cached entry and refresh it in the background. This hides the slow API's latency from users, but they can briefly see old data. It suits profiles well.\n\n**Watch out for:**\n- **Stampede:** many requests miss on the same hot key and all hit the API at once. Fix it with request coalescing (single-flight) or a lock per key.\n- **Synchronized expiry:** add jitter to TTLs so entries don't all expire at the same moment.\n- **Sensitive fields:** use a short TTL or don't cache fields like permissions and email. Stale auth data is a security risk.",
+    "ttft_ms": 3260,
+    "type": "result",
+    "duration_ms": 7864,
+    "uuid": "05631407-b8e1-446d-a322-f08eabcadf7a",
+    "ttft_stream_ms": 3258,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3259,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

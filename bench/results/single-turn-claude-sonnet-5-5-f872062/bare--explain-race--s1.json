@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "explain-race",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:20:19.135Z",
+  "durationMs": 12698,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 22305,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 1148,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22305
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.06724649999999999,
+  "result": "# Debugging a load-only race condition\n\n**1. Make it reproducible**\n- Reproduce load in a test harness: a load generator (k6, wrk, Gatling) against a staging copy, or a stress test that hammers the suspect code path with many threads.\n- Shrink the problem: lower CPU count (`taskset`), add more threads than cores, or inject random sleeps and yields at suspect points to widen the race window.\n- Record the failing seed, inputs, and timing so you can replay it.\n\n**2. Use tools that detect races directly**\n- **Go:** `go test -race` or `go run -race`.\n- **C/C++/Rust:** ThreadSanitizer (`-fsanitize=thread`). Helgrind or DRD also work.\n- **Java:** jcstress, or Lincheck for concurrency tests. Use async-profiler lock profiling and thread dumps (`jstack`) for deadlocks and contention.\n- **Python:** `faulthandler`, plus `py-spy dump` for stuck threads.\n- Expect 5–15x slowdown with sanitizers. That can change timings and hide the bug, so run them in both stress and normal modes.\n\n**3. Observe without disturbing**\n- Add structured logs with thread ID, monotonic timestamp, and request ID at state transitions. Logging itself adds synchronization, so prefer per-thread ring buffers or lock-free tracing (eBPF, `perf`, LTTng) and dump them on failure.\n- Log the invariant violation at the moment it's detected, not only the downstream symptom.\n- Capture a core dump or heap dump on failure.\n\n**4. Form hypotheses from the symptom**\n- Look for shared mutable state: caches, lazy init, counters, singletons, non-thread-safe collections, and connection or buffer pools.\n- Check-then-act patterns (`if (!exists) create`) and read-modify-write without atomicity.\n- Lock ordering, a lock held across I/O, and missing memory barriers (such as double-checked locking without `volatile`).\n- Timeouts and retries that cause duplicate or concurrent execution.\n- Resource exhaustion under load (thread pool, DB connections, file descriptors), which can look like a race.\n\n**5. Narrow and confirm**\n- Bisect: disable components, or reduce the pool to one thread. If the bug disappears, it's concurrency-related.\n- Add assertions for invariants (such as \"this lock must be held\" or \"this value is only written once\").\n- Force the interleaving with latches or barriers in a unit test, so the suspected race fails deterministically.\n- Deterministic schedulers (rr chaos mode, Loom for Rust, Coyote for .NET) can systematically explore interleavings.\n\n**6. Fix and verify**\n- Prefer eliminating sharing (immutability, confinement, message passing) over adding locks.\n- Otherwise, use the narrowest correct synchronization: atomics for single variables, and a lock for compound invariants.\n- Add the forced-interleaving test as a regression test.\n- Re-run the original load test for much longer than it previously took to fail. A race that failed once an hour needs many hours of clean runs before you trust the fix.\n\n**Common pitfall:** adding a log line or lock that makes the bug vanish doesn't fix it. It only shifts the timing. Keep investigating until you can explain the exact interleaving.\n\nIf you have a particular service, language, or symptom in mind, tell me and I can get more specific.",
+  "output": {
+    "duration_api_ms": 12424,
+    "stop_reason": "end_turn",
+    "session_id": "99e00b1b-5472-4471-b034-39132fac8e5e",
+    "total_cost_usd": 0.06724649999999999,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 22305,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 1148,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 22305
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1148,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 22305,
+        "webSearchRequests": 0,
+        "costUSD": 0.06724649999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "# Debugging a load-only race condition\n\n**1. Make it reproducible**\n- Reproduce load in a test harness: a load generator (k6, wrk, Gatling) against a staging copy, or a stress test that hammers the suspect code path with many threads.\n- Shrink the problem: lower CPU count (`taskset`), add more threads than cores, or inject random sleeps and yields at suspect points to widen the race window.\n- Record the failing seed, inputs, and timing so you can replay it.\n\n**2. Use tools that detect races directly**\n- **Go:** `go test -race` or `go run -race`.\n- **C/C++/Rust:** ThreadSanitizer (`-fsanitize=thread`). Helgrind or DRD also work.\n- **Java:** jcstress, or Lincheck for concurrency tests. Use async-profiler lock profiling and thread dumps (`jstack`) for deadlocks and contention.\n- **Python:** `faulthandler`, plus `py-spy dump` for stuck threads.\n- Expect 5–15x slowdown with sanitizers. That can change timings and hide the bug, so run them in both stress and normal modes.\n\n**3. Observe without disturbing**\n- Add structured logs with thread ID, monotonic timestamp, and request ID at state transitions. Logging itself adds synchronization, so prefer per-thread ring buffers or lock-free tracing (eBPF, `perf`, LTTng) and dump them on failure.\n- Log the invariant violation at the moment it's detected, not only the downstream symptom.\n- Capture a core dump or heap dump on failure.\n\n**4. Form hypotheses from the symptom**\n- Look for shared mutable state: caches, lazy init, counters, singletons, non-thread-safe collections, and connection or buffer pools.\n- Check-then-act patterns (`if (!exists) create`) and read-modify-write without atomicity.\n- Lock ordering, a lock held across I/O, and missing memory barriers (such as double-checked locking without `volatile`).\n- Timeouts and retries that cause duplicate or concurrent execution.\n- Resource exhaustion under load (thread pool, DB connections, file descriptors), which can look like a race.\n\n**5. Narrow and confirm**\n- Bisect: disable components, or reduce the pool to one thread. If the bug disappears, it's concurrency-related.\n- Add assertions for invariants (such as \"this lock must be held\" or \"this value is only written once\").\n- Force the interleaving with latches or barriers in a unit test, so the suspected race fails deterministically.\n- Deterministic schedulers (rr chaos mode, Loom for Rust, Coyote for .NET) can systematically explore interleavings.\n\n**6. Fix and verify**\n- Prefer eliminating sharing (immutability, confinement, message passing) over adding locks.\n- Otherwise, use the narrowest correct synchronization: atomics for single variables, and a lock for compound invariants.\n- Add the forced-interleaving test as a regression test.\n- Re-run the original load test for much longer than it previously took to fail. A race that failed once an hour needs many hours of clean runs before you trust the fix.\n\n**Common pitfall:** adding a log line or lock that makes the bug vanish doesn't fix it. It only shifts the timing. Keep investigating until you can explain the exact interleaving.\n\nIf you have a particular service, language, or symptom in mind, tell me and I can get more specific.",
+    "ttft_ms": 12467,
+    "type": "result",
+    "duration_ms": 12475,
+    "uuid": "128396f4-cd6f-4d39-bc5c-f09506626b05",
+    "ttft_stream_ms": 3738,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3738,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

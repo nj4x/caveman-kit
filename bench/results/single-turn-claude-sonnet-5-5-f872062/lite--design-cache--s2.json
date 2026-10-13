@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "design-cache",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:29:09.974Z",
+  "durationMs": 7851,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7055,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 501,
+    "output_tokens_details": {
+      "thinking_tokens": 53
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7055
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0260827,
+  "result": "**Use cache-aside with a TTL, and delete the cache entry when a profile changes.** The TTL caps how stale data can get, and deleting on write keeps reads fresh.\n\n- **TTL only:** Simplest option, with no coupling to the write path. Readers can see data up to one TTL old. A short TTL means more misses on the slow API.\n- **Delete on write (event-driven):** Updates show up almost at once. You need a hook on every write path, such as the API, an admin tool or a batch job. If one path is missed, its entries stay stale until the TTL expires, which is why you keep the TTL as a backstop.\n- **Write-through (update the cache on write):** The next read never misses. It is more complex, and two writes racing each other can leave the older value in the cache. Deleting is safer than updating.\n- **Stale-while-revalidate:** Serves the stale value and refreshes it in the background. This hides the API's slowness and suits slow upstreams, but readers knowingly get stale data for a short time.\n\n**Recommendation:** Use delete-on-write plus a TTL of a few minutes to an hour, depending on how much staleness you can accept. If you don't own the write paths, use TTL plus stale-while-revalidate.\n\nAlso guard against a stampede of requests when a popular key expires. Use request coalescing (single-flight) or add random jitter to the TTL.",
+  "output": {
+    "duration_api_ms": 7612,
+    "stop_reason": "end_turn",
+    "session_id": "57ce72b4-7ecc-4758-999f-7e5d81b30149",
+    "total_cost_usd": 0.0260827,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7055,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 501,
+      "output_tokens_details": {
+        "thinking_tokens": 53
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7055
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 501,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7055,
+        "webSearchRequests": 0,
+        "costUSD": 0.0260827,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 53,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Use cache-aside with a TTL, and delete the cache entry when a profile changes.** The TTL caps how stale data can get, and deleting on write keeps reads fresh.\n\n- **TTL only:** Simplest option, with no coupling to the write path. Readers can see data up to one TTL old. A short TTL means more misses on the slow API.\n- **Delete on write (event-driven):** Updates show up almost at once. You need a hook on every write path, such as the API, an admin tool or a batch job. If one path is missed, its entries stay stale until the TTL expires, which is why you keep the TTL as a backstop.\n- **Write-through (update the cache on write):** The next read never misses. It is more complex, and two writes racing each other can leave the older value in the cache. Deleting is safer than updating.\n- **Stale-while-revalidate:** Serves the stale value and refreshes it in the background. This hides the API's slowness and suits slow upstreams, but readers knowingly get stale data for a short time.\n\n**Recommendation:** Use delete-on-write plus a TTL of a few minutes to an hour, depending on how much staleness you can accept. If you don't own the write paths, use TTL plus stale-while-revalidate.\n\nAlso guard against a stampede of requests when a popular key expires. Use request coalescing (single-flight) or add random jitter to the TTL.",
+    "ttft_ms": 3103,
+    "type": "result",
+    "duration_ms": 7664,
+    "uuid": "e945d9ec-d300-46ec-9d1f-e3bf55073ab0",
+    "ttft_stream_ms": 3102,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3102,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

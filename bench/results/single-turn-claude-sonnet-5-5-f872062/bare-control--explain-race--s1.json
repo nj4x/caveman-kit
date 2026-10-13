@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "explain-race",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:23:49.099Z",
+  "durationMs": 20286,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5155,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1619,
+    "output_tokens_details": {
+      "thinking_tokens": 15
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5155
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.032512700000000005,
+  "result": "A load-only race usually means a timing window too narrow to hit at low concurrency. You want to make the window easier to hit, then watch it happen. Here's a practical order:\n\n## 1. Characterize the failure first\n- **Pin down the symptom.** Is it corrupted data, a crash, a deadlock, a lost update, or a duplicate? Each points to a different class of bug: unsynchronized writes, use-after-free, lock ordering, check-then-act, or non-idempotent retries.\n- **Correlate with metrics.** Check whether failures track concurrency, latency, GC pauses, CPU saturation, or connection-pool exhaustion. \"Only under load\" often really means \"only when something gets slow,\" and slowness widens the window.\n- **Collect artifacts at the moment of failure:** thread dumps (`jstack`, `py-spy dump`, `gdb thread apply all bt`, Go's `SIGQUIT`), core dumps, and logs with request/thread IDs.\n\n## 2. Reproduce it reliably\n- **Load-test locally** (k6, wrk, Gatling, locust) against a single instance, pushing concurrency well past normal levels.\n- **Shrink the machine.** Run on fewer cores (`taskset`, container CPU limits) or oversubscribe threads. More context switches means more interleavings.\n- **Inject delays.** Add random sleeps or yields between suspect reads and writes, or use chaos/fault injection on dependencies. If a `sleep(10ms)` between check and act makes it fail every time, you've found it.\n- **Write a stress test** that hammers the suspect code path from N threads in a tight loop with a barrier start, and run it thousands of times.\n\n## 3. Use tools built for this\n- **Race detectors:** ThreadSanitizer (`-fsanitize=thread` for C/C++/Rust), Go's `-race`, Java's jcstress, and Helgrind/DRD (Valgrind). Run them under the stress test, not just the unit tests.\n- **Deterministic or systematic schedulers:** `loom` (Rust), Coyote (.NET), rr with chaos mode (record the failing run, then replay it deterministically), and Go's `GOMAXPROCS` tweaks.\n- **Deadlock-specific tools:** lock-order analysis, JVM deadlock detection in thread dumps, `pstack`/`gdb` on the hung process.\n\n## 4. Instrument without hiding the bug\n- Heavy logging adds synchronization (log locks, I/O), so it can make the race disappear (a \"Heisenbug\"). Prefer:\n  - Lock-free ring buffers or per-thread buffers that you dump on failure\n  - Atomic counters and sequence numbers\n  - Assertions on invariants, e.g. `assert(owner == current_thread)` or version checks\n- Tag every log line with thread ID and a monotonic timestamp so you can reconstruct the interleaving.\n\n## 5. Audit the usual suspects\n- **Check-then-act:** `if (!map.contains(k)) map.put(k, v)`, lazy init, \"get or create\"\n- **Read-modify-write on shared state** without atomics: counters, `x += 1`\n- **Non-thread-safe objects shared across threads:** `HashMap`, `SimpleDateFormat`, DB connections, HTTP clients with mutable state\n- **Leaking state through reuse:** caches and memoization, mutable objects returned from caches, thread-local leaks across pooled threads (request context bleeding between requests)\n- **Async callbacks** that capture mutable variables\n- **Double-checked locking** without proper memory barriers or `volatile`\n- **Inconsistent lock ordering** across code paths, which causes deadlock\n- **Pool exhaustion and timeouts** that trigger retries, combined with operations that aren't idempotent\n- **Shutdown and startup races:** using an object before init completes or after close\n\n## 6. Fix and prove it\n- Prefer removing shared mutable state (immutability, message passing, confinement to one thread) over adding locks.\n- Otherwise use the narrowest correct primitive: an atomic, a concurrent collection with atomic ops like `computeIfAbsent`, or a lock around the *entire* invariant, not just part of it.\n- **Verify with the same reproducer.** It should fail reliably before the fix and pass reliably after it across many runs. Keep the stress test in CI.\n\n**Rule of thumb:** if you can't reproduce it, widen the window with delays, fewer cores, and more threads. If you can reproduce it but can't see it, use a race detector or a record/replay tool. Don't trust a fix you haven't seen turn a failing reproducer into a passing one.\n\nIf you share the language and runtime or the specific symptom, I can get more concrete about tools and likely culprits.",
+  "output": {
+    "duration_api_ms": 20037,
+    "stop_reason": "end_turn",
+    "session_id": "cb411db0-0fb8-4b03-97ff-42e9e248bfc2",
+    "total_cost_usd": 0.032512700000000005,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5155,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1619,
+      "output_tokens_details": {
+        "thinking_tokens": 15
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5155
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1619,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5155,
+        "webSearchRequests": 0,
+        "costUSD": 0.032512700000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 15,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "A load-only race usually means a timing window too narrow to hit at low concurrency. You want to make the window easier to hit, then watch it happen. Here's a practical order:\n\n## 1. Characterize the failure first\n- **Pin down the symptom.** Is it corrupted data, a crash, a deadlock, a lost update, or a duplicate? Each points to a different class of bug: unsynchronized writes, use-after-free, lock ordering, check-then-act, or non-idempotent retries.\n- **Correlate with metrics.** Check whether failures track concurrency, latency, GC pauses, CPU saturation, or connection-pool exhaustion. \"Only under load\" often really means \"only when something gets slow,\" and slowness widens the window.\n- **Collect artifacts at the moment of failure:** thread dumps (`jstack`, `py-spy dump`, `gdb thread apply all bt`, Go's `SIGQUIT`), core dumps, and logs with request/thread IDs.\n\n## 2. Reproduce it reliably\n- **Load-test locally** (k6, wrk, Gatling, locust) against a single instance, pushing concurrency well past normal levels.\n- **Shrink the machine.** Run on fewer cores (`taskset`, container CPU limits) or oversubscribe threads. More context switches means more interleavings.\n- **Inject delays.** Add random sleeps or yields between suspect reads and writes, or use chaos/fault injection on dependencies. If a `sleep(10ms)` between check and act makes it fail every time, you've found it.\n- **Write a stress test** that hammers the suspect code path from N threads in a tight loop with a barrier start, and run it thousands of times.\n\n## 3. Use tools built for this\n- **Race detectors:** ThreadSanitizer (`-fsanitize=thread` for C/C++/Rust), Go's `-race`, Java's jcstress, and Helgrind/DRD (Valgrind). Run them under the stress test, not just the unit tests.\n- **Deterministic or systematic schedulers:** `loom` (Rust), Coyote (.NET), rr with chaos mode (record the failing run, then replay it deterministically), and Go's `GOMAXPROCS` tweaks.\n- **Deadlock-specific tools:** lock-order analysis, JVM deadlock detection in thread dumps, `pstack`/`gdb` on the hung process.\n\n## 4. Instrument without hiding the bug\n- Heavy logging adds synchronization (log locks, I/O), so it can make the race disappear (a \"Heisenbug\"). Prefer:\n  - Lock-free ring buffers or per-thread buffers that you dump on failure\n  - Atomic counters and sequence numbers\n  - Assertions on invariants, e.g. `assert(owner == current_thread)` or version checks\n- Tag every log line with thread ID and a monotonic timestamp so you can reconstruct the interleaving.\n\n## 5. Audit the usual suspects\n- **Check-then-act:** `if (!map.contains(k)) map.put(k, v)`, lazy init, \"get or create\"\n- **Read-modify-write on shared state** without atomics: counters, `x += 1`\n- **Non-thread-safe objects shared across threads:** `HashMap`, `SimpleDateFormat`, DB connections, HTTP clients with mutable state\n- **Leaking state through reuse:** caches and memoization, mutable objects returned from caches, thread-local leaks across pooled threads (request context bleeding between requests)\n- **Async callbacks** that capture mutable variables\n- **Double-checked locking** without proper memory barriers or `volatile`\n- **Inconsistent lock ordering** across code paths, which causes deadlock\n- **Pool exhaustion and timeouts** that trigger retries, combined with operations that aren't idempotent\n- **Shutdown and startup races:** using an object before init completes or after close\n\n## 6. Fix and prove it\n- Prefer removing shared mutable state (immutability, message passing, confinement to one thread) over adding locks.\n- Otherwise use the narrowest correct primitive: an atomic, a concurrent collection with atomic ops like `computeIfAbsent`, or a lock around the *entire* invariant, not just part of it.\n- **Verify with the same reproducer.** It should fail reliably before the fix and pass reliably after it across many runs. Keep the stress test in CI.\n\n**Rule of thumb:** if you can't reproduce it, widen the window with delays, fewer cores, and more threads. If you can reproduce it but can't see it, use a race detector or a record/replay tool. Don't trust a fix you haven't seen turn a failing reproducer into a passing one.\n\nIf you share the language and runtime or the specific symptom, I can get more concrete about tools and likely culprits.",
+    "ttft_ms": 3387,
+    "type": "result",
+    "duration_ms": 20085,
+    "uuid": "8ee5a34f-a3b3-4b89-9753-3cd98aa9272c",
+    "ttft_stream_ms": 3385,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 3386,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

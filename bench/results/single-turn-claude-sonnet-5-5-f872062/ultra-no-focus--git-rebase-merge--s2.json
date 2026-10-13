@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "git-rebase-merge",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:34:05.465Z",
+  "durationMs": 5184,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6830,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 277,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6830
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0232802,
+  "result": "Rebase on shared branch: rarely. Rewrites history, so teammates' clones diverge.\n\n**Use rebase when:**\n- Updating your own unpushed or solo local commits onto latest `main` before opening PR.\n- Cleaning up your own WIP commits (`git rebase -i`) before sharing.\n- Everyone on the branch agrees, and coordinates a force-push (`--force-with-lease`), then all re-sync with `git pull --rebase` or reset.\n- Team wants linear history and enforces it by workflow.\n\n**Use merge when:**\n- Others already pulled the branch. Merge never rewrites their commits.\n- You want to preserve true history and branch context.\n- Resolving conflicts once, not per commit.\n\n**Rule:** Never rebase commits others have based work on. Public history = merge. Private history = rebase.",
+  "output": {
+    "duration_api_ms": 4925,
+    "stop_reason": "end_turn",
+    "session_id": "6c0cbd16-d2f8-4b89-9be7-de64252e27fe",
+    "total_cost_usd": 0.0232802,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6830,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 277,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6830
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 277,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6830,
+        "webSearchRequests": 0,
+        "costUSD": 0.0232802,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebase on shared branch: rarely. Rewrites history, so teammates' clones diverge.\n\n**Use rebase when:**\n- Updating your own unpushed or solo local commits onto latest `main` before opening PR.\n- Cleaning up your own WIP commits (`git rebase -i`) before sharing.\n- Everyone on the branch agrees, and coordinates a force-push (`--force-with-lease`), then all re-sync with `git pull --rebase` or reset.\n- Team wants linear history and enforces it by workflow.\n\n**Use merge when:**\n- Others already pulled the branch. Merge never rewrites their commits.\n- You want to preserve true history and branch context.\n- Resolving conflicts once, not per commit.\n\n**Rule:** Never rebase commits others have based work on. Public history = merge. Private history = rebase.",
+    "ttft_ms": 4969,
+    "type": "result",
+    "duration_ms": 4977,
+    "uuid": "cc5e1a11-3841-44e1-935b-e0a7a08302e7",
+    "ttft_stream_ms": 3548,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3548,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "error-explain",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:32:08.835Z",
+  "durationMs": 5245,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6920,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 353,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6920
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0242652,
+  "result": "Python's `json` parser recurses once per nesting level. The default limit is 1000 frames, so deep nesting overflows it.\n\nFixes, best first:\n\n1. **Raise the limit** (quick, but very deep input can still crash the interpreter's C stack):\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(open(\"file.json\"))\n```\n\n2. **Run in a thread with a bigger stack** (safer with a high limit):\n```python\nimport sys, threading, json\nsys.setrecursionlimit(100_000)\nthreading.stack_size(256 * 1024 * 1024)\ndef main():\n    global data\n    data = json.load(open(\"file.json\"))\nt = threading.Thread(target=main); t.start(); t.join()\n```\n\n3. **Use an iterative parser** such as `ijson`, which streams the file and doesn't recurse the same way. Use it if the file is huge or hostile.\n\nIf you recurse in your own code after parsing (walking or printing the tree), that code can also hit the limit. Rewrite it with an explicit stack.",
+  "output": {
+    "duration_api_ms": 4986,
+    "stop_reason": "end_turn",
+    "session_id": "81d604e3-221e-436b-bf70-80d5387cc68f",
+    "total_cost_usd": 0.0242652,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6920,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 353,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6920
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 353,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6920,
+        "webSearchRequests": 0,
+        "costUSD": 0.0242652,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Python's `json` parser recurses once per nesting level. The default limit is 1000 frames, so deep nesting overflows it.\n\nFixes, best first:\n\n1. **Raise the limit** (quick, but very deep input can still crash the interpreter's C stack):\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(open(\"file.json\"))\n```\n\n2. **Run in a thread with a bigger stack** (safer with a high limit):\n```python\nimport sys, threading, json\nsys.setrecursionlimit(100_000)\nthreading.stack_size(256 * 1024 * 1024)\ndef main():\n    global data\n    data = json.load(open(\"file.json\"))\nt = threading.Thread(target=main); t.start(); t.join()\n```\n\n3. **Use an iterative parser** such as `ijson`, which streams the file and doesn't recurse the same way. Use it if the file is huge or hostile.\n\nIf you recurse in your own code after parsing (walking or printing the tree), that code can also hit the limit. Rewrite it with an explicit stack.",
+    "ttft_ms": 5032,
+    "type": "result",
+    "duration_ms": 5039,
+    "uuid": "73b37625-fc7a-4f60-ac38-897577d6c164",
+    "ttft_stream_ms": 3481,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3481,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}
