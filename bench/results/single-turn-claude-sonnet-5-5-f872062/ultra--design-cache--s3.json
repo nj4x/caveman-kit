@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "design-cache",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:32:57.705Z",
+  "durationMs": 6695,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6905,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 402,
+    "output_tokens_details": {
+      "thinking_tokens": 44
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6905
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.024717700000000002,
+  "result": "**Use TTL plus delete-on-write.** Cache-aside: read the cache, and on a miss fetch from the API and store the result with a TTL. When a profile changes, delete its key.\n\n- **TTL only:** simplest option. Data can be stale for up to one TTL. Fine if profiles change rarely and brief staleness is OK.\n- **Delete on write (event-driven):** data is fresh almost immediately. It needs a write hook or event bus. If an event is missed, the entry stays stale forever. Keep the TTL as a backstop.\n- **Write-through:** the cache always holds current data, but writes get slower. It only works if you control the write path. You don't if the API belongs to a third party.\n- **Stale-while-revalidate:** serves the old value and refreshes it in the background. Reads stay fast even when the API is slow. The cost is a short staleness window.\n\nPick TTL length by staleness tolerance, for example 5–15 min. Add jitter so many keys don't expire at once. Use single-flight or a lock on misses so concurrent requests don't all hit the slow API together.",
+  "output": {
+    "duration_api_ms": 6441,
+    "stop_reason": "end_turn",
+    "session_id": "a3256585-7e41-4b0b-8657-fc677d87973a",
+    "total_cost_usd": 0.024717700000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6905,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 402,
+      "output_tokens_details": {
+        "thinking_tokens": 44
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6905
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 402,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6905,
+        "webSearchRequests": 0,
+        "costUSD": 0.024717700000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 44,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Use TTL plus delete-on-write.** Cache-aside: read the cache, and on a miss fetch from the API and store the result with a TTL. When a profile changes, delete its key.\n\n- **TTL only:** simplest option. Data can be stale for up to one TTL. Fine if profiles change rarely and brief staleness is OK.\n- **Delete on write (event-driven):** data is fresh almost immediately. It needs a write hook or event bus. If an event is missed, the entry stays stale forever. Keep the TTL as a backstop.\n- **Write-through:** the cache always holds current data, but writes get slower. It only works if you control the write path. You don't if the API belongs to a third party.\n- **Stale-while-revalidate:** serves the old value and refreshes it in the background. Reads stay fast even when the API is slow. The cost is a short staleness window.\n\nPick TTL length by staleness tolerance, for example 5–15 min. Add jitter so many keys don't expire at once. Use single-flight or a lock on misses so concurrent requests don't all hit the slow API together.",
+    "ttft_ms": 3571,
+    "type": "result",
+    "duration_ms": 6497,
+    "uuid": "878444c7-ac56-456d-b6e9-4a075c56d83e",
+    "ttft_stream_ms": 3570,
+    "time_to_request_ms": 53,
+    "first_content_frame_ms": 3570,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

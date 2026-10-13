@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "review-snippet",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:24:52.116Z",
+  "durationMs": 7407,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5228,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 570,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5228
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0222052,
+  "result": "**Main bug: `forEach` doesn't wait for async callbacks.**\n\n`forEach` ignores the promises returned by the `async` callback. The function reaches `return users` right away, before any fetch completes, so it almost always returns an empty array `[]`. The users get pushed in later, after the caller has already received the array.\n\n**Secondary issues**\n\n1. **Result order isn't guaranteed.** Even if the timing worked, `push` happens in the order responses arrive, not the order of `ids`.\n2. **Errors are unhandled.** A rejection inside the `forEach` callback becomes an unhandled promise rejection. The caller's `try/catch` or `.catch` can never see it.\n3. **No HTTP status check.** `fetch` only rejects on network failure. A 404 or 500 still goes to `res.json()`, which may throw a confusing parse error or push an error body into the result as if it were a user.\n4. **Unbounded concurrency (if fixed naively).** With a large `ids` array, `Promise.all` fires every request at once. You may need batching or a concurrency limit.\n\n**Fixed version**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`map` returns an array of promises and `Promise.all` waits for all of them. It also preserves input order and propagates the first error to the caller. If you want partial results instead of failing on the first error, use `Promise.allSettled`. If you want sequential requests, use a `for...of` loop with `await`.",
+  "output": {
+    "duration_api_ms": 7157,
+    "stop_reason": "end_turn",
+    "session_id": "c08c39cf-7c3a-4dbb-9544-c7e20720ae2d",
+    "total_cost_usd": 0.0222052,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5228,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 570,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5228
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 570,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5228,
+        "webSearchRequests": 0,
+        "costUSD": 0.0222052,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Main bug: `forEach` doesn't wait for async callbacks.**\n\n`forEach` ignores the promises returned by the `async` callback. The function reaches `return users` right away, before any fetch completes, so it almost always returns an empty array `[]`. The users get pushed in later, after the caller has already received the array.\n\n**Secondary issues**\n\n1. **Result order isn't guaranteed.** Even if the timing worked, `push` happens in the order responses arrive, not the order of `ids`.\n2. **Errors are unhandled.** A rejection inside the `forEach` callback becomes an unhandled promise rejection. The caller's `try/catch` or `.catch` can never see it.\n3. **No HTTP status check.** `fetch` only rejects on network failure. A 404 or 500 still goes to `res.json()`, which may throw a confusing parse error or push an error body into the result as if it were a user.\n4. **Unbounded concurrency (if fixed naively).** With a large `ids` array, `Promise.all` fires every request at once. You may need batching or a concurrency limit.\n\n**Fixed version**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`map` returns an array of promises and `Promise.all` waits for all of them. It also preserves input order and propagates the first error to the caller. If you want partial results instead of failing on the first error, use `Promise.allSettled`. If you want sequential requests, use a `for...of` loop with `await`.",
+    "ttft_ms": 7206,
+    "type": "result",
+    "duration_ms": 7210,
+    "uuid": "55b56ae8-a12e-462a-88e5-3d4eba5e0415",
+    "ttft_stream_ms": 4236,
+    "time_to_request_ms": 54,
+    "first_content_frame_ms": 4237,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

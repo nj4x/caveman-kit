@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "design-cache",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:27:20.651Z",
+  "durationMs": 17202,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5177,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1359,
+    "output_tokens_details": {
+      "thinking_tokens": 21
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5177
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0299677,
+  "result": "**Recommendation:** Use **TTL expiry plus event-driven invalidation on writes**, served **stale-while-revalidate**. If you don't control the write path, use TTL alone with a short TTL and accept some staleness.\n\n## The main strategies\n\n| Strategy | How it works | Pros | Cons |\n|---|---|---|---|\n| **TTL only** | Each entry expires after N seconds | Trivial to build. Self-healing. No coupling to the write path | Data can be stale for up to the full TTL. You have to trade freshness against hit rate. Many keys can expire at once (stampede) |\n| **Write-through / explicit invalidation** | Whoever updates a profile also updates or deletes the cache key | Close to fresh. Long TTLs become safe | You must own every write path. A missed path leaves data stale forever unless a TTL backs it up. Race conditions between DB and cache |\n| **Event-driven (CDC / pub-sub)** | The profile service emits `user.updated` and a consumer evicts the key | Decoupled from the code paths that write. Works across services | Needs infra (Kafka, SNS, Debezium). Events arrive late, out of order or get dropped, so you still want a TTL |\n| **Stale-while-revalidate** | Serve the expired entry right away and refresh it in the background | Latency stays flat even with a slow upstream. Avoids stampedes | Readers sometimes see data one refresh old |\n| **Validation (ETag / If-None-Match)** | Revalidate with the origin and get a cheap 304 | Always correct | Still a round trip to the slow API per request, so it helps bandwidth but not latency |\n\n## Why the hybrid fits user profiles\n\n- **Reads far outnumber writes**, so long TTLs give high hit rates.\n- **Users notice stale data on their own profile** (\"I changed my avatar and it didn't update\"). Evicting on write covers that case. Other readers seeing data a few minutes old is usually fine.\n- **The TTL is your safety net** for missed or lost invalidations. Something like 5–15 minutes, with jitter, works well.\n- **Stale-while-revalidate** stops the slow API from showing up in p99 latency when entries expire.\n\n## Pitfalls to design for\n\n1. **Stampede on a cold or expired key.** Use request coalescing (single-flight or a per-key lock) so only one request hits the upstream.\n2. **Delete, don't set, on writes.** Setting the new value can race with a concurrent read that is filling the cache with old data. Deleting the key, optionally deleting it again after a short delay (\"double delete\"), is safer.\n3. **TTL jitter.** Add ±10–20% randomness so keys don't all expire together.\n4. **Negative caching.** Cache 404s briefly (around 30s) so lookups for missing users don't hammer the API.\n5. **Partial or permissioned views.** If the response varies by viewer (private fields), include that in the cache key or cache only the public projection.\n6. **PII.** Profiles are personal data. Encrypt at rest if you use a shared cache like Redis, and make sure account deletion also evicts the user's entries (GDPR).\n7. **Local vs. shared cache.** In-process caches (Caffeine, lru-cache) are fastest but hard to invalidate across instances. Redis gives you one place to invalidate. A two-tier setup works: a small local cache with a very short TTL (around 30s) in front of Redis.\n\n## Choosing quickly\n\n- **You own the profile write path:** evict on write, TTL around 15 minutes with jitter, stale-while-revalidate, single-flight.\n- **It's a third-party API with no change events:** TTL only, sized to how much staleness you can tolerate, plus stale-while-revalidate and single-flight.\n- **Profiles change rarely and correctness matters a lot:** event-driven invalidation with a long TTL as the backstop.\n\nIf you tell me your stack (language, Redis or in-memory, whether you control the writes), I can sketch the implementation.",
+  "output": {
+    "duration_api_ms": 16961,
+    "stop_reason": "end_turn",
+    "session_id": "d9f36fb3-62f9-4175-9dcc-f614fbe59b3a",
+    "total_cost_usd": 0.0299677,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5177,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1359,
+      "output_tokens_details": {
+        "thinking_tokens": 21
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5177
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1359,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5177,
+        "webSearchRequests": 0,
+        "costUSD": 0.0299677,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 21,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Recommendation:** Use **TTL expiry plus event-driven invalidation on writes**, served **stale-while-revalidate**. If you don't control the write path, use TTL alone with a short TTL and accept some staleness.\n\n## The main strategies\n\n| Strategy | How it works | Pros | Cons |\n|---|---|---|---|\n| **TTL only** | Each entry expires after N seconds | Trivial to build. Self-healing. No coupling to the write path | Data can be stale for up to the full TTL. You have to trade freshness against hit rate. Many keys can expire at once (stampede) |\n| **Write-through / explicit invalidation** | Whoever updates a profile also updates or deletes the cache key | Close to fresh. Long TTLs become safe | You must own every write path. A missed path leaves data stale forever unless a TTL backs it up. Race conditions between DB and cache |\n| **Event-driven (CDC / pub-sub)** | The profile service emits `user.updated` and a consumer evicts the key | Decoupled from the code paths that write. Works across services | Needs infra (Kafka, SNS, Debezium). Events arrive late, out of order or get dropped, so you still want a TTL |\n| **Stale-while-revalidate** | Serve the expired entry right away and refresh it in the background | Latency stays flat even with a slow upstream. Avoids stampedes | Readers sometimes see data one refresh old |\n| **Validation (ETag / If-None-Match)** | Revalidate with the origin and get a cheap 304 | Always correct | Still a round trip to the slow API per request, so it helps bandwidth but not latency |\n\n## Why the hybrid fits user profiles\n\n- **Reads far outnumber writes**, so long TTLs give high hit rates.\n- **Users notice stale data on their own profile** (\"I changed my avatar and it didn't update\"). Evicting on write covers that case. Other readers seeing data a few minutes old is usually fine.\n- **The TTL is your safety net** for missed or lost invalidations. Something like 5–15 minutes, with jitter, works well.\n- **Stale-while-revalidate** stops the slow API from showing up in p99 latency when entries expire.\n\n## Pitfalls to design for\n\n1. **Stampede on a cold or expired key.** Use request coalescing (single-flight or a per-key lock) so only one request hits the upstream.\n2. **Delete, don't set, on writes.** Setting the new value can race with a concurrent read that is filling the cache with old data. Deleting the key, optionally deleting it again after a short delay (\"double delete\"), is safer.\n3. **TTL jitter.** Add ±10–20% randomness so keys don't all expire together.\n4. **Negative caching.** Cache 404s briefly (around 30s) so lookups for missing users don't hammer the API.\n5. **Partial or permissioned views.** If the response varies by viewer (private fields), include that in the cache key or cache only the public projection.\n6. **PII.** Profiles are personal data. Encrypt at rest if you use a shared cache like Redis, and make sure account deletion also evicts the user's entries (GDPR).\n7. **Local vs. shared cache.** In-process caches (Caffeine, lru-cache) are fastest but hard to invalidate across instances. Redis gives you one place to invalidate. A two-tier setup works: a small local cache with a very short TTL (around 30s) in front of Redis.\n\n## Choosing quickly\n\n- **You own the profile write path:** evict on write, TTL around 15 minutes with jitter, stale-while-revalidate, single-flight.\n- **It's a third-party API with no change events:** TTL only, sized to how much staleness you can tolerate, plus stale-while-revalidate and single-flight.\n- **Profiles change rarely and correctness matters a lot:** event-driven invalidation with a long TTL as the backstop.\n\nIf you tell me your stack (language, Redis or in-memory, whether you control the writes), I can sketch the implementation.",
+    "ttft_ms": 3026,
+    "type": "result",
+    "duration_ms": 17011,
+    "uuid": "b4637289-e0f4-4725-bc47-1014b9526f33",
+    "ttft_stream_ms": 3024,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3025,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

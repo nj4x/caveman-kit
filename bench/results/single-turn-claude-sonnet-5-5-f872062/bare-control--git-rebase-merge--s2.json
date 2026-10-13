@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "git-rebase-merge",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:25:26.613Z",
+  "durationMs": 8443,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5154,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 656,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5154
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.022880199999999996,
+  "result": "Rebase rewrites history, so on a shared branch the rule is: **only rebase commits that nobody else has based work on.** Merge is the default for shared branches. Rebase is the exception.\n\n**Use rebase when:**\n\n- **Your own unpushed or private commits.** Rebase local work onto the latest branch tip before pushing (`git pull --rebase`). This avoids noisy \"Merge branch 'x' into x\" commits and nobody is affected.\n- **The team has agreed on it.** Everyone knows the branch gets force-pushed, and they know to run `git pull --rebase` or reset to the new tip afterward.\n- **You're cleaning up before review or merge.** Squashing fixups and reordering commits with `git rebase -i` is fine once collaborators have stopped pushing to the branch.\n- **You want linear history.** If the project enforces it, rebase the feature branch onto `main` before merging, usually with `--force-with-lease`.\n\n**Use merge when:**\n\n- **Others have pulled or based work on the branch.** Rewriting commits they already have forces them to reconcile diverged histories, and it often causes duplicate commits and conflicts.\n- **You want to preserve the true history.** Merge commits record when and how integration happened.\n- **Conflicts are likely to be complex.** A merge resolves them once. A rebase replays each commit and can make you resolve the same conflict repeatedly.\n- **You can't coordinate with everyone.** Merge is non-destructive and safe.\n\n**Practical tips**\n\n- Use `--force-with-lease`, never plain `--force`. It refuses to overwrite commits you haven't seen.\n- Before rebasing, make sure collaborators have pushed their work, and tell them afterward.\n- A common compromise is to merge `main` into the shared branch while it's active, then squash-merge or rebase when landing it on `main`.\n- If you're unsure, merge. A messy history is recoverable, but a botched force-push to a shared branch can lose other people's work.",
+  "output": {
+    "duration_api_ms": 8190,
+    "stop_reason": "end_turn",
+    "session_id": "1be6bc15-0cfd-4cb6-808c-ab2389b7d8a2",
+    "total_cost_usd": 0.022880199999999996,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5154,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 656,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5154
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 656,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5154,
+        "webSearchRequests": 0,
+        "costUSD": 0.022880199999999996,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebase rewrites history, so on a shared branch the rule is: **only rebase commits that nobody else has based work on.** Merge is the default for shared branches. Rebase is the exception.\n\n**Use rebase when:**\n\n- **Your own unpushed or private commits.** Rebase local work onto the latest branch tip before pushing (`git pull --rebase`). This avoids noisy \"Merge branch 'x' into x\" commits and nobody is affected.\n- **The team has agreed on it.** Everyone knows the branch gets force-pushed, and they know to run `git pull --rebase` or reset to the new tip afterward.\n- **You're cleaning up before review or merge.** Squashing fixups and reordering commits with `git rebase -i` is fine once collaborators have stopped pushing to the branch.\n- **You want linear history.** If the project enforces it, rebase the feature branch onto `main` before merging, usually with `--force-with-lease`.\n\n**Use merge when:**\n\n- **Others have pulled or based work on the branch.** Rewriting commits they already have forces them to reconcile diverged histories, and it often causes duplicate commits and conflicts.\n- **You want to preserve the true history.** Merge commits record when and how integration happened.\n- **Conflicts are likely to be complex.** A merge resolves them once. A rebase replays each commit and can make you resolve the same conflict repeatedly.\n- **You can't coordinate with everyone.** Merge is non-destructive and safe.\n\n**Practical tips**\n\n- Use `--force-with-lease`, never plain `--force`. It refuses to overwrite commits you haven't seen.\n- Before rebasing, make sure collaborators have pushed their work, and tell them afterward.\n- A common compromise is to merge `main` into the shared branch while it's active, then squash-merge or rebase when landing it on `main`.\n- If you're unsure, merge. A messy history is recoverable, but a botched force-push to a shared branch can lose other people's work.",
+    "ttft_ms": 8236,
+    "type": "result",
+    "duration_ms": 8241,
+    "uuid": "124e904c-d7ec-452b-9ce8-20314ebaca2c",
+    "ttft_stream_ms": 3467,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 3467,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

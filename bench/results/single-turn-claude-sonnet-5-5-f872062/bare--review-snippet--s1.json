@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "review-snippet",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:21:03.379Z",
+  "durationMs": 6279,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5222,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 571,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5222
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0222002,
+  "result": "**Main bug: `forEach` doesn't await async callbacks.**\n\n`forEach` calls each async callback, ignores the returned promises, and moves on. So `return users` runs immediately, before any fetch completes. The caller almost always gets `[]`. The users are pushed later, after the caller has already received the array.\n\n**Other problems:**\n\n1. **Rejections are unhandled.** If a `fetch` or `res.json()` throws inside the callback, the error becomes an unhandled promise rejection. The caller can't catch it with `try/catch` around `loadUsers`.\n2. **No HTTP status check.** `fetch` only rejects on network errors. A 404 or 500 still resolves, and `res.json()` may then throw or return an error body that gets pushed in as if it were a user.\n3. **Result order isn't guaranteed.** Even once it's awaited properly, `push` runs in completion order, not in `ids` order.\n4. **Unbounded concurrency** (minor). A large `ids` list fires every request at once.\n\n**Fix:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`map` returns the array of promises and `Promise.all` waits for all of them. Results come back in the same order as `ids`, and any failure rejects `loadUsers` so the caller can handle it. If you want partial results when some requests fail, use `Promise.allSettled` instead. For large lists, batch the requests or use a concurrency limiter such as `p-limit`.",
+  "output": {
+    "duration_api_ms": 6016,
+    "stop_reason": "end_turn",
+    "session_id": "37e009f8-ab70-4f69-abf5-4c07fe66843e",
+    "total_cost_usd": 0.0222002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5222,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 571,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5222
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 571,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5222,
+        "webSearchRequests": 0,
+        "costUSD": 0.0222002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Main bug: `forEach` doesn't await async callbacks.**\n\n`forEach` calls each async callback, ignores the returned promises, and moves on. So `return users` runs immediately, before any fetch completes. The caller almost always gets `[]`. The users are pushed later, after the caller has already received the array.\n\n**Other problems:**\n\n1. **Rejections are unhandled.** If a `fetch` or `res.json()` throws inside the callback, the error becomes an unhandled promise rejection. The caller can't catch it with `try/catch` around `loadUsers`.\n2. **No HTTP status check.** `fetch` only rejects on network errors. A 404 or 500 still resolves, and `res.json()` may then throw or return an error body that gets pushed in as if it were a user.\n3. **Result order isn't guaranteed.** Even once it's awaited properly, `push` runs in completion order, not in `ids` order.\n4. **Unbounded concurrency** (minor). A large `ids` list fires every request at once.\n\n**Fix:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`map` returns the array of promises and `Promise.all` waits for all of them. Results come back in the same order as `ids`, and any failure rejects `loadUsers` so the caller can handle it. If you want partial results when some requests fail, use `Promise.allSettled` instead. For large lists, batch the requests or use a concurrency limiter such as `p-limit`.",
+    "ttft_ms": 6055,
+    "type": "result",
+    "duration_ms": 6068,
+    "uuid": "ae5ddce4-c21a-454a-9299-2ed8f84d89a0",
+    "ttft_stream_ms": 3254,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 3255,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

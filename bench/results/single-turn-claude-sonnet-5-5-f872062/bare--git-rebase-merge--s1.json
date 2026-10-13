@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "git-rebase-merge",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:21:26.369Z",
+  "durationMs": 8164,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5148,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 568,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5148
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0219852,
+  "result": "Rebasing a shared branch rewrites history, so the default is to **merge**. Rebase is safe only in a few cases.\n\n**Use rebase when:**\n- **Only you have commits on the branch, or the others have agreed to it.** Rebase your own unpushed or private commits freely. If the branch is shared, everyone must know you're rewriting it. They'll need `git fetch` followed by `git reset --hard origin/branch`, or `git pull --rebase`, to resync.\n- **You're updating your local work with the latest upstream.** Running `git pull --rebase` replays your unpushed local commits on top of the remote ones. This avoids noisy \"Merge branch 'x' of origin\" commits.\n- **You're cleaning up before sharing.** Squash fixups and reorder commits with `git rebase -i` before the first push or before opening a PR.\n- **Your team requires linear history.** Some teams rebase onto main right before merging, usually with fast-forward or squash merges.\n- **The branch is short-lived and has a single owner.** Rebasing onto main keeps it current without merge commits.\n\n**Use merge when:**\n- Several people push to the branch.\n- The commits are already pushed and others may have based work on them.\n- You want to preserve the true history, including when and how the integration happened.\n- You'd rather resolve conflicts once than once per replayed commit.\n\n**If you do rebase a shared branch:**\n- Use `git push --force-with-lease`, never plain `--force`. It refuses to overwrite commits you haven't seen.\n- Tell your collaborators before you push.\n- Don't rebase across a merge commit unless you understand `--rebase-merges`.\n\nA simple rule: rebase what's only yours, and merge what's shared.",
+  "output": {
+    "duration_api_ms": 7908,
+    "stop_reason": "end_turn",
+    "session_id": "8b200cc2-b600-445e-9813-3fee5ad3d367",
+    "total_cost_usd": 0.0219852,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5148,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 568,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5148
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 568,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5148,
+        "webSearchRequests": 0,
+        "costUSD": 0.0219852,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebasing a shared branch rewrites history, so the default is to **merge**. Rebase is safe only in a few cases.\n\n**Use rebase when:**\n- **Only you have commits on the branch, or the others have agreed to it.** Rebase your own unpushed or private commits freely. If the branch is shared, everyone must know you're rewriting it. They'll need `git fetch` followed by `git reset --hard origin/branch`, or `git pull --rebase`, to resync.\n- **You're updating your local work with the latest upstream.** Running `git pull --rebase` replays your unpushed local commits on top of the remote ones. This avoids noisy \"Merge branch 'x' of origin\" commits.\n- **You're cleaning up before sharing.** Squash fixups and reorder commits with `git rebase -i` before the first push or before opening a PR.\n- **Your team requires linear history.** Some teams rebase onto main right before merging, usually with fast-forward or squash merges.\n- **The branch is short-lived and has a single owner.** Rebasing onto main keeps it current without merge commits.\n\n**Use merge when:**\n- Several people push to the branch.\n- The commits are already pushed and others may have based work on them.\n- You want to preserve the true history, including when and how the integration happened.\n- You'd rather resolve conflicts once than once per replayed commit.\n\n**If you do rebase a shared branch:**\n- Use `git push --force-with-lease`, never plain `--force`. It refuses to overwrite commits you haven't seen.\n- Tell your collaborators before you push.\n- Don't rebase across a merge commit unless you understand `--rebase-merges`.\n\nA simple rule: rebase what's only yours, and merge what's shared.",
+    "ttft_ms": 7947,
+    "type": "result",
+    "duration_ms": 7960,
+    "uuid": "ddc51cfe-ce6c-438b-9510-7c39b5c42f86",
+    "ttft_stream_ms": 3673,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3673,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

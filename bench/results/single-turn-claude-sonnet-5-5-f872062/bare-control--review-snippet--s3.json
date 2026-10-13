@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "review-snippet",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:25:09.480Z",
+  "durationMs": 10454,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5228,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 554,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5228
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0220452,
+  "result": "**Main bug: `forEach` doesn't await async callbacks.**\n\n`forEach` ignores the promises returned by the `async` callbacks. The function reaches `return users` right after starting the fetches, so it returns an empty array (or at best a partially filled one). The pushes happen later, after the caller already has the array.\n\n**Secondary issues:**\n\n1. **No error handling.** A failed fetch or `res.json()` inside `forEach` becomes an unhandled promise rejection. The caller never sees it and can't catch it.\n2. **No `res.ok` check.** `fetch` only rejects on network failure. A 404 or 500 still resolves, and the code tries to parse the error body as a user.\n3. **Result order isn't guaranteed.** Even with the await bug fixed, `push` in completion order means `users` may not line up with `ids`.\n4. **Unbounded concurrency.** With a large `ids` array, this fires every request at once. That can hit browser connection limits or server rate limits.\n\n**Fixed version:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`Promise.all` waits for every request, keeps results in the same order as `ids`, and rejects if any request fails. If you'd rather get partial results when some fail, use `Promise.allSettled` and filter on `status === 'fulfilled'`. For large lists, batch the ids or use a concurrency limiter such as `p-limit`.",
+  "output": {
+    "duration_api_ms": 10206,
+    "stop_reason": "end_turn",
+    "session_id": "05ffc4be-02a4-4e89-8c03-5f4024523995",
+    "total_cost_usd": 0.0220452,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5228,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 554,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5228
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 554,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5228,
+        "webSearchRequests": 0,
+        "costUSD": 0.0220452,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Main bug: `forEach` doesn't await async callbacks.**\n\n`forEach` ignores the promises returned by the `async` callbacks. The function reaches `return users` right after starting the fetches, so it returns an empty array (or at best a partially filled one). The pushes happen later, after the caller already has the array.\n\n**Secondary issues:**\n\n1. **No error handling.** A failed fetch or `res.json()` inside `forEach` becomes an unhandled promise rejection. The caller never sees it and can't catch it.\n2. **No `res.ok` check.** `fetch` only rejects on network failure. A 404 or 500 still resolves, and the code tries to parse the error body as a user.\n3. **Result order isn't guaranteed.** Even with the await bug fixed, `push` in completion order means `users` may not line up with `ids`.\n4. **Unbounded concurrency.** With a large `ids` array, this fires every request at once. That can hit browser connection limits or server rate limits.\n\n**Fixed version:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(\n    ids.map(async id => {\n      const res = await fetch(`/api/users/${id}`);\n      if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n      return res.json();\n    })\n  );\n}\n```\n\n`Promise.all` waits for every request, keeps results in the same order as `ids`, and rejects if any request fails. If you'd rather get partial results when some fail, use `Promise.allSettled` and filter on `status === 'fulfilled'`. For large lists, batch the ids or use a concurrency limiter such as `p-limit`.",
+    "ttft_ms": 10252,
+    "type": "result",
+    "duration_ms": 10258,
+    "uuid": "63177753-c9b8-4a4d-8fdc-8d6637fe2b9b",
+    "ttft_stream_ms": 7472,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 7473,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

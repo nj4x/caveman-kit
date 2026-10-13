@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "git-rebase-merge",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:32:03.585Z",
+  "durationMs": 5354,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6882,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 299,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6882
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.023630200000000004,
+  "result": "Rebase rarely fits a shared branch. It rewrites commits, so teammates' clones diverge from the rewritten history and force-pushes can overwrite their work.\n\nRebase is safe when:\n- Only you have commits on the branch, or the team agrees to it.\n- Nobody else has pulled the commits you're rewriting.\n- You're rebasing your local work onto the updated upstream before pushing (`git pull --rebase`). Those commits aren't public yet.\n- You're cleaning up your own unpushed commits.\n\nUse merge when:\n- Others push to the branch.\n- You're integrating the shared branch with `main`. Merge preserves history and needs no force-push.\n\nIf you must rebase a shared branch, announce it first. Push with `--force-with-lease`, not `--force`, and have teammates run `git fetch` followed by `git reset --hard origin/<branch>` or `git pull --rebase`.",
+  "output": {
+    "duration_api_ms": 5092,
+    "stop_reason": "end_turn",
+    "session_id": "cca4bf6d-4bcf-4f05-83bf-3160cfd97b1b",
+    "total_cost_usd": 0.023630200000000004,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6882,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 299,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6882
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 299,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6882,
+        "webSearchRequests": 0,
+        "costUSD": 0.023630200000000004,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebase rarely fits a shared branch. It rewrites commits, so teammates' clones diverge from the rewritten history and force-pushes can overwrite their work.\n\nRebase is safe when:\n- Only you have commits on the branch, or the team agrees to it.\n- Nobody else has pulled the commits you're rewriting.\n- You're rebasing your local work onto the updated upstream before pushing (`git pull --rebase`). Those commits aren't public yet.\n- You're cleaning up your own unpushed commits.\n\nUse merge when:\n- Others push to the branch.\n- You're integrating the shared branch with `main`. Merge preserves history and needs no force-push.\n\nIf you must rebase a shared branch, announce it first. Push with `--force-with-lease`, not `--force`, and have teammates run `git fetch` followed by `git reset --hard origin/<branch>` or `git pull --rebase`.",
+    "ttft_ms": 5136,
+    "type": "result",
+    "duration_ms": 5146,
+    "uuid": "00eb40fb-95b3-4ce5-9e6e-72b980962acb",
+    "ttft_stream_ms": 3396,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3397,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

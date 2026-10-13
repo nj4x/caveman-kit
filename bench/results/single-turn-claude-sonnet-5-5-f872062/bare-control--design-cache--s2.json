@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "design-cache",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:27:03.445Z",
+  "durationMs": 19016,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5177,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1548,
+    "output_tokens_details": {
+      "thinking_tokens": 27
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5177
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0318577,
+  "result": "For user profiles, I'd use **cache-aside with a TTL, and also delete the cache entry whenever a profile is written**. The TTL puts a ceiling on how stale data can get. The delete on write makes most reads fresh right away.\n\n## The main options\n\n| Strategy | How it works | Pros | Cons |\n|---|---|---|---|\n| **TTL only** | Each entry expires after N seconds | Simple; no coupling to writes | Data can be up to N seconds stale; all entries expiring at once can flood the slow API |\n| **Delete on write** | Code that updates a profile removes the cache key | Fresh data soon after a write; cheap to do | Needs a hook in every write path; a race can put stale data back (see pitfalls) |\n| **Write-through** | Writes update the cache and the source of truth together | The cache is rarely stale | You need to own the write path; caches data nobody reads; the two-system write isn't atomic |\n| **Event-driven** (CDC, pub/sub, webhooks) | The source of truth publishes change events and consumers delete keys | Works when writes happen outside your service | More infrastructure; events can be lost or arrive late, so you still need a TTL as backup |\n| **Stale-while-revalidate** | Serve the cached value even if expired and refresh it in the background | Reads stay fast even when the API is slow; spreads out load | Callers sometimes get stale data on purpose |\n| **Validation (ETag / `If-None-Match`)** | Ask the API \"has this changed?\" and get a cheap 304 if not | Always correct | Each read still makes a network call to the slow API, so it only helps if the 304 path is fast |\n\n## How to choose\n\n1. **Who writes the profiles?**\n   - Only your service: delete on write plus a TTL works well.\n   - Someone else (a third-party API, another team): you can't hook the writes. Use a TTL, plus events or webhooks if they offer them.\n2. **How much staleness is acceptable?** Display names and avatars can usually be minutes old. Permissions, roles, emails and account status usually can't. Consider caching those separately with short TTLs, or not caching them at all.\n3. **How slow and fragile is the API?** If it's really slow or flaky, stale-while-revalidate and serving stale data when the API errors keep you running through outages.\n\n## Pitfalls whichever strategy you pick\n\n- **Delete, don't update, on write.** Writing the new value into the cache causes races: two concurrent writes can leave the older value cached. Deleting is idempotent and safer.\n- **Race when reloading after a delete.** A slow reader can fetch the old value, then write it into the cache just after you deleted the key. The TTL limits how long this lasts. If it matters, delete the key twice (once more about 1 second after the write) or store versions or timestamps and reject older values.\n- **Stampede when a popular key expires.** Many requests miss at once and all hit the slow API. Fix this by letting only one request fetch per key (single-flight or a short lock), refreshing early with some randomness, or using stale-while-revalidate.\n- **Randomize TTLs** (for example 300s ±10%) so entries don't all expire at the same moment.\n- **Cache \"not found\" results** briefly (for example 30s) so requests for missing users don't keep hitting the API.\n- **Keys:** include anything the response depends on, such as `profile:v2:{userId}:{locale}`. A version prefix lets you invalidate everything by changing the version when the response format changes.\n- **Per-user data:** never let one user's view be served to another. Check the key if the API returns different fields depending on who is asking.\n- **Where the cache lives:** an in-process LRU is the fastest but each instance has its own copy, so invalidation is harder. Redis or Memcached is shared and easy to invalidate. Using both is common: a small local cache with a very short TTL (5–30s) in front of Redis.\n\n## Starting point\n\n```\nread(userId):\n  v = redis.get(key)\n  if v: return v                       # optionally: if soft-expired, refresh async\n  with singleflight(key):\n    v = api.getProfile(userId)\n    redis.set(key, v, ttl=300 ± jitter)\n  return v\n\nupdate(userId, data):\n  api.updateProfile(userId, data)\n  redis.delete(key)\n```\n\nTrack your hit rate, API latency and error rate. Then tune the TTL: shorten it if users notice stale data, and lengthen it if the API is still overloaded.\n\nIf you tell me your stack, who writes the profiles and how stale the data can be, I can make this more specific or sketch the implementation.",
+  "output": {
+    "duration_api_ms": 18765,
+    "stop_reason": "end_turn",
+    "session_id": "d17d86be-9d15-4d3e-b079-0971d1f55b91",
+    "total_cost_usd": 0.0318577,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5177,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1548,
+      "output_tokens_details": {
+        "thinking_tokens": 27
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5177
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1548,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5177,
+        "webSearchRequests": 0,
+        "costUSD": 0.0318577,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 27,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "For user profiles, I'd use **cache-aside with a TTL, and also delete the cache entry whenever a profile is written**. The TTL puts a ceiling on how stale data can get. The delete on write makes most reads fresh right away.\n\n## The main options\n\n| Strategy | How it works | Pros | Cons |\n|---|---|---|---|\n| **TTL only** | Each entry expires after N seconds | Simple; no coupling to writes | Data can be up to N seconds stale; all entries expiring at once can flood the slow API |\n| **Delete on write** | Code that updates a profile removes the cache key | Fresh data soon after a write; cheap to do | Needs a hook in every write path; a race can put stale data back (see pitfalls) |\n| **Write-through** | Writes update the cache and the source of truth together | The cache is rarely stale | You need to own the write path; caches data nobody reads; the two-system write isn't atomic |\n| **Event-driven** (CDC, pub/sub, webhooks) | The source of truth publishes change events and consumers delete keys | Works when writes happen outside your service | More infrastructure; events can be lost or arrive late, so you still need a TTL as backup |\n| **Stale-while-revalidate** | Serve the cached value even if expired and refresh it in the background | Reads stay fast even when the API is slow; spreads out load | Callers sometimes get stale data on purpose |\n| **Validation (ETag / `If-None-Match`)** | Ask the API \"has this changed?\" and get a cheap 304 if not | Always correct | Each read still makes a network call to the slow API, so it only helps if the 304 path is fast |\n\n## How to choose\n\n1. **Who writes the profiles?**\n   - Only your service: delete on write plus a TTL works well.\n   - Someone else (a third-party API, another team): you can't hook the writes. Use a TTL, plus events or webhooks if they offer them.\n2. **How much staleness is acceptable?** Display names and avatars can usually be minutes old. Permissions, roles, emails and account status usually can't. Consider caching those separately with short TTLs, or not caching them at all.\n3. **How slow and fragile is the API?** If it's really slow or flaky, stale-while-revalidate and serving stale data when the API errors keep you running through outages.\n\n## Pitfalls whichever strategy you pick\n\n- **Delete, don't update, on write.** Writing the new value into the cache causes races: two concurrent writes can leave the older value cached. Deleting is idempotent and safer.\n- **Race when reloading after a delete.** A slow reader can fetch the old value, then write it into the cache just after you deleted the key. The TTL limits how long this lasts. If it matters, delete the key twice (once more about 1 second after the write) or store versions or timestamps and reject older values.\n- **Stampede when a popular key expires.** Many requests miss at once and all hit the slow API. Fix this by letting only one request fetch per key (single-flight or a short lock), refreshing early with some randomness, or using stale-while-revalidate.\n- **Randomize TTLs** (for example 300s ±10%) so entries don't all expire at the same moment.\n- **Cache \"not found\" results** briefly (for example 30s) so requests for missing users don't keep hitting the API.\n- **Keys:** include anything the response depends on, such as `profile:v2:{userId}:{locale}`. A version prefix lets you invalidate everything by changing the version when the response format changes.\n- **Per-user data:** never let one user's view be served to another. Check the key if the API returns different fields depending on who is asking.\n- **Where the cache lives:** an in-process LRU is the fastest but each instance has its own copy, so invalidation is harder. Redis or Memcached is shared and easy to invalidate. Using both is common: a small local cache with a very short TTL (5–30s) in front of Redis.\n\n## Starting point\n\n```\nread(userId):\n  v = redis.get(key)\n  if v: return v                       # optionally: if soft-expired, refresh async\n  with singleflight(key):\n    v = api.getProfile(userId)\n    redis.set(key, v, ttl=300 ± jitter)\n  return v\n\nupdate(userId, data):\n  api.updateProfile(userId, data)\n  redis.delete(key)\n```\n\nTrack your hit rate, API latency and error rate. Then tune the TTL: shorten it if users notice stale data, and lengthen it if the API is still overloaded.\n\nIf you tell me your stack, who writes the profiles and how stale the data can be, I can make this more specific or sketch the implementation.",
+    "ttft_ms": 3107,
+    "type": "result",
+    "duration_ms": 18817,
+    "uuid": "0979f520-aab9-47bb-92ff-7ecd79523fe3",
+    "ttft_stream_ms": 3106,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3106,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

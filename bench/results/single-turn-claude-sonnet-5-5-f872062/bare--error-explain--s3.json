@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "error-explain",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:22:12.592Z",
+  "durationMs": 9243,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5186,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 985,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5186
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0262502,
+  "result": "**What's going on**\n\nPython's `json` module (the C-accelerated scanner and the pure-Python fallback alike) parses nested structures recursively. Each nesting level of `[` or `{` consumes stack frames. Python caps recursion at about 1000 frames by default (`sys.getrecursionlimit()`), so JSON nested several hundred levels deep hits that limit and raises `RecursionError`.\n\nIt can also happen without deep data, if your own code walks the parsed structure recursively (flattening, searching, validating), or if you're already deep in a call stack when you call `json.load`.\n\n**Fixes, roughly from simplest to most robust**\n\n1. **Raise the recursion limit** (quick fix, fine for moderately deep data):\n   ```python\n   import sys, json\n   sys.setrecursionlimit(10_000)\n   with open(\"data.json\") as f:\n       data = json.load(f)\n   ```\n   Going much higher risks a real stack overflow, which segfaults the interpreter. Combine it with a bigger thread stack for very deep input:\n   ```python\n   import threading, sys, json\n\n   def work():\n       sys.setrecursionlimit(100_000)\n       with open(\"data.json\") as f:\n           data = json.load(f)\n       # ... process data ...\n\n   threading.stack_size(512 * 1024 * 1024)  # 512 MB\n   t = threading.Thread(target=work)\n   t.start(); t.join()\n   ```\n\n2. **Use a parser that doesn't recurse**, such as `ijson` (streaming, iterative):\n   ```python\n   import ijson\n   with open(\"data.json\", \"rb\") as f:\n       for prefix, event, value in ijson.parse(f):\n           ...\n   ```\n   This also helps if the file is huge. Note that some third-party parsers, like `orjson`, have their own fixed depth limits (`orjson` caps at 254 levels), so check before switching.\n\n3. **Fix your own traversal code.** If the error's traceback points at your functions rather than `json/decoder.py`, convert the recursion to an explicit stack:\n   ```python\n   def walk(root):\n       stack = [root]\n       while stack:\n           node = stack.pop()\n           if isinstance(node, dict):\n               stack.extend(node.values())\n           elif isinstance(node, list):\n               stack.extend(node)\n           else:\n               yield node\n   ```\n\n4. **Question the data.** Thousands of nesting levels is unusual. It may indicate a bug in whatever generated the file, or a malicious payload. If the file is untrusted, don't raise the limit. Reject it instead, for example by pre-scanning for maximum bracket depth.\n\n**To diagnose which case you're in**, look at the bottom of the traceback. If the repeating frames are in `json/decoder.py` or `scanner.py`, the parser is the cause (fixes 1, 2 or 4). If they're in your code, it's fix 3.\n\nIf you share the traceback or a snippet of the code, I can point to the exact cause.",
+  "output": {
+    "duration_api_ms": 8998,
+    "stop_reason": "end_turn",
+    "session_id": "19d7178e-1918-408b-b2f2-4f4d82e3780f",
+    "total_cost_usd": 0.0262502,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5186,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 985,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5186
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 985,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5186,
+        "webSearchRequests": 0,
+        "costUSD": 0.0262502,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**What's going on**\n\nPython's `json` module (the C-accelerated scanner and the pure-Python fallback alike) parses nested structures recursively. Each nesting level of `[` or `{` consumes stack frames. Python caps recursion at about 1000 frames by default (`sys.getrecursionlimit()`), so JSON nested several hundred levels deep hits that limit and raises `RecursionError`.\n\nIt can also happen without deep data, if your own code walks the parsed structure recursively (flattening, searching, validating), or if you're already deep in a call stack when you call `json.load`.\n\n**Fixes, roughly from simplest to most robust**\n\n1. **Raise the recursion limit** (quick fix, fine for moderately deep data):\n   ```python\n   import sys, json\n   sys.setrecursionlimit(10_000)\n   with open(\"data.json\") as f:\n       data = json.load(f)\n   ```\n   Going much higher risks a real stack overflow, which segfaults the interpreter. Combine it with a bigger thread stack for very deep input:\n   ```python\n   import threading, sys, json\n\n   def work():\n       sys.setrecursionlimit(100_000)\n       with open(\"data.json\") as f:\n           data = json.load(f)\n       # ... process data ...\n\n   threading.stack_size(512 * 1024 * 1024)  # 512 MB\n   t = threading.Thread(target=work)\n   t.start(); t.join()\n   ```\n\n2. **Use a parser that doesn't recurse**, such as `ijson` (streaming, iterative):\n   ```python\n   import ijson\n   with open(\"data.json\", \"rb\") as f:\n       for prefix, event, value in ijson.parse(f):\n           ...\n   ```\n   This also helps if the file is huge. Note that some third-party parsers, like `orjson`, have their own fixed depth limits (`orjson` caps at 254 levels), so check before switching.\n\n3. **Fix your own traversal code.** If the error's traceback points at your functions rather than `json/decoder.py`, convert the recursion to an explicit stack:\n   ```python\n   def walk(root):\n       stack = [root]\n       while stack:\n           node = stack.pop()\n           if isinstance(node, dict):\n               stack.extend(node.values())\n           elif isinstance(node, list):\n               stack.extend(node)\n           else:\n               yield node\n   ```\n\n4. **Question the data.** Thousands of nesting levels is unusual. It may indicate a bug in whatever generated the file, or a malicious payload. If the file is untrusted, don't raise the limit. Reject it instead, for example by pre-scanning for maximum bracket depth.\n\n**To diagnose which case you're in**, look at the bottom of the traceback. If the repeating frames are in `json/decoder.py` or `scanner.py`, the parser is the cause (fixes 1, 2 or 4). If they're in your code, it's fix 3.\n\nIf you share the traceback or a snippet of the code, I can point to the exact cause.",
+    "ttft_ms": 9041,
+    "type": "result",
+    "duration_ms": 9048,
+    "uuid": "780033ca-24e0-4493-b836-1fa95e2eb59e",
+    "ttft_stream_ms": 3191,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3191,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "error-explain",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:26:04.988Z",
+  "durationMs": 9165,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5192,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 931,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5192
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.025725199999999997,
+  "result": "**What's going on**\n\nPython's `json` parser (both the C `_json` scanner and the pure-Python fallback) is recursive: each nested `[` or `{` adds stack frames. Python caps the stack at `sys.getrecursionlimit()`, which is 1000 by default. A file nested a few hundred levels deep (often fewer, since each level uses more than one frame) hits that cap and raises `RecursionError`.\n\n**Fixes, from simplest to most robust**\n\n1. **Raise the recursion limit.** This is quick and often enough:\n   ```python\n   import sys, json\n   sys.setrecursionlimit(10_000)\n   data = json.load(open(\"file.json\"))\n   ```\n   Don't set it too high. Very deep recursion can overflow the C stack and crash the interpreter with a segfault. Values up to the low tens of thousands are usually safe on the main thread.\n\n2. **Run in a thread with a bigger stack** if you need a higher limit:\n   ```python\n   import sys, json, threading\n\n   sys.setrecursionlimit(100_000)\n   threading.stack_size(256 * 1024 * 1024)\n\n   def work():\n       global data\n       with open(\"file.json\") as f:\n           data = json.load(f)\n\n   t = threading.Thread(target=work)\n   t.start(); t.join()\n   ```\n\n3. **Use an iterative or streaming parser** that doesn't recurse, which is the robust option for untrusted or very deep input:\n   - `ijson` streams events without building the whole tree recursively.\n   - `orjson` and `ujson` have their own depth limits. `orjson` rejects nesting beyond 1024 levels, so it may not help here.\n   - `simdjson` (`pysimdjson`) handles deep nesting better, though it has a configurable max depth too.\n\n4. **Check your own code.** The error message says \"while calling a Python object\". If your script walks the parsed data recursively (flattening, validating, or pretty-printing it), the recursion may be in your code, not in `json`. Look at the traceback. If the repeated frames are your functions, convert them to an iterative version with an explicit stack:\n   ```python\n   def walk(root):\n       stack = [root]\n       while stack:\n           node = stack.pop()\n           if isinstance(node, dict):\n               stack.extend(node.values())\n           elif isinstance(node, list):\n               stack.extend(node)\n           else:\n               ...  # process leaf\n   ```\n\n5. **Check whether the nesting is legitimate.** Thousands of levels of nesting usually means a bug in whatever generated the file, such as a serializer following a cycle or a wrapper applied repeatedly. Fixing the producer is often the real answer.\n\nIf you paste the traceback, I can tell you whether the recursion is inside `json` or in your own code. I can also look at the script if you tell me where it is.",
+  "output": {
+    "duration_api_ms": 8911,
+    "stop_reason": "end_turn",
+    "session_id": "b2e49f73-1883-4c1d-a59b-e91d199d4492",
+    "total_cost_usd": 0.025725199999999997,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5192,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 931,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5192
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 931,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5192,
+        "webSearchRequests": 0,
+        "costUSD": 0.025725199999999997,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**What's going on**\n\nPython's `json` parser (both the C `_json` scanner and the pure-Python fallback) is recursive: each nested `[` or `{` adds stack frames. Python caps the stack at `sys.getrecursionlimit()`, which is 1000 by default. A file nested a few hundred levels deep (often fewer, since each level uses more than one frame) hits that cap and raises `RecursionError`.\n\n**Fixes, from simplest to most robust**\n\n1. **Raise the recursion limit.** This is quick and often enough:\n   ```python\n   import sys, json\n   sys.setrecursionlimit(10_000)\n   data = json.load(open(\"file.json\"))\n   ```\n   Don't set it too high. Very deep recursion can overflow the C stack and crash the interpreter with a segfault. Values up to the low tens of thousands are usually safe on the main thread.\n\n2. **Run in a thread with a bigger stack** if you need a higher limit:\n   ```python\n   import sys, json, threading\n\n   sys.setrecursionlimit(100_000)\n   threading.stack_size(256 * 1024 * 1024)\n\n   def work():\n       global data\n       with open(\"file.json\") as f:\n           data = json.load(f)\n\n   t = threading.Thread(target=work)\n   t.start(); t.join()\n   ```\n\n3. **Use an iterative or streaming parser** that doesn't recurse, which is the robust option for untrusted or very deep input:\n   - `ijson` streams events without building the whole tree recursively.\n   - `orjson` and `ujson` have their own depth limits. `orjson` rejects nesting beyond 1024 levels, so it may not help here.\n   - `simdjson` (`pysimdjson`) handles deep nesting better, though it has a configurable max depth too.\n\n4. **Check your own code.** The error message says \"while calling a Python object\". If your script walks the parsed data recursively (flattening, validating, or pretty-printing it), the recursion may be in your code, not in `json`. Look at the traceback. If the repeated frames are your functions, convert them to an iterative version with an explicit stack:\n   ```python\n   def walk(root):\n       stack = [root]\n       while stack:\n           node = stack.pop()\n           if isinstance(node, dict):\n               stack.extend(node.values())\n           elif isinstance(node, list):\n               stack.extend(node)\n           else:\n               ...  # process leaf\n   ```\n\n5. **Check whether the nesting is legitimate.** Thousands of levels of nesting usually means a bug in whatever generated the file, such as a serializer following a cycle or a wrapper applied repeatedly. Fixing the producer is often the real answer.\n\nIf you paste the traceback, I can tell you whether the recursion is inside `json` or in your own code. I can also look at the script if you tell me where it is.",
+    "ttft_ms": 8957,
+    "type": "result",
+    "duration_ms": 8962,
+    "uuid": "925789a6-fcc4-495d-b265-242511c88e1f",
+    "ttft_stream_ms": 3333,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 3333,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

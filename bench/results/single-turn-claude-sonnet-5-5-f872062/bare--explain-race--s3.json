@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "explain-race",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:20:57.094Z",
+  "durationMs": 15384,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5149,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1426,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5149
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.030567700000000003,
+  "result": "# Debugging a load-only race condition\n\n**1. Make it reproducible first**\n- Capture what \"load\" means: concurrency level, request mix, payload sizes, CPU count, and container limits (CPU throttling changes scheduling a lot).\n- Build a stress harness that reproduces it locally or in staging. Run it in a loop and track the failure rate, so you can tell whether a fix works.\n- Raise the odds of hitting it. Run more threads than cores, pin the process to fewer CPUs, add `sleep`/`yield` at suspect points, or use a chaos/fuzz scheduler. Examples are `rr --chaos`, Go's `-race` with `GOMAXPROCS` tweaks, and Java's jcstress.\n\n**2. Use tools that find races directly**\n- **Dynamic detectors:** ThreadSanitizer (C/C++/Go/Rust), Go `-race`, and Helgrind/DRD. They report unsynchronized accesses even when the bad interleaving doesn't happen on that run. Run them under your stress test.\n- **Java/JVM:** jcstress, thread dumps (`jstack`) taken during a hang, and async-profiler's lock profiling.\n- **Record and replay:** `rr` (Linux) records a failing run, so you can replay it deterministically and step backward from the corruption to the cause.\n- **Python/Node:** `faulthandler`, `py-spy dump`, and asyncio debug mode. For Node, look for interleaving across `await` points.\n\n**3. Gather evidence without changing timing**\n- Logging can hide the race, because I/O and locks in the logger change the interleaving. Prefer a lock-free ring buffer or per-thread buffers, and dump them on failure.\n- Record thread ID, a monotonic timestamp, a request or correlation ID, and the state before and after the critical operation.\n- Add invariant assertions close to the shared state (for example \"count >= 0\", \"this object is owned by one thread\") so the failure shows up where the bug is, not later.\n- Use sampling and tracing (eBPF, perf, OpenTelemetry) rather than heavy instrumentation.\n\n**4. Reason about the code**\nLook for the usual suspects:\n- Check-then-act (`if (!map.contains(k)) map.put(k, v)`) and read-modify-write on shared counters.\n- Lazy initialization and double-checked locking without proper memory ordering.\n- Shared mutable state in singletons, caches, static or global variables, and non-thread-safe libraries (date formatters, `HashMap`, regexes with state).\n- Lock ordering that causes deadlocks, or locks held across I/O.\n- Visibility problems: missing `volatile`/atomics/memory barriers.\n- Resource limits that only matter under load: connection-pool exhaustion, timeouts that fire mid-operation, retry storms, and queue overflows.\n- Callbacks or futures that complete on a different thread than you expect.\n\n**5. Narrow it down**\n- Bisect by disabling features, reducing the thread pool to 1 (does it vanish?), or serializing one component with a big lock. If a coarse lock fixes it, shrink the lock until it fails again. That tells you which state is involved.\n- Check the commit history near when it started, and bisect with the stress test as the oracle.\n\n**6. Fix and prove it**\n- Prefer eliminating sharing (immutability, thread confinement, message passing) over adding more locks.\n- If you need synchronization, make the invariant explicit: which lock guards which data. Use atomic operations or concurrent data structures for simple cases.\n- Write a regression test that forces the bad interleaving (injected delays, latches, or barriers) rather than relying on luck.\n- Re-run the stress test many times (hundreds of runs, or hours) under the race detector. A single clean run proves very little.\n- Deploy with metrics and alerts on the invariant you asserted, so a recurrence is visible.\n\n**Rule of thumb:** make it fail more often, then make it fail loudly and close to the cause. Don't trust a \"fix\" until the failure rate has dropped to zero over a statistically meaningful number of runs.\n\nIf you tell me the language/runtime and the symptom (corruption, deadlock, wrong results, crash), I can give more specific tooling and steps.",
+  "output": {
+    "duration_api_ms": 15132,
+    "stop_reason": "end_turn",
+    "session_id": "f19bb6f8-71ac-466b-b752-4831bb02953b",
+    "total_cost_usd": 0.030567700000000003,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5149,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1426,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5149
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1426,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5149,
+        "webSearchRequests": 0,
+        "costUSD": 0.030567700000000003,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "# Debugging a load-only race condition\n\n**1. Make it reproducible first**\n- Capture what \"load\" means: concurrency level, request mix, payload sizes, CPU count, and container limits (CPU throttling changes scheduling a lot).\n- Build a stress harness that reproduces it locally or in staging. Run it in a loop and track the failure rate, so you can tell whether a fix works.\n- Raise the odds of hitting it. Run more threads than cores, pin the process to fewer CPUs, add `sleep`/`yield` at suspect points, or use a chaos/fuzz scheduler. Examples are `rr --chaos`, Go's `-race` with `GOMAXPROCS` tweaks, and Java's jcstress.\n\n**2. Use tools that find races directly**\n- **Dynamic detectors:** ThreadSanitizer (C/C++/Go/Rust), Go `-race`, and Helgrind/DRD. They report unsynchronized accesses even when the bad interleaving doesn't happen on that run. Run them under your stress test.\n- **Java/JVM:** jcstress, thread dumps (`jstack`) taken during a hang, and async-profiler's lock profiling.\n- **Record and replay:** `rr` (Linux) records a failing run, so you can replay it deterministically and step backward from the corruption to the cause.\n- **Python/Node:** `faulthandler`, `py-spy dump`, and asyncio debug mode. For Node, look for interleaving across `await` points.\n\n**3. Gather evidence without changing timing**\n- Logging can hide the race, because I/O and locks in the logger change the interleaving. Prefer a lock-free ring buffer or per-thread buffers, and dump them on failure.\n- Record thread ID, a monotonic timestamp, a request or correlation ID, and the state before and after the critical operation.\n- Add invariant assertions close to the shared state (for example \"count >= 0\", \"this object is owned by one thread\") so the failure shows up where the bug is, not later.\n- Use sampling and tracing (eBPF, perf, OpenTelemetry) rather than heavy instrumentation.\n\n**4. Reason about the code**\nLook for the usual suspects:\n- Check-then-act (`if (!map.contains(k)) map.put(k, v)`) and read-modify-write on shared counters.\n- Lazy initialization and double-checked locking without proper memory ordering.\n- Shared mutable state in singletons, caches, static or global variables, and non-thread-safe libraries (date formatters, `HashMap`, regexes with state).\n- Lock ordering that causes deadlocks, or locks held across I/O.\n- Visibility problems: missing `volatile`/atomics/memory barriers.\n- Resource limits that only matter under load: connection-pool exhaustion, timeouts that fire mid-operation, retry storms, and queue overflows.\n- Callbacks or futures that complete on a different thread than you expect.\n\n**5. Narrow it down**\n- Bisect by disabling features, reducing the thread pool to 1 (does it vanish?), or serializing one component with a big lock. If a coarse lock fixes it, shrink the lock until it fails again. That tells you which state is involved.\n- Check the commit history near when it started, and bisect with the stress test as the oracle.\n\n**6. Fix and prove it**\n- Prefer eliminating sharing (immutability, thread confinement, message passing) over adding more locks.\n- If you need synchronization, make the invariant explicit: which lock guards which data. Use atomic operations or concurrent data structures for simple cases.\n- Write a regression test that forces the bad interleaving (injected delays, latches, or barriers) rather than relying on luck.\n- Re-run the stress test many times (hundreds of runs, or hours) under the race detector. A single clean run proves very little.\n- Deploy with metrics and alerts on the invariant you asserted, so a recurrence is visible.\n\n**Rule of thumb:** make it fail more often, then make it fail loudly and close to the cause. Don't trust a \"fix\" until the failure rate has dropped to zero over a statistically meaningful number of runs.\n\nIf you tell me the language/runtime and the symptom (corruption, deadlock, wrong results, crash), I can give more specific tooling and steps.",
+    "ttft_ms": 15171,
+    "type": "result",
+    "duration_ms": 15185,
+    "uuid": "80815ade-d6f5-48b6-b801-a5b3b648efe2",
+    "ttft_stream_ms": 3830,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3831,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "design-cache",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:29:02.120Z",
+  "durationMs": 8879,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7055,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 516,
+    "output_tokens_details": {
+      "thinking_tokens": 32
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7055
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0262327,
+  "result": "**Use TTL plus event-driven invalidation.** Give each entry a TTL, and delete or update the cache key whenever a profile changes.\n\n- **TTL only:** Simplest option, with no hooks into the write path. Reads can be stale for up to one TTL. Short TTLs mean more misses. Fine if a few minutes of staleness is acceptable.\n- **Event-driven invalidation** (on write, or through a change event or webhook): Data stays fresh. It needs access to every write path. A missed event leaves stale data indefinitely, so keep the TTL as a backstop.\n- **Write-through:** The cache is always current and the next read doesn't miss. It couples writes to the cache, and a failure between DB and cache can cause drift.\n- **Stale-while-revalidate:** Serve the stale entry and refresh it in the background. Latency stays low and it holds up if the API is slow or down. Some reads are briefly stale.\n\n**Pitfalls:**\n- **Thundering herd:** When a popular key expires, many requests hit the slow API at once. Use request coalescing or a lock per key.\n- **Same-time expiry:** Add jitter to TTLs so entries don't all expire together.\n- **Sensitive fields:** If profiles hold permissions or PII, use short TTLs or skip caching those fields.\n\nIf you don't control the API's writes, use TTL plus stale-while-revalidate. If you do, use event-driven invalidation with a TTL backstop.",
+  "output": {
+    "duration_api_ms": 8640,
+    "stop_reason": "end_turn",
+    "session_id": "4f6cd596-6c65-4244-9e70-cb7448783123",
+    "total_cost_usd": 0.0262327,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7055,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 516,
+      "output_tokens_details": {
+        "thinking_tokens": 32
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7055
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 516,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7055,
+        "webSearchRequests": 0,
+        "costUSD": 0.0262327,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 32,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Use TTL plus event-driven invalidation.** Give each entry a TTL, and delete or update the cache key whenever a profile changes.\n\n- **TTL only:** Simplest option, with no hooks into the write path. Reads can be stale for up to one TTL. Short TTLs mean more misses. Fine if a few minutes of staleness is acceptable.\n- **Event-driven invalidation** (on write, or through a change event or webhook): Data stays fresh. It needs access to every write path. A missed event leaves stale data indefinitely, so keep the TTL as a backstop.\n- **Write-through:** The cache is always current and the next read doesn't miss. It couples writes to the cache, and a failure between DB and cache can cause drift.\n- **Stale-while-revalidate:** Serve the stale entry and refresh it in the background. Latency stays low and it holds up if the API is slow or down. Some reads are briefly stale.\n\n**Pitfalls:**\n- **Thundering herd:** When a popular key expires, many requests hit the slow API at once. Use request coalescing or a lock per key.\n- **Same-time expiry:** Add jitter to TTLs so entries don't all expire together.\n- **Sensitive fields:** If profiles hold permissions or PII, use short TTLs or skip caching those fields.\n\nIf you don't control the API's writes, use TTL plus stale-while-revalidate. If you do, use event-driven invalidation with a TTL backstop.",
+    "ttft_ms": 3592,
+    "type": "result",
+    "duration_ms": 8689,
+    "uuid": "5fb454f6-140f-44a9-9cdf-48ecceb81b6c",
+    "ttft_stream_ms": 3590,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3591,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

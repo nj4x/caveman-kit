@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "error-explain",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:32:23.774Z",
+  "durationMs": 7372,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6920,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 417,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6920
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0249052,
+  "result": "Python's `json` parser is recursive. Each nesting level uses stack frames. Default limit is 1000, so nesting past roughly that depth raises `RecursionError`.\n\nFixes, easiest first:\n\n1. Raise the limit:\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(open(\"file.json\"))\n```\nVery high limits can crash the interpreter with a segfault (C stack overflow). Keep it moderate.\n\n2. Run in a thread with a bigger stack for very deep files:\n```python\nimport threading, sys\nsys.setrecursionlimit(100_000)\nthreading.stack_size(512 * 1024 * 1024)\nt = threading.Thread(target=main)\nt.start(); t.join()\n```\n\n3. Use an iterative parser such as `ijson` (streaming) or `orjson`. `orjson` has its own fixed depth limit of 1024, so it fails on the deepest files. `ijson` avoids recursion in parsing, but your code that walks the result must also be iterative.\n\nIf you walk the parsed data recursively, that code can hit the same error. Rewrite it with an explicit stack.\n\nIf the depth is unexpected, check the file. Runaway nesting often means a generator bug or a malicious input.",
+  "output": {
+    "duration_api_ms": 7119,
+    "stop_reason": "end_turn",
+    "session_id": "18cf529b-11e0-4e28-bb9f-b214a5315f60",
+    "total_cost_usd": 0.0249052,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6920,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 417,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6920
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 417,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6920,
+        "webSearchRequests": 0,
+        "costUSD": 0.0249052,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Python's `json` parser is recursive. Each nesting level uses stack frames. Default limit is 1000, so nesting past roughly that depth raises `RecursionError`.\n\nFixes, easiest first:\n\n1. Raise the limit:\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(open(\"file.json\"))\n```\nVery high limits can crash the interpreter with a segfault (C stack overflow). Keep it moderate.\n\n2. Run in a thread with a bigger stack for very deep files:\n```python\nimport threading, sys\nsys.setrecursionlimit(100_000)\nthreading.stack_size(512 * 1024 * 1024)\nt = threading.Thread(target=main)\nt.start(); t.join()\n```\n\n3. Use an iterative parser such as `ijson` (streaming) or `orjson`. `orjson` has its own fixed depth limit of 1024, so it fails on the deepest files. `ijson` avoids recursion in parsing, but your code that walks the result must also be iterative.\n\nIf you walk the parsed data recursively, that code can hit the same error. Rewrite it with an explicit stack.\n\nIf the depth is unexpected, check the file. Runaway nesting often means a generator bug or a malicious input.",
+    "ttft_ms": 7166,
+    "type": "result",
+    "duration_ms": 7170,
+    "uuid": "67af965d-f46c-4d18-bbd1-187404f29cb6",
+    "ttft_stream_ms": 4842,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 4842,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

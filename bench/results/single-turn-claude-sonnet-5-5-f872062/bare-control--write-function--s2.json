@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "write-function",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:26:19.476Z",
+  "durationMs": 8473,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5169,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 626,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5169
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0226177,
+  "result": "```python\ndef merge_intervals(intervals):\n    \"\"\"Merge overlapping intervals.\n\n    Intervals that touch (e.g. (1, 3) and (3, 5)) are treated as overlapping.\n    Returns a new sorted list; the input is not modified.\n    \"\"\"\n    if not intervals:\n        return []\n\n    ordered = sorted(intervals, key=lambda iv: iv[0])\n    merged = [ordered[0]]\n\n    for start, end in ordered[1:]:\n        last_start, last_end = merged[-1]\n        if start <= last_end:\n            merged[-1] = (last_start, max(last_end, end))\n        else:\n            merged.append((start, end))\n\n    return merged\n```\n\nExample:\n\n```python\n>>> merge_intervals([(8, 10), (1, 3), (2, 6), (15, 18), (17, 20)])\n[(1, 6), (8, 10), (15, 20)]\n```\n\n**How it works:** Sort by start. After that, any interval that overlaps the last merged one can be absorbed by extending the last merged end to `max(last_end, end)`. The `max` matters when an interval is fully contained in the previous one, such as (1, 10) followed by (2, 5). Otherwise the interval starts a new group.\n\n**Time complexity:** O(n log n).\n- Sorting dominates at O(n log n).\n- The merge pass is a single scan, O(n), because each interval is looked at once and the last-merged lookup is O(1).\n\n**Space complexity:** O(n) for the output list. Python's `sorted` also uses O(n) for the sorted copy. If you sort in place with `intervals.sort()`, the extra space beyond the output is O(1) auxiliary, though that mutates the input.\n\nIf the input is already sorted by start, you can skip the sort and the whole thing runs in O(n).\n\nTo treat touching intervals as separate, change `start <= last_end` to `start < last_end`.",
+  "output": {
+    "duration_api_ms": 8209,
+    "stop_reason": "end_turn",
+    "session_id": "d11c5af5-5090-4ed9-b933-be2f4e1eda2d",
+    "total_cost_usd": 0.0226177,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5169,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 626,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5169
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 626,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5169,
+        "webSearchRequests": 0,
+        "costUSD": 0.0226177,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "```python\ndef merge_intervals(intervals):\n    \"\"\"Merge overlapping intervals.\n\n    Intervals that touch (e.g. (1, 3) and (3, 5)) are treated as overlapping.\n    Returns a new sorted list; the input is not modified.\n    \"\"\"\n    if not intervals:\n        return []\n\n    ordered = sorted(intervals, key=lambda iv: iv[0])\n    merged = [ordered[0]]\n\n    for start, end in ordered[1:]:\n        last_start, last_end = merged[-1]\n        if start <= last_end:\n            merged[-1] = (last_start, max(last_end, end))\n        else:\n            merged.append((start, end))\n\n    return merged\n```\n\nExample:\n\n```python\n>>> merge_intervals([(8, 10), (1, 3), (2, 6), (15, 18), (17, 20)])\n[(1, 6), (8, 10), (15, 20)]\n```\n\n**How it works:** Sort by start. After that, any interval that overlaps the last merged one can be absorbed by extending the last merged end to `max(last_end, end)`. The `max` matters when an interval is fully contained in the previous one, such as (1, 10) followed by (2, 5). Otherwise the interval starts a new group.\n\n**Time complexity:** O(n log n).\n- Sorting dominates at O(n log n).\n- The merge pass is a single scan, O(n), because each interval is looked at once and the last-merged lookup is O(1).\n\n**Space complexity:** O(n) for the output list. Python's `sorted` also uses O(n) for the sorted copy. If you sort in place with `intervals.sort()`, the extra space beyond the output is O(1) auxiliary, though that mutates the input.\n\nIf the input is already sorted by start, you can skip the sort and the whole thing runs in O(n).\n\nTo treat touching intervals as separate, change `start <= last_end` to `start < last_end`.",
+    "ttft_ms": 8249,
+    "type": "result",
+    "duration_ms": 8261,
+    "uuid": "7d9b1748-1c4c-4a30-8a76-7b6670149212",
+    "ttft_stream_ms": 4845,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 4845,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "review-snippet",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:31:37.413Z",
+  "durationMs": 5684,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6956,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 340,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6956
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.024225200000000002,
+  "result": "**Main bug:** `forEach` ignores async callbacks' promises. `return users` runs immediately, so caller gets `[]` (or partial array).\n\n**Secondary bugs:**\n- Result order is nondeterministic: `push` happens in completion order, not `ids` order.\n- No `res.ok` check. 404/500 responses get parsed as users, or `.json()` throws on non-JSON.\n- No error handling. A rejection inside the `forEach` callback becomes an unhandled promise rejection, not a rejection of `loadUsers`.\n\n**Fix:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(ids.map(async id => {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n    return res.json();\n  }));\n}\n```\n\n`Promise.all` keeps input order and rejects if any fetch fails. Want partial results instead? Use `Promise.allSettled`.",
+  "output": {
+    "duration_api_ms": 5431,
+    "stop_reason": "end_turn",
+    "session_id": "292d069c-b46f-4cfe-bccc-1a9a552cf331",
+    "total_cost_usd": 0.024225200000000002,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6956,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 340,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6956
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 340,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6956,
+        "webSearchRequests": 0,
+        "costUSD": 0.024225200000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**Main bug:** `forEach` ignores async callbacks' promises. `return users` runs immediately, so caller gets `[]` (or partial array).\n\n**Secondary bugs:**\n- Result order is nondeterministic: `push` happens in completion order, not `ids` order.\n- No `res.ok` check. 404/500 responses get parsed as users, or `.json()` throws on non-JSON.\n- No error handling. A rejection inside the `forEach` callback becomes an unhandled promise rejection, not a rejection of `loadUsers`.\n\n**Fix:**\n\n```js\nasync function loadUsers(ids) {\n  return Promise.all(ids.map(async id => {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) throw new Error(`Failed to load user ${id}: ${res.status}`);\n    return res.json();\n  }));\n}\n```\n\n`Promise.all` keeps input order and rejects if any fetch fails. Want partial results instead? Use `Promise.allSettled`.",
+    "ttft_ms": 5476,
+    "type": "result",
+    "duration_ms": 5483,
+    "uuid": "1dc8009a-68ee-4051-8945-05882f3658c6",
+    "ttft_stream_ms": 4084,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 4085,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

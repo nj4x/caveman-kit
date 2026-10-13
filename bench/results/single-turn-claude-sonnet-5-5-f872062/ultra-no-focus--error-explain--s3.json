@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "error-explain",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:34:32.739Z",
+  "durationMs": 7747,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6868,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 699,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6868
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0275952,
+  "result": "Python's `json` parser recurses once per nesting level. Default limit is 1000 frames (`sys.getrecursionlimit()`). The C scanner and Python frames each count. JSON nested a few hundred levels deep hits the limit.\n\nFixes, easiest first:\n\n1. **Raise the limit.** Fine for moderately deep data:\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(open(\"file.json\"))\n```\nToo high a value can segfault the interpreter (C stack overflow). Raise it in steps. Don't go to millions.\n\n2. **Run in a thread with a bigger stack.** Use this if raising the limit crashes:\n```python\nimport sys, json, threading\n\nsys.setrecursionlimit(50_000)\nthreading.stack_size(512 * 1024 * 1024)\n\nresult = {}\ndef work():\n    with open(\"file.json\") as f:\n        result[\"data\"] = json.load(f)\n\nt = threading.Thread(target=work)\nt.start(); t.join()\ndata = result[\"data\"]\n```\n\n3. **Use an iterative parser.** No recursion limit in the parser. `ijson` streams events:\n```python\nimport ijson\nwith open(\"file.json\", \"rb\") as f:\n    for prefix, event, value in ijson.parse(f):\n        ...\n```\nNote: if you then build the object, or walk it, with recursive code, you hit the same error. Walk it with an explicit stack instead.\n\n4. **Check your own code.** The error may come from your recursive walker, not `json`. Traceback shows which. Convert to a stack:\n```python\nstack = [data]\nwhile stack:\n    node = stack.pop()\n    if isinstance(node, dict):\n        stack.extend(node.values())\n    elif isinstance(node, list):\n        stack.extend(node)\n    else:\n        ...  # leaf\n```\n\n5. **Check the file.** Nesting of thousands of levels is unusual. It can mean a bug in the producer, or hostile input. For untrusted input, don't raise the limit. Reject deep files instead.\n\nIf you paste the traceback, I can tell whether the parser or your own code recurses.",
+  "output": {
+    "duration_api_ms": 7490,
+    "stop_reason": "end_turn",
+    "session_id": "d76a2f3e-38f7-4317-aac6-fd8e188604d2",
+    "total_cost_usd": 0.0275952,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6868,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 699,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6868
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 699,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6868,
+        "webSearchRequests": 0,
+        "costUSD": 0.0275952,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Python's `json` parser recurses once per nesting level. Default limit is 1000 frames (`sys.getrecursionlimit()`). The C scanner and Python frames each count. JSON nested a few hundred levels deep hits the limit.\n\nFixes, easiest first:\n\n1. **Raise the limit.** Fine for moderately deep data:\n```python\nimport sys, json\nsys.setrecursionlimit(10_000)\ndata = json.load(open(\"file.json\"))\n```\nToo high a value can segfault the interpreter (C stack overflow). Raise it in steps. Don't go to millions.\n\n2. **Run in a thread with a bigger stack.** Use this if raising the limit crashes:\n```python\nimport sys, json, threading\n\nsys.setrecursionlimit(50_000)\nthreading.stack_size(512 * 1024 * 1024)\n\nresult = {}\ndef work():\n    with open(\"file.json\") as f:\n        result[\"data\"] = json.load(f)\n\nt = threading.Thread(target=work)\nt.start(); t.join()\ndata = result[\"data\"]\n```\n\n3. **Use an iterative parser.** No recursion limit in the parser. `ijson` streams events:\n```python\nimport ijson\nwith open(\"file.json\", \"rb\") as f:\n    for prefix, event, value in ijson.parse(f):\n        ...\n```\nNote: if you then build the object, or walk it, with recursive code, you hit the same error. Walk it with an explicit stack instead.\n\n4. **Check your own code.** The error may come from your recursive walker, not `json`. Traceback shows which. Convert to a stack:\n```python\nstack = [data]\nwhile stack:\n    node = stack.pop()\n    if isinstance(node, dict):\n        stack.extend(node.values())\n    elif isinstance(node, list):\n        stack.extend(node)\n    else:\n        ...  # leaf\n```\n\n5. **Check the file.** Nesting of thousands of levels is unusual. It can mean a bug in the producer, or hostile input. For untrusted input, don't raise the limit. Reject deep files instead.\n\nIf you paste the traceback, I can tell whether the parser or your own code recurses.",
+    "ttft_ms": 7531,
+    "type": "result",
+    "duration_ms": 7542,
+    "uuid": "56d3f1b2-c796-46bf-aa37-e4434315e64c",
+    "ttft_stream_ms": 3630,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3631,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

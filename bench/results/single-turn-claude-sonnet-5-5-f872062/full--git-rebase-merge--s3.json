@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "git-rebase-merge",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:30:12.922Z",
+  "durationMs": 5153,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6909,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 224,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6909
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0229477,
+  "result": "Rebase on shared branch: almost never. Rewrites history, so everyone else's clones diverge and need force-push plus painful recovery.\n\nRebase OK only when:\n- Team agrees, and everyone stops pushing while you do it.\n- Your own unpushed or personal commits sit on top of the shared branch. Run `git pull --rebase` to replay them.\n- You rebase the feature branch onto `main` before merge, with team warned and everyone re-syncing after (`git fetch && git reset --hard origin/<branch>`).\n\nDefault: `git merge`. Preserves history, safe for multiple contributors, no force-push.\n\nRule: never rebase commits others already pulled.",
+  "output": {
+    "duration_api_ms": 4895,
+    "stop_reason": "end_turn",
+    "session_id": "51fc5608-5c55-4e6f-b040-5a654644d0dd",
+    "total_cost_usd": 0.0229477,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6909,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 224,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6909
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 224,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6909,
+        "webSearchRequests": 0,
+        "costUSD": 0.0229477,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebase on shared branch: almost never. Rewrites history, so everyone else's clones diverge and need force-push plus painful recovery.\n\nRebase OK only when:\n- Team agrees, and everyone stops pushing while you do it.\n- Your own unpushed or personal commits sit on top of the shared branch. Run `git pull --rebase` to replay them.\n- You rebase the feature branch onto `main` before merge, with team warned and everyone re-syncing after (`git fetch && git reset --hard origin/<branch>`).\n\nDefault: `git merge`. Preserves history, safe for multiple contributors, no force-push.\n\nRule: never rebase commits others already pulled.",
+    "ttft_ms": 4938,
+    "type": "result",
+    "duration_ms": 4948,
+    "uuid": "f3ea246b-a8a7-4d2a-8a0b-43c14fb50c4a",
+    "ttft_stream_ms": 3663,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 3664,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

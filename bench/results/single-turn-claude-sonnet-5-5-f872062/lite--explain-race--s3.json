@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "explain-race",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:27:45.455Z",
+  "durationMs": 8150,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7033,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 502,
+    "output_tokens_details": {
+      "thinking_tokens": 18
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7033
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0260377,
+  "result": "Make the race happen on purpose and in a way you can see it, then confirm the fix under the same conditions.\n\n1. **Reproduce it.** Run a load test that hammers the failing path with high concurrency. Inject delays (`sleep`, yield) at suspect points to widen the timing window. A reliable repro is most of the work.\n2. **Run race detectors.** Use ThreadSanitizer (`-fsanitize=thread`), Go's `-race`, or Helgrind/DRD. They catch data races even when the output looks correct.\n3. **Log without changing timing much.** Use per-thread ring buffers or async structured logs with thread ID, monotonic timestamp and a correlation ID. Heavy synchronous logging adds locks and can hide the bug.\n4. **Capture state when it fails.** On failure, take thread dumps (`jstack`, `gdb thread apply all bt`, `py-spy dump`) or a core dump. These show which locks are held and where each thread is waiting.\n5. **Audit shared state.** Find check-then-act patterns, lazy init, unsynchronized collections, non-atomic counters and inconsistent lock ordering.\n6. **Fix at the root.** Prefer immutability or confinement (each thread owns its own data). Otherwise use atomics or a single lock with consistent ordering.\n7. **Verify the fix.** Re-run the same load test and race detector many times, since one passing run proves little. Add a stress test to CI.",
+  "output": {
+    "duration_api_ms": 7898,
+    "stop_reason": "end_turn",
+    "session_id": "9c6e4d15-1b88-4318-918a-d17034a69004",
+    "total_cost_usd": 0.0260377,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7033,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 502,
+      "output_tokens_details": {
+        "thinking_tokens": 18
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7033
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 502,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7033,
+        "webSearchRequests": 0,
+        "costUSD": 0.0260377,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 18,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Make the race happen on purpose and in a way you can see it, then confirm the fix under the same conditions.\n\n1. **Reproduce it.** Run a load test that hammers the failing path with high concurrency. Inject delays (`sleep`, yield) at suspect points to widen the timing window. A reliable repro is most of the work.\n2. **Run race detectors.** Use ThreadSanitizer (`-fsanitize=thread`), Go's `-race`, or Helgrind/DRD. They catch data races even when the output looks correct.\n3. **Log without changing timing much.** Use per-thread ring buffers or async structured logs with thread ID, monotonic timestamp and a correlation ID. Heavy synchronous logging adds locks and can hide the bug.\n4. **Capture state when it fails.** On failure, take thread dumps (`jstack`, `gdb thread apply all bt`, `py-spy dump`) or a core dump. These show which locks are held and where each thread is waiting.\n5. **Audit shared state.** Find check-then-act patterns, lazy init, unsynchronized collections, non-atomic counters and inconsistent lock ordering.\n6. **Fix at the root.** Prefer immutability or confinement (each thread owns its own data). Otherwise use atomics or a single lock with consistent ordering.\n7. **Verify the fix.** Re-run the same load test and race detector many times, since one passing run proves little. Add a stress test to CI.",
+    "ttft_ms": 3439,
+    "type": "result",
+    "duration_ms": 7948,
+    "uuid": "5729ea6a-50f4-4648-bf19-dc73a4565f02",
+    "ttft_stream_ms": 3437,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 3437,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

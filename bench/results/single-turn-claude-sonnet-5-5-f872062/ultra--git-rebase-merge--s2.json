@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra",
+  "mode": "ultra",
+  "task": "git-rebase-merge",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:31:58.228Z",
+  "durationMs": 5163,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6882,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 228,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6882
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0229202,
+  "result": "Rebase when branch is shared only if everyone agrees to it. Default: merge.\n\n**Rebase OK when:**\n- Your local, unpushed commits: rebase onto updated base (`git pull --rebase`) for clean linear history.\n- Team agreed on rebase workflow and force-push coordination (`git push --force-with-lease`).\n- Cleaning up your own WIP commits before the branch merges.\n\n**Use merge when:**\n- Others have pulled or based work on the branch. Rebase rewrites commit hashes, so their history diverges and they get duplicate commits or conflicts.\n- You want to preserve true history and avoid force-push.\n\nRule: never rebase commits others already have.",
+  "output": {
+    "duration_api_ms": 4910,
+    "stop_reason": "end_turn",
+    "session_id": "f7a7f6e5-bacd-4e0b-a3b5-02b979e0dda1",
+    "total_cost_usd": 0.0229202,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6882,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 228,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6882
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 228,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6882,
+        "webSearchRequests": 0,
+        "costUSD": 0.0229202,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rebase when branch is shared only if everyone agrees to it. Default: merge.\n\n**Rebase OK when:**\n- Your local, unpushed commits: rebase onto updated base (`git pull --rebase`) for clean linear history.\n- Team agreed on rebase workflow and force-push coordination (`git push --force-with-lease`).\n- Cleaning up your own WIP commits before the branch merges.\n\n**Use merge when:**\n- Others have pulled or based work on the branch. Rebase rewrites commit hashes, so their history diverges and they get duplicate commits or conflicts.\n- You want to preserve true history and avoid force-push.\n\nRule: never rebase commits others already have.",
+    "ttft_ms": 4954,
+    "type": "result",
+    "duration_ms": 4961,
+    "uuid": "ef5aeab5-da8f-4021-bddf-943c9b0486e3",
+    "ttft_stream_ms": 3892,
+    "time_to_request_ms": 50,
+    "first_content_frame_ms": 3893,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

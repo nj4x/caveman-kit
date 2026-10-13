@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "explain-race",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:29:32.321Z",
+  "durationMs": 7010,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6910,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 388,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6910
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.024590200000000003,
+  "result": "Reproduce it first. Turn up the contention, then capture state without changing the timing much. Then fix the shared-state access.\n\n1. **Reproduce:** Load-test with more threads than cores. Add random `sleep`/`yield` at suspect points to widen race windows. Run in a loop until it fails.\n2. **Detect:** Run race detectors in CI or staging: ThreadSanitizer (`-fsanitize=thread`), Go `-race`, Java JCStress. They catch races that have not crashed yet.\n3. **Observe:** Normal logging changes timing. Use lock-free ring-buffer logs, or log thread ID plus a monotonic timestamp. On failure, take thread dumps (`jstack`, `gdb thread apply all bt`) to catch deadlocks or lock order.\n4. **Narrow:** Find state shared across threads, like caches, counters, lazy init and check-then-act. Shrink the suspect area by bisecting which parts take locks.\n5. **Fix:** Use a mutex, atomics or immutable data, or confine the state to one thread. Keep the stress test as a regression test. One clean run proves nothing, so run it many times.",
+  "output": {
+    "duration_api_ms": 6761,
+    "stop_reason": "end_turn",
+    "session_id": "c1c0d840-7780-4b81-856f-59de3d9992a1",
+    "total_cost_usd": 0.024590200000000003,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6910,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 388,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6910
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 388,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6910,
+        "webSearchRequests": 0,
+        "costUSD": 0.024590200000000003,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Reproduce it first. Turn up the contention, then capture state without changing the timing much. Then fix the shared-state access.\n\n1. **Reproduce:** Load-test with more threads than cores. Add random `sleep`/`yield` at suspect points to widen race windows. Run in a loop until it fails.\n2. **Detect:** Run race detectors in CI or staging: ThreadSanitizer (`-fsanitize=thread`), Go `-race`, Java JCStress. They catch races that have not crashed yet.\n3. **Observe:** Normal logging changes timing. Use lock-free ring-buffer logs, or log thread ID plus a monotonic timestamp. On failure, take thread dumps (`jstack`, `gdb thread apply all bt`) to catch deadlocks or lock order.\n4. **Narrow:** Find state shared across threads, like caches, counters, lazy init and check-then-act. Shrink the suspect area by bisecting which parts take locks.\n5. **Fix:** Use a mutex, atomics or immutable data, or confine the state to one thread. Keep the stress test as a regression test. One clean run proves nothing, so run it many times.",
+    "ttft_ms": 6800,
+    "type": "result",
+    "duration_ms": 6812,
+    "uuid": "41431c67-b479-4b88-8687-065d2ed64edf",
+    "ttft_stream_ms": 3582,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3582,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

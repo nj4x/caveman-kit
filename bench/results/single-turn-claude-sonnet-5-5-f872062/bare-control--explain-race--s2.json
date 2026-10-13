@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare-control",
+  "mode": "off",
+  "task": "explain-race",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:24:21.975Z",
+  "durationMs": 32872,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5155,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1995,
+    "output_tokens_details": {
+      "thinking_tokens": 21
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5155
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.036272700000000005,
+  "result": "Load-only race conditions are hard because the bug depends on timing, and anything that changes timing (logging, a debugger, a different machine) can make it disappear. The way through is to make the failure easy to reproduce, collect evidence without disturbing timing much, and then prove the fix holds.\n\n## 1. Make it reproducible\n- **Get a reliable repro before anything else.** Capture the load profile from production (request mix, concurrency, payload sizes) and replay it with a tool like k6, wrk, Gatling or Locust, or a custom harness.\n- **Make collisions more likely:**\n  - Run more threads than you have cores.\n  - Pin to fewer cores (`taskset`, cgroups, container CPU limits) so threads get preempted more often.\n  - Add small random sleeps or `yield()` at suspect points (\"chaos\" or \"jitter\" injection).\n  - Shrink pools, queues and caches so contention goes up.\n- **Narrow the input.** Shrink the repro until it fails fast. A single endpoint hit by 50 threads in a tight loop is far easier to work with than a full-system load test.\n- **Track the failure rate.** For example, \"fails 3 times in 1000 runs.\" That number is how you'll later tell whether a fix worked.\n\n## 2. Collect evidence without changing timing much\n- **Avoid synchronous logging.** It usually takes a lock and serializes your threads, which hides the race. Instead use:\n  - Lock-free per-thread ring buffers, dumped when the failure happens.\n  - Async loggers.\n  - Monotonic timestamps plus thread IDs, so you can rebuild the interleaving afterwards.\n- **Use correlation IDs** to follow one request across threads.\n- **Assert invariants loudly and early.** Check things like \"this map entry exists,\" \"this counter is never negative,\" \"this object isn't used after release.\" An assert that fires at the corruption point beats a crash ten minutes later.\n- **Dump state on failure:** a core dump, heap dump, or thread dump (`jstack`, `gdb thread apply all bt`, `py-spy dump`, `dotnet-dump`). Thread dumps are especially useful for deadlocks and livelocks.\n\n## 3. Use the tooling built for this\n| Ecosystem | Tool |\n|---|---|\n| C/C++/Rust | **ThreadSanitizer** (`-fsanitize=thread`), Helgrind/DRD, `loom` (Rust: exhaustively explores interleavings) |\n| Go | `go test -race` / `go build -race` |\n| Java | jcstress, Java Flight Recorder, async-profiler lock profiling, FindBugs/SpotBugs concurrency checks |\n| .NET | Concurrency Visualizer, Coyote (systematic interleaving testing) |\n| General | `rr` record/replay with `--chaos` (Linux), deterministic simulation testing |\n\nRun your tests under TSan or `-race` while the load test is running. These tools catch data races even when the run didn't visibly fail, so you often find the bug without hitting the symptom.\n\n## 4. Form hypotheses from the usual suspects\nMost races fall into a few patterns:\n- **Check-then-act:** `if (!map.contains(k)) map.put(k, v)`, lazy init, double-checked locking without proper memory barriers.\n- **Read-modify-write on shared state:** `count++`, updating stats, mutating shared collections.\n- **Unsafe publication:** an object is shared with another thread before its constructor finishes, or a field is missing `volatile`/atomic.\n- **Lifecycle bugs:** use-after-close, a callback firing after cancel, connection-pool objects returned twice.\n- **Shared \"thread-safe\" objects that aren't:** `SimpleDateFormat`, non-concurrent HashMaps, request-scoped state stored in singletons or statics.\n- **Lock ordering:** deadlock under contention.\n- **Races outside memory:** two requests updating the same DB row (lost updates), cache stampedes, file renames.\n\nReview the code that touches the corrupted state and ask, for each shared mutable variable: who writes it, who reads it, and what guards it?\n\n## 5. Confirm, fix, and verify\n- **Prove the hypothesis.** Put a deliberate sleep inside the suspected window. If the failure rate jumps from 0.3% to 90%, you've found it.\n- **Fix the design, not just the symptom.** Options include:\n  - Stop sharing the state (make it immutable, or confine it to one thread).\n  - Use atomic operations (`computeIfAbsent`, CAS, atomics).\n  - Narrow the critical section with correct locking.\n  - Use DB-level guards (optimistic locking, `SELECT … FOR UPDATE`, unique constraints).\n- **Don't fix it with a sleep or retry.** That only shrinks the window, and the bug comes back under more load.\n- **Verify with statistics.** Run the amplified repro for many times more iterations than it took to fail before, under the race detector. Then add a stress or regression test (jcstress, loom, or a concurrent test with a barrier/latch that starts all threads at once) so it stays fixed.\n\n## Practical tips\n- A `CountDownLatch` or barrier that releases all threads at the same instant makes collisions much more likely in tests.\n- If adding logs or attaching a debugger makes the bug vanish, that's strong evidence it's a timing race, not a logic bug.\n- Check recent changes to pool sizes, async conversions, or caching. Those often expose races that were always there.\n- If the bug only shows up in production, deploy the invariant checks and ring-buffer tracing there behind a feature flag, and capture a dump when they trip.\n\nIf you tell me your language or runtime and what the failure looks like (corrupted data, crash, deadlock, wrong response), I can suggest the specific tools and the patterns most likely to be the cause.",
+  "output": {
+    "duration_api_ms": 32615,
+    "stop_reason": "end_turn",
+    "session_id": "27168ea3-13ac-4276-9594-40f3a04d6fe0",
+    "total_cost_usd": 0.036272700000000005,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5155,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1995,
+      "output_tokens_details": {
+        "thinking_tokens": 21
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5155
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1995,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5155,
+        "webSearchRequests": 0,
+        "costUSD": 0.036272700000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 21,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Load-only race conditions are hard because the bug depends on timing, and anything that changes timing (logging, a debugger, a different machine) can make it disappear. The way through is to make the failure easy to reproduce, collect evidence without disturbing timing much, and then prove the fix holds.\n\n## 1. Make it reproducible\n- **Get a reliable repro before anything else.** Capture the load profile from production (request mix, concurrency, payload sizes) and replay it with a tool like k6, wrk, Gatling or Locust, or a custom harness.\n- **Make collisions more likely:**\n  - Run more threads than you have cores.\n  - Pin to fewer cores (`taskset`, cgroups, container CPU limits) so threads get preempted more often.\n  - Add small random sleeps or `yield()` at suspect points (\"chaos\" or \"jitter\" injection).\n  - Shrink pools, queues and caches so contention goes up.\n- **Narrow the input.** Shrink the repro until it fails fast. A single endpoint hit by 50 threads in a tight loop is far easier to work with than a full-system load test.\n- **Track the failure rate.** For example, \"fails 3 times in 1000 runs.\" That number is how you'll later tell whether a fix worked.\n\n## 2. Collect evidence without changing timing much\n- **Avoid synchronous logging.** It usually takes a lock and serializes your threads, which hides the race. Instead use:\n  - Lock-free per-thread ring buffers, dumped when the failure happens.\n  - Async loggers.\n  - Monotonic timestamps plus thread IDs, so you can rebuild the interleaving afterwards.\n- **Use correlation IDs** to follow one request across threads.\n- **Assert invariants loudly and early.** Check things like \"this map entry exists,\" \"this counter is never negative,\" \"this object isn't used after release.\" An assert that fires at the corruption point beats a crash ten minutes later.\n- **Dump state on failure:** a core dump, heap dump, or thread dump (`jstack`, `gdb thread apply all bt`, `py-spy dump`, `dotnet-dump`). Thread dumps are especially useful for deadlocks and livelocks.\n\n## 3. Use the tooling built for this\n| Ecosystem | Tool |\n|---|---|\n| C/C++/Rust | **ThreadSanitizer** (`-fsanitize=thread`), Helgrind/DRD, `loom` (Rust: exhaustively explores interleavings) |\n| Go | `go test -race` / `go build -race` |\n| Java | jcstress, Java Flight Recorder, async-profiler lock profiling, FindBugs/SpotBugs concurrency checks |\n| .NET | Concurrency Visualizer, Coyote (systematic interleaving testing) |\n| General | `rr` record/replay with `--chaos` (Linux), deterministic simulation testing |\n\nRun your tests under TSan or `-race` while the load test is running. These tools catch data races even when the run didn't visibly fail, so you often find the bug without hitting the symptom.\n\n## 4. Form hypotheses from the usual suspects\nMost races fall into a few patterns:\n- **Check-then-act:** `if (!map.contains(k)) map.put(k, v)`, lazy init, double-checked locking without proper memory barriers.\n- **Read-modify-write on shared state:** `count++`, updating stats, mutating shared collections.\n- **Unsafe publication:** an object is shared with another thread before its constructor finishes, or a field is missing `volatile`/atomic.\n- **Lifecycle bugs:** use-after-close, a callback firing after cancel, connection-pool objects returned twice.\n- **Shared \"thread-safe\" objects that aren't:** `SimpleDateFormat`, non-concurrent HashMaps, request-scoped state stored in singletons or statics.\n- **Lock ordering:** deadlock under contention.\n- **Races outside memory:** two requests updating the same DB row (lost updates), cache stampedes, file renames.\n\nReview the code that touches the corrupted state and ask, for each shared mutable variable: who writes it, who reads it, and what guards it?\n\n## 5. Confirm, fix, and verify\n- **Prove the hypothesis.** Put a deliberate sleep inside the suspected window. If the failure rate jumps from 0.3% to 90%, you've found it.\n- **Fix the design, not just the symptom.** Options include:\n  - Stop sharing the state (make it immutable, or confine it to one thread).\n  - Use atomic operations (`computeIfAbsent`, CAS, atomics).\n  - Narrow the critical section with correct locking.\n  - Use DB-level guards (optimistic locking, `SELECT … FOR UPDATE`, unique constraints).\n- **Don't fix it with a sleep or retry.** That only shrinks the window, and the bug comes back under more load.\n- **Verify with statistics.** Run the amplified repro for many times more iterations than it took to fail before, under the race detector. Then add a stress or regression test (jcstress, loom, or a concurrent test with a barrier/latch that starts all threads at once) so it stays fixed.\n\n## Practical tips\n- A `CountDownLatch` or barrier that releases all threads at the same instant makes collisions much more likely in tests.\n- If adding logs or attaching a debugger makes the bug vanish, that's strong evidence it's a timing race, not a logic bug.\n- Check recent changes to pool sizes, async conversions, or caching. Those often expose races that were always there.\n- If the bug only shows up in production, deploy the invariant checks and ring-buffer tracing there behind a feature flag, and capture a dump when they trip.\n\nIf you tell me your language or runtime and what the failure looks like (corrupted data, crash, deadlock, wrong response), I can suggest the specific tools and the patterns most likely to be the cause.",
+    "ttft_ms": 11120,
+    "type": "result",
+    "duration_ms": 32669,
+    "uuid": "f38613c8-dbca-485f-958b-e9315197daab",
+    "ttft_stream_ms": 11118,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 11119,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

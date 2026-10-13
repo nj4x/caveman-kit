@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "ultra-no-focus",
+  "mode": "ultra",
+  "task": "explain-race",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:33:26.717Z",
+  "durationMs": 14640,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6831,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1097,
+    "output_tokens_details": {
+      "thinking_tokens": 23
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 6831
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0314827,
+  "result": "Race under load = timing window widens with contention. Goal: make it reproduce fast, then find the unsynced shared state.\n\n**1. Reproduce cheaply**\n- Load test locally (k6, wrk, JMeter, custom harness). Ramp concurrency past prod peak.\n- Shrink the window: more threads than cores, `taskset`/CPU limits, fewer pool slots, inject `sleep`/`yield` at suspect points.\n- Loop the failing test thousands of times (`go test -count=10000`, `pytest --count`, JUnit repeat).\n- Stress tools: `stress-ng` for CPU noise, `tc netem` for network jitter.\n\n**2. Use race detectors**\n- Go: `-race`. C/C++/Rust: ThreadSanitizer (`-fsanitize=thread`). Java: `jcstress`, or Lincheck for Kotlin/JVM. .NET: Coyote. Helgrind/DRD under Valgrind.\n- Run them under the load test, not only unit tests. They flag unsynced access even when no failure shows.\n\n**3. Observe without killing timing**\n- Heavy logging serializes threads and hides the bug. Log to a lock-free ring buffer per thread, and dump it on failure.\n- Log thread ID, monotonic timestamp, object ID, and state before and after.\n- Add invariant asserts at the failure point. Crash early, capture the core dump.\n- On hang, take thread dumps (`jstack`, `gdb thread apply all bt`, `py-spy dump`, Go `SIGQUIT`). Deadlock shows as a lock cycle.\n- Use tracing (`perf`, eBPF/`bpftrace`, async-profiler lock mode) for lock contention and wait graphs.\n\n**4. Narrow the suspect code**\n- Look for check-then-act (`if !map.contains(k) map.put(k)`), lazy init, unsynced read-modify-write (`count++`), and shared mutable caches.\n- Look for iterating a collection while another thread mutates it.\n- Look for objects escaping the constructor, and for publication without a memory barrier (missing `volatile`/atomic).\n- Look for connection, buffer, or request objects reused across pool threads. ThreadLocal leaks between requests also count.\n- Check lock ordering for deadlocks. Look for async callbacks touching state after the owner has freed it.\n- Bisect: wrap a whole subsystem in one big lock. If the failure stops, shrink the lock scope until it reappears.\n\n**5. Fix**\n- Prefer removing shared mutable state: immutability, message passing, per-thread copies.\n- Otherwise use the narrowest correct primitive: atomic or CAS, mutex, concurrent collection, `compute`/`putIfAbsent`.\n- Keep a consistent lock order. Never hold a lock across I/O or callbacks.\n\n**6. Verify**\n- Rerun the same load and loop count with the race detector on. Zero reports, zero failures.\n- Add a stress test to CI so the race does not regress.\n- For critical algorithms, use model checking or deterministic schedulers: TLA+, Loom (Rust), rr chaos mode (record and replay the failing run).",
+  "output": {
+    "duration_api_ms": 14380,
+    "stop_reason": "end_turn",
+    "session_id": "20130ed2-7ff0-4cc7-bae3-dbd8ba01af93",
+    "total_cost_usd": 0.0314827,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 6831,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1097,
+      "output_tokens_details": {
+        "thinking_tokens": 23
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 6831
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1097,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 6831,
+        "webSearchRequests": 0,
+        "costUSD": 0.0314827,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 23,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Race under load = timing window widens with contention. Goal: make it reproduce fast, then find the unsynced shared state.\n\n**1. Reproduce cheaply**\n- Load test locally (k6, wrk, JMeter, custom harness). Ramp concurrency past prod peak.\n- Shrink the window: more threads than cores, `taskset`/CPU limits, fewer pool slots, inject `sleep`/`yield` at suspect points.\n- Loop the failing test thousands of times (`go test -count=10000`, `pytest --count`, JUnit repeat).\n- Stress tools: `stress-ng` for CPU noise, `tc netem` for network jitter.\n\n**2. Use race detectors**\n- Go: `-race`. C/C++/Rust: ThreadSanitizer (`-fsanitize=thread`). Java: `jcstress`, or Lincheck for Kotlin/JVM. .NET: Coyote. Helgrind/DRD under Valgrind.\n- Run them under the load test, not only unit tests. They flag unsynced access even when no failure shows.\n\n**3. Observe without killing timing**\n- Heavy logging serializes threads and hides the bug. Log to a lock-free ring buffer per thread, and dump it on failure.\n- Log thread ID, monotonic timestamp, object ID, and state before and after.\n- Add invariant asserts at the failure point. Crash early, capture the core dump.\n- On hang, take thread dumps (`jstack`, `gdb thread apply all bt`, `py-spy dump`, Go `SIGQUIT`). Deadlock shows as a lock cycle.\n- Use tracing (`perf`, eBPF/`bpftrace`, async-profiler lock mode) for lock contention and wait graphs.\n\n**4. Narrow the suspect code**\n- Look for check-then-act (`if !map.contains(k) map.put(k)`), lazy init, unsynced read-modify-write (`count++`), and shared mutable caches.\n- Look for iterating a collection while another thread mutates it.\n- Look for objects escaping the constructor, and for publication without a memory barrier (missing `volatile`/atomic).\n- Look for connection, buffer, or request objects reused across pool threads. ThreadLocal leaks between requests also count.\n- Check lock ordering for deadlocks. Look for async callbacks touching state after the owner has freed it.\n- Bisect: wrap a whole subsystem in one big lock. If the failure stops, shrink the lock scope until it reappears.\n\n**5. Fix**\n- Prefer removing shared mutable state: immutability, message passing, per-thread copies.\n- Otherwise use the narrowest correct primitive: atomic or CAS, mutex, concurrent collection, `compute`/`putIfAbsent`.\n- Keep a consistent lock order. Never hold a lock across I/O or callbacks.\n\n**6. Verify**\n- Rerun the same load and loop count with the race detector on. Zero reports, zero failures.\n- Add a stress test to CI so the race does not regress.\n- For critical algorithms, use model checking or deterministic schedulers: TLA+, Loom (Rust), rr chaos mode (record and replay the failing run).",
+    "ttft_ms": 3250,
+    "type": "result",
+    "duration_ms": 14433,
+    "uuid": "6d08e446-5df8-4a4d-bd78-8e8dc2433d2f",
+    "ttft_stream_ms": 3249,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 3249,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

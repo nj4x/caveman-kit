@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "design-cache",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:23:08.786Z",
+  "durationMs": 16954,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5171,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 1404,
+    "output_tokens_details": {
+      "thinking_tokens": 20
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 5171
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.030402700000000005,
+  "result": "**My recommendation:** use cache-aside with a TTL, and also delete the cached entry whenever a profile changes, if you can detect writes. If you can't detect writes, use TTL alone and add stale-while-revalidate to hide the slow API.\n\n## The main options\n\n| Strategy | How it works | Pros | Cons |\n|---|---|---|---|\n| **TTL only** | Each entry expires after N seconds or minutes | Simplest; no coupling to the write path; works even if you don't own the API | Data can be stale for up to the full TTL; it's hard to pick a TTL that is both fresh and gives a good hit rate |\n| **Explicit invalidation on write** | When a profile is updated, delete (or update) its cache key | Data is fresh soon after a change; you can use long TTLs and get a high hit rate | You must see every write path; one missed path (an admin tool, a batch job, another service) means stale data indefinitely; there are race conditions (below) |\n| **Event-driven invalidation** | The API or database publishes change events (webhook, CDC, pub/sub), and the cache subscribes | Separates writers from the cache; catches writes from any source | More infrastructure; events can be delayed or lost, so you still want a TTL as a backstop |\n| **Write-through** | Writes go through the cache layer, which updates both | The cache stays warm and consistent | Only works if all writes go through your layer; slower writes; can fill the cache with profiles nobody reads |\n| **Stale-while-revalidate** | Serve the expired entry right away and refresh it in the background | Users almost never wait on the slow API | They sometimes see slightly stale data; you need background refresh logic |\n\n## Recommended setup for user profiles\n\n1. **Cache-aside reads:** check the cache; on a miss, call the API and store the result with a TTL.\n2. **Delete on write, don't update.** After a successful profile update, `DEL user:{id}`. Deleting is safer than writing the new value, because two concurrent writers updating the cache can leave the older value in place.\n3. **Keep a TTL as a safety net** (for example 5–15 minutes, depending on how stale is acceptable). It limits the damage from any write you missed.\n4. **Add stale-while-revalidate or request coalescing** so that when a popular profile expires, hundreds of requests don't all hit the slow API at once (a \"thundering herd\" or cache stampede).\n5. **Add ±10% jitter to TTLs** so entries filled together don't all expire together.\n\n## Trade-offs to decide on\n\n- **How stale can it be?** Showing an old avatar for 10 minutes is usually fine. Permissions, roles, or email used for auth usually are not. Either cache those fields separately with a short TTL or don't cache them.\n- **Race on invalidation:** a reader can fetch old data, a writer then updates and deletes the key, and the reader then writes its old data into the cache. Ways to reduce this:\n  - Short TTLs.\n  - Versioned values, where a write only succeeds if its version is newer.\n  - A delayed second delete, a few hundred ms after the first.\n- **Negative caching:** cache \"user not found\" briefly (around 30 s). Otherwise lookups for missing IDs hit the API every time.\n- **Per-user data and privacy:** if responses differ by who is asking (private fields), include the viewer's scope in the cache key, or only cache the public view.\n- **Where the cache lives:**\n  - In-process (an LRU in memory) is the fastest, but each instance invalidates separately, so you'd need pub/sub to broadcast deletes.\n  - A shared cache (Redis or Memcached) gives one place to invalidate, at the cost of a network hop.\n  - A common setup is a small in-process cache with a short TTL in front of Redis.\n\n**Quick decision guide:**\n- **You don't control writes:** TTL plus stale-while-revalidate.\n- **You control all writes:** delete on write plus a TTL backstop.\n- **Writes come from many systems:** event-driven invalidation plus a TTL backstop.\n\nIf you tell me your stack (language, Redis or in-memory, whether you own the write path), I can sketch the implementation.",
+  "output": {
+    "duration_api_ms": 16691,
+    "stop_reason": "end_turn",
+    "session_id": "08ccc5ed-4b4c-445e-aa49-9acb88476c35",
+    "total_cost_usd": 0.030402700000000005,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 5171,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 1404,
+      "output_tokens_details": {
+        "thinking_tokens": 20
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 5171
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 1404,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 5171,
+        "webSearchRequests": 0,
+        "costUSD": 0.030402700000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 20,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**My recommendation:** use cache-aside with a TTL, and also delete the cached entry whenever a profile changes, if you can detect writes. If you can't detect writes, use TTL alone and add stale-while-revalidate to hide the slow API.\n\n## The main options\n\n| Strategy | How it works | Pros | Cons |\n|---|---|---|---|\n| **TTL only** | Each entry expires after N seconds or minutes | Simplest; no coupling to the write path; works even if you don't own the API | Data can be stale for up to the full TTL; it's hard to pick a TTL that is both fresh and gives a good hit rate |\n| **Explicit invalidation on write** | When a profile is updated, delete (or update) its cache key | Data is fresh soon after a change; you can use long TTLs and get a high hit rate | You must see every write path; one missed path (an admin tool, a batch job, another service) means stale data indefinitely; there are race conditions (below) |\n| **Event-driven invalidation** | The API or database publishes change events (webhook, CDC, pub/sub), and the cache subscribes | Separates writers from the cache; catches writes from any source | More infrastructure; events can be delayed or lost, so you still want a TTL as a backstop |\n| **Write-through** | Writes go through the cache layer, which updates both | The cache stays warm and consistent | Only works if all writes go through your layer; slower writes; can fill the cache with profiles nobody reads |\n| **Stale-while-revalidate** | Serve the expired entry right away and refresh it in the background | Users almost never wait on the slow API | They sometimes see slightly stale data; you need background refresh logic |\n\n## Recommended setup for user profiles\n\n1. **Cache-aside reads:** check the cache; on a miss, call the API and store the result with a TTL.\n2. **Delete on write, don't update.** After a successful profile update, `DEL user:{id}`. Deleting is safer than writing the new value, because two concurrent writers updating the cache can leave the older value in place.\n3. **Keep a TTL as a safety net** (for example 5–15 minutes, depending on how stale is acceptable). It limits the damage from any write you missed.\n4. **Add stale-while-revalidate or request coalescing** so that when a popular profile expires, hundreds of requests don't all hit the slow API at once (a \"thundering herd\" or cache stampede).\n5. **Add ±10% jitter to TTLs** so entries filled together don't all expire together.\n\n## Trade-offs to decide on\n\n- **How stale can it be?** Showing an old avatar for 10 minutes is usually fine. Permissions, roles, or email used for auth usually are not. Either cache those fields separately with a short TTL or don't cache them.\n- **Race on invalidation:** a reader can fetch old data, a writer then updates and deletes the key, and the reader then writes its old data into the cache. Ways to reduce this:\n  - Short TTLs.\n  - Versioned values, where a write only succeeds if its version is newer.\n  - A delayed second delete, a few hundred ms after the first.\n- **Negative caching:** cache \"user not found\" briefly (around 30 s). Otherwise lookups for missing IDs hit the API every time.\n- **Per-user data and privacy:** if responses differ by who is asking (private fields), include the viewer's scope in the cache key, or only cache the public view.\n- **Where the cache lives:**\n  - In-process (an LRU in memory) is the fastest, but each instance invalidates separately, so you'd need pub/sub to broadcast deletes.\n  - A shared cache (Redis or Memcached) gives one place to invalidate, at the cost of a network hop.\n  - A common setup is a small in-process cache with a short TTL in front of Redis.\n\n**Quick decision guide:**\n- **You don't control writes:** TTL plus stale-while-revalidate.\n- **You control all writes:** delete on write plus a TTL backstop.\n- **Writes come from many systems:** event-driven invalidation plus a TTL backstop.\n\nIf you tell me your stack (language, Redis or in-memory, whether you own the write path), I can sketch the implementation.",
+    "ttft_ms": 3123,
+    "type": "result",
+    "duration_ms": 16743,
+    "uuid": "66c5f902-6919-4a23-9d26-90869d572b29",
+    "ttft_stream_ms": 3121,
+    "time_to_request_ms": 49,
+    "first_content_frame_ms": 3122,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

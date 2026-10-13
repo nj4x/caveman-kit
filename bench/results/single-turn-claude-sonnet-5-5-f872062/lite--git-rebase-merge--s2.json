@@ -1,0 +1,121 @@
+{
+  "runId": "single-turn-claude-sonnet-5-5-f872062",
+  "kind": "single-turn",
+  "model": "claude-sonnet-5-5",
+  "arm": "lite",
+  "mode": "lite",
+  "task": "git-rebase-merge",
+  "seed": 2,
+  "finishedAt": "2026-10-13T00:28:13.127Z",
+  "durationMs": 5296,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 7032,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 223,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 7032
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0232452,
+  "result": "Rarely. Rebase rewrites commit history, so on a shared branch it forces everyone else to reconcile diverged history.\n\n**Use merge** when others have pulled or based work on the branch. It keeps history intact and needs no force-push.\n\n**Rebase is OK when:**\n- Only you have commits on the branch, or the team agreed to it.\n- You're rebasing your own local, unpushed commits onto the updated branch (`git pull --rebase`) to avoid noisy merge commits.\n- You're cleaning up your own commits before merging the branch into main.\n\n**Rule:** never rebase commits others already have. If you must, use `git push --force-with-lease` and tell the team first.",
+  "output": {
+    "duration_api_ms": 5045,
+    "stop_reason": "end_turn",
+    "session_id": "e9f24f7c-9480-478c-ae92-312b7d4ac2a7",
+    "total_cost_usd": 0.0232452,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 7032,
+      "cache_read_input_tokens": 17156,
+      "output_tokens": 223,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 7032
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 223,
+        "cacheReadInputTokens": 17156,
+        "cacheCreationInputTokens": 7032,
+        "webSearchRequests": 0,
+        "costUSD": 0.0232452,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Rarely. Rebase rewrites commit history, so on a shared branch it forces everyone else to reconcile diverged history.\n\n**Use merge** when others have pulled or based work on the branch. It keeps history intact and needs no force-push.\n\n**Rebase is OK when:**\n- Only you have commits on the branch, or the team agreed to it.\n- You're rebasing your own local, unpushed commits onto the updated branch (`git pull --rebase`) to avoid noisy merge commits.\n- You're cleaning up your own commits before merging the branch into main.\n\n**Rule:** never rebase commits others already have. If you must, use `git push --force-with-lease` and tell the team first.",
+    "ttft_ms": 5087,
+    "type": "result",
+    "duration_ms": 5095,
+    "uuid": "f716f583-3e00-4e5d-9ed9-64009e23f443",
+    "ttft_stream_ms": 3831,
+    "time_to_request_ms": 48,
+    "first_content_frame_ms": 3831,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}
