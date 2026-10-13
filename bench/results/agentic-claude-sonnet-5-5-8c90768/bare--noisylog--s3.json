@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 3,
+  "finishedAt": "2026-10-13T00:54:26.375Z",
+  "durationMs": 162038,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 13051,
+    "cache_read_input_tokens": 230568,
+    "output_tokens": 2102,
+    "output_tokens_details": {
+      "thinking_tokens": 71
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 13051
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0997971,
+  "result": "I found and fixed the regression. It was a misspelled header name in `anthrouter/http_util.py:120`: the proxy read `anthropic-ratelimit-request-remaining` (singular) instead of `anthropic-ratelimit-requests-remaining`.\n\nBecause of that, the \"requests remaining\" number was never picked up from upstream responses. Every request saved it to the database as `NULL`, and the proxy's status output left it out. The other rate-limit values (tokens remaining, reset time) were still recorded correctly. The fix is a one-line change to the header name; I didn't touch any tests.\n\n**Test results:**\n- **The regression:** `test_successful_request_records_usage_and_the_rate_limit_window` and `test_status_reports_the_last_rate_limit_window` failed before the fix and now pass.\n- **Full suite:** 1125 passed, 3 failed, 1 skipped.\n- **The 3 remaining failures:** they also fail without my change, so they're older problems and I left them alone, as you asked:\n  - `test_config.py::test_editable_fields_live_editable_fields`\n  - `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n  - `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe change isn't committed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 1470,
+    "reReads": 0,
+    "turns": 10,
+    "outputTokens": 2102
+  }
+}

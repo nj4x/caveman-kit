@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 2,
+  "finishedAt": "2026-10-13T01:26:44.143Z",
+  "durationMs": 214445,
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 12445,
+    "cache_read_input_tokens": 210214,
+    "output_tokens": 1906,
+    "output_tokens_details": {
+      "thinking_tokens": 87
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 12445
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.09224729999999999,
+  "result": "I fixed the regression: in `anthrouter/http_util.py:120` the requests-remaining header name had lost an \"s\". It read `anthropic-ratelimit-request-remaining`, but the header the upstream actually sends is `anthropic-ratelimit-requests-remaining`. Because of the typo, the requests-remaining value was never captured, so it was stored as `None` and left out of the status report.\n\nThat one change fixed 3 of the 6 failing tests:\n- `test_status_reports_the_last_rate_limit_window`\n- `test_successful_request_records_usage_and_the_rate_limit_window`\n- `test_admin_requests_reflects_a_dispatched_request`\n\nI re-ran the three affected test files (`test_handlers.py`, `test_admin.py`, `test_config.py`), not the full suite: 264 passed, 3 failed. I didn't touch those 3 failures because they have nothing to do with rate limits:\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` expect routing reason `session_cached_tier` but get `classifier_rules_trivial`.\n- `test_editable_fields_live_editable_fields` fails because the live-editable fields include an extra one, `oauth_usage_poll_interval`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 414,
+    "reReads": 0,
+    "turns": 9,
+    "outputTokens": 1906
+  }
+}

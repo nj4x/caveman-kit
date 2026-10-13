@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 4,
+  "finishedAt": "2026-10-13T02:04:26.579Z",
+  "durationMs": 156499,
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 11330,
+    "cache_read_input_tokens": 198960,
+    "output_tokens": 1913,
+    "output_tokens_details": {
+      "thinking_tokens": 63
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 11330
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.08727900000000001,
+  "result": "I fixed it. A typo in a header name in `anthrouter/http_util.py:120` meant anthrouter never recorded the \"requests remaining\" count from upstream responses. Anthropic sends `anthropic-ratelimit-requests-remaining` (plural), but the code looked for `anthropic-ratelimit-request-remaining`. That count came back empty, so the database column was null and the `proxy-status` output had no \"Requests remaining\" line. The other rate-limit fields weren't affected.\n\nThe fix is one line, adding the missing \"s\". The two tests that caught it now pass:\n- `test_successful_request_records_usage_and_the_rate_limit_window`\n- `test_status_reports_the_last_rate_limit_window`\n\n**Full suite:** 1125 passed, 1 skipped, 3 failed. Those 3 also fail with my change removed, so they were already failing before this regression and I left them alone:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI haven't committed the change.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 867,
+    "reReads": 0,
+    "turns": 9,
+    "outputTokens": 1913
+  }
+}

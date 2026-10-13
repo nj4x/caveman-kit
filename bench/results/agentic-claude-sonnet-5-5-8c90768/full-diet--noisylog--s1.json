@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 1,
+  "finishedAt": "2026-10-13T01:23:08.493Z",
+  "durationMs": 162427,
+  "usage": {
+    "input_tokens": 20,
+    "cache_creation_input_tokens": 12803,
+    "cache_read_input_tokens": 266845,
+    "output_tokens": 2169,
+    "output_tokens_details": {
+      "thinking_tokens": 93
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 12803
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.10710650000000001,
+  "result": "I fixed the regression: it was a typo in a header name at `anthrouter/http_util.py:120`. The proxy was reading `anthropic-ratelimit-request-remaining`. The upstream response header is `anthropic-ratelimit-requests-remaining`. Because the names didn't match, `requests_remaining` was never recorded. I changed it to `requests-remaining`.\n\nThe two tests that caught it now pass:\n- `test_status_reports_the_last_rate_limit_window`\n- `test_successful_request_records_usage_and_the_rate_limit_window`\n\nFull run: 1125 passed, 3 failed, 1 skipped. Those 3 failures also happen without my fix, and none involve rate limits, so I left them alone:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe change is not committed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 365,
+    "reReads": 0,
+    "turns": 11,
+    "outputTokens": 2169
+  }
+}

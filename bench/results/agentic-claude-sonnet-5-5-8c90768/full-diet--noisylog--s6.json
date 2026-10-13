@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 6,
+  "finishedAt": "2026-10-13T02:59:26.076Z",
+  "durationMs": 407886,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 14542,
+    "cache_read_input_tokens": 243462,
+    "output_tokens": 2200,
+    "output_tokens_details": {
+      "thinking_tokens": 135
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 14542
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.10708340000000001,
+  "result": "Fixed the regression. A header name in `anthrouter/http_util.py:120` had a typo: it read `anthropic-ratelimit-request-remaining`. Anthropic actually sends `anthropic-ratelimit-requests-remaining`, so `requests_remaining` was never recorded. I changed it to `requests`.\n\nTest results before and after the fix:\n- **Before:** 6 failed, 1122 passed, 1 skipped.\n- **After:** 3 failed, 1125 passed, 1 skipped.\n\nThe fix made these 3 tests pass:\n- `test_status_reports_the_last_rate_limit_window`\n- `test_successful_request_records_usage_and_the_rate_limit_window`\n- `test_admin_requests_reflects_a_dispatched_request`\n\nI left the other 3 failures alone. Their names suggest config and tier caching, not rate limits, so they likely predate this regression. I did not check their tracebacks:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe change is not committed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 1791,
+    "reReads": 0,
+    "turns": 11,
+    "outputTokens": 2200
+  }
+}

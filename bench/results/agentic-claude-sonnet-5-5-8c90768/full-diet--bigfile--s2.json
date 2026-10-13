@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "bigfile",
+  "seed": 2,
+  "finishedAt": "2026-10-13T01:20:14.361Z",
+  "durationMs": 9829,
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 11474,
+    "cache_read_input_tokens": 125611,
+    "output_tokens": 650,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 11474
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.060327200000000004,
+  "result": "Fixed in `anthrouter/model_router.py:[redacted]3`. `parse_classifier_score` checked `0 <= value < 100`, so it rejected 100. It now checks `0 <= value <= 100`, which matches its docstring. I didn't run the tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 1865,
+    "reReads": 0,
+    "turns": 5,
+    "outputTokens": 650
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 1,
+  "finishedAt": "2026-10-13T00:55:40.414Z",
+  "durationMs": 16532,
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 14044,
+    "cache_read_input_tokens": 214038,
+    "output_tokens": 1287,
+    "output_tokens_details": {
+      "thinking_tokens": 77
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 14044
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0908196,
+  "result": "The activity-label prompt is recognized again when a `<system-reminder>` block comes first. I checked the example from your report by hand and `is_activity_label_prompt` now returns `True`. I couldn't run the test suite because pytest isn't installed in this environment.\n\n**Root cause:** `strip_reminders()` in `anthrouter/request_text.py` is documented to remove the wrapper blocks \"and trim outer whitespace\", but it never trimmed. After the reminder was removed, the newline that followed it stayed at the start of the text, so `startswith('Describe your most recent action…')` failed.\n\n**Fix:** `strip_reminders()` now ends with `.strip()`. I changed it there rather than in `is_activity_label_prompt` so every caller gets the documented behavior. That includes the local-command matching in `handlers.py` and the classifier input in `model_router.py`.\n\nI didn't touch any tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 9,
+    "outputTokens": 1287
+  }
+}

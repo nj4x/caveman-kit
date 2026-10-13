@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-8c90768",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 6,
+  "finishedAt": "2026-10-13T02:21:16.693Z",
+  "durationMs": 210362,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 14961,
+    "cache_read_input_tokens": 245900,
+    "output_tokens": 2003,
+    "output_tokens_details": {
+      "thinking_tokens": 115
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 14961
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.10664850000000001,
+  "result": "I fixed it with a one-line change in `strip_reminders`, the shared helper that `is_activity_label_prompt` uses. The prompt in your example is now detected and answered locally again.\n\n**Root cause:** `strip_reminders()` (`anthrouter/request_text.py:155`) says in its docstring that it trims outer whitespace, but it never did. When it cut out the `<system-reminder>…</system-reminder>` block, the newline after it was left behind. So the text became `\"\\nDescribe your most recent action…\"`, and the exact check that the text starts with the label prompt failed.\n\n**Fix:** the helper now returns `_LOCAL_COMMAND_WRAPPER_RE.sub('', text).strip()`, which matches its docstring. Because the fix is in the shared helper, the other places that use it get the same correct output too: local-command matching in `handlers.py` and classifier input and the transcript fallbacks in `model_router.py`. No test files were changed.\n\n**Tests:** the full suite gives 1125 passed, 3 failed, 1 skipped.\n- Three activity-label tests that failed before the change now pass, including the `<system-reminder>` case and the leading-whitespace case.\n- The 3 failures were already failing before my change, and they don't involve this code: `test_config.py::test_editable_fields_live_editable_fields` and two tier-cache tests in `test_handlers.py`. I left them alone.\n\nI ran the tests with `uv run --with pytest` because `python` isn't on PATH here, so `make test` fails to start.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 10,
+    "outputTokens": 2003
+  }
+}
