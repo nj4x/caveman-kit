@@ -19,7 +19,7 @@ BACKUP_DIR="$KIT_HOME/backup"
 SETTINGS="$CLAUDE_DIR/settings.json"
 STATUSLINE="$CLAUDE_DIR/statusline.sh"
 SKILL_PATH="$CLAUDE_DIR/skills/caveman/SKILL.md"
-SKILL_SOURCE="JuliusBrussee/caveman@v3.2.0"
+SKILL_SOURCE="JuliusBrussee/caveman@v4.0.1"
 
 INSTALL_SKILL=1
 [ "${1:-}" = "--no-install-skill" ] && INSTALL_SKILL=0
