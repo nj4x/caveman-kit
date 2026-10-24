@@ -32,7 +32,8 @@ function estimateCost({ model, pendingCalls, kind = 'single-turn' }) {
   return { perCall, total: perCall * pendingCalls, knownModel: known };
 }
 
-function formatEstimate({ model, pendingCalls, doneCalls, kind = 'single-turn' }) {
+// warmupCalls (agentic, ADR 0010): one-turn calls priced as single-turn calls.
+function formatEstimate({ model, pendingCalls, doneCalls, kind = 'single-turn', warmupCalls = 0 }) {
   const e = estimateCost({ model, pendingCalls, kind });
   const lines = [
     `Estimated cost: ${pendingCalls} call(s) x ~$${e.perCall.toFixed(3)} = ~$${e.total.toFixed(2)} ` +
@@ -40,6 +41,11 @@ function formatEstimate({ model, pendingCalls, doneCalls, kind = 'single-turn' }
     `  assumes ~${assumed(kind).input} uncached input + ~${assumed(kind).output} output tokens per call at ` +
     `${e.knownModel ? model : `${FALLBACK_MODEL} prices (unknown model ${model})`} list price`,
   ];
+  if (warmupCalls > 0) {
+    const w = estimateCost({ model, pendingCalls: warmupCalls, kind: 'single-turn' });
+    lines.push(`  plus ${warmupCalls} warmup call(s) x ~$${w.perCall.toFixed(3)} = ~$${w.total.toFixed(2)} ` +
+      `(total ~$${(e.total + w.total).toFixed(2)})`);
+  }
   return lines.join('\n');
 }
 

@@ -66,7 +66,7 @@ agentic_cell() {
 }
 
 run_agentic() {
-  run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --min-fixtures 1 --no-escalate --yes "$@"
+  run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --min-fixtures 1 --no-escalate --no-warmup --yes "$@"
 }
 
 # make_fixtures <names...>: one valid fixture dir per name under $FIXTURES.

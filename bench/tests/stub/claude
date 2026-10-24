@@ -18,6 +18,7 @@
 // STUB_EXIT=<n> sets the exit code; STUB_SELF_KILL=1 SIGKILLs itself after the
 // stream; STUB_LEAK=1 puts ANTHROPIC_API_KEY in the stream, result, stderr and
 // cwd/leak.txt; STUB_STDERR_PAD=<n> appends n chars after the key on stderr.
+// STUB_FAIL_WARMUP=1 fails only warmup calls (--max-turns 1).
 'use strict';
 
 if (process.env.STUB_IGNORE_TERM === '1') {
@@ -66,6 +67,11 @@ if (process.env.STUB_MARK) fs.appendFileSync(process.env.STUB_MARK, 'STUB CALL\n
 function finish() {
   if (process.env.STUB_FAIL === '1' || process.env.STUB_FAIL_ARM === arm) {
     process.stderr.write('stub: simulated failure\n');
+    process.exit(1);
+  }
+  const turnsAt = process.argv.indexOf('--max-turns');
+  if (process.env.STUB_FAIL_WARMUP === '1' && turnsAt >= 0 && process.argv[turnsAt + 1] === '1') {
+    process.stderr.write('stub: simulated warmup failure\n');
     process.exit(1);
   }
   if (process.argv.includes('stream-json')) {

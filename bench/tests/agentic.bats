@@ -66,7 +66,7 @@ teardown() { bench_teardown; }
     const expected = { bare: 501, full: 301, "full-diet": 201 };
     for (const [arm, out] of Object.entries(expected)) {
       const cell = JSON.parse(fs.readFileSync(dir + "/" + arm + "--tiny--s1.json", "utf8"));
-      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, turns: 7, outputTokens: out }, arm);
+      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
       assert.strictEqual(cell.usage.cache_read_input_tokens, arm === "full-diet" ? 1000 : 2000);
       assert.ok(fs.existsSync(dir + "/" + arm + "--tiny--s1.stream.jsonl"));
     }
@@ -85,8 +85,13 @@ teardown() { bench_teardown; }
       JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "2", content: "ef" }] } }),
       JSON.stringify({ type: "result", is_error: false, usage: { output_tokens: 9 } }),
     ].join("\n");
-    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, turns: 2, outputTokens: 9 });
-    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
+    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, turns: 2, outputTokens: 9, firstCacheRead: null });
+    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
+
+    // firstCacheRead comes from the first assistant message with usage only.
+    const msg = (id, read) => JSON.stringify({ type: "assistant", message: { id, content: [], usage: { cache_read_input_tokens: read } } });
+    assert.strictEqual(analyze([msg("a", 0), msg("b", 17156)].join("\n")).diagnostics.firstCacheRead, 0);
+    assert.strictEqual(analyze([msg("a", 17156), msg("b", 0)].join("\n")).diagnostics.firstCacheRead, 17156);
 
     // An errored whole-file Read covers nothing; a Read with no limit covers
     // only the first 2000 lines.
@@ -426,4 +431,69 @@ teardown() { bench_teardown; }
     assert.strictEqual(res.pass, false);
     assert.ok(res.tail.includes("could not copy hidden test"), res.tail);
   '
+}
+
+@test "agentic-warmup: each cell follows a one-turn warmup in the same arm and work dir; warmups stay out of the cells" {
+  STUB_FIX_ARMS=full,full-diet run run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --min-fixtures 1 --no-escalate --yes --seeds 1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"plus 3 warmup call(s)"* ]] || false
+  # 3 arms x (1 warmup + 1 cell).
+  [ "$(stub_calls)" -eq 6 ]
+  log_assert '
+    const prompt = "Reply with the single word OK. Do not use any tools.";
+    for (let i = 0; i < entries.length; i += 2) {
+      const [w, c] = [entries[i], entries[i + 1]];
+      assert.strictEqual(w.argv[w.argv.indexOf("-p") + 1], prompt);
+      assert.strictEqual(w.argv[w.argv.indexOf("--max-turns") + 1], "1");
+      assert.notStrictEqual(c.argv[c.argv.indexOf("-p") + 1], prompt);
+      assert.strictEqual(w.arm, c.arm);
+      assert.strictEqual(w.cwd, c.cwd);
+      // The warmup of a fixing arm wrote value.txt; the cell got a fresh clone.
+      assert.strictEqual(c.value, "bad\n", c.arm);
+    }
+  '
+  dir="$(ls -d "$RESULTS"/agentic-*)"
+  [ "$(find "$dir" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')" -eq 3 ]
+  node -e '
+    const fs = require("fs");
+    const assert = require("assert");
+    const dir = process.argv[1] + "/warmup";
+    const names = fs.readdirSync(dir).sort();
+    assert.deepStrictEqual(names, ["bare--tiny--s1.json", "full--tiny--s1.json", "full-diet--tiny--s1.json"]);
+    for (const n of names) {
+      const w = JSON.parse(fs.readFileSync(dir + "/" + n, "utf8"));
+      assert.strictEqual(w.warmup, true);
+      assert.strictEqual(w.kind, "agentic-warmup");
+      assert.ok(w.usage);
+    }
+  ' "$dir"
+  grep -q 'Warmup before each cell (ADR 0010): on' "$RESEARCH"/*-bench-agentic-*.md
+}
+
+@test "agentic-warmup: a failed warmup warns and the cell still runs" {
+  STUB_FAIL_WARMUP=1 run run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --min-fixtures 1 --no-escalate --yes --seeds 1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN warmup bare--tiny--s1: exit 1"* ]] || false
+  [ -f "$(agentic_cell full tiny 1)" ]
+  [ ! -d "$(ls -d "$RESULTS"/agentic-*)/warmup" ]
+}
+
+@test "agentic-max-seeds: --max-seeds caps the one escalation; it must exceed --seeds and needs agentic" {
+  STUB_FLAT=1 run run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --min-fixtures 1 --no-warmup --yes --seeds 1 --max-seeds 3
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"escalating to seeds 2-3"* ]] || false
+  [ "$(stub_calls)" -eq 9 ]
+  grep -q 'escalated to 3' "$RESEARCH"/*-bench-agentic-*.md
+
+  run run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --yes --seeds 3 --max-seeds 3
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--max-seeds must be an integer above --seeds (3)"* ]] || false
+
+  run run_bench --kind single-turn --max-seeds 6 --yes
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--max-seeds only applies to --kind agentic"* ]] || false
+
+  run run_bench --kind single-turn --no-warmup --yes
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--no-warmup only applies to --kind agentic"* ]] || false
 }

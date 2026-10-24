@@ -15,7 +15,7 @@ setup() {
 teardown() { bench_teardown; }
 
 run_gate() {
-  run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --yes --run-id g "$@"
+  run_bench --kind agentic --fixtures-dir "$FIXTURES" --kit-dir "$KIT" --no-warmup --yes --run-id g "$@"
 }
 
 # JS prelude for node_assert: build(fn) makes cells for every arm, fixture and

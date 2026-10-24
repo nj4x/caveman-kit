@@ -212,7 +212,8 @@ feeds no verdict.
   lower. No extra seeds are run.
 - Escalation: if the interval includes zero after `--seeds` N seeds (default
   3), the runner prints a new estimate, asks again (unless `--yes`) and runs
-  seeds N+1..2N, skipping cells that exist, then recomputes. If the interval
+  seeds N+1..M, skipping cells that exist, then recomputes. M is
+  `--max-seeds` (default 2N; ADR 0010 allows up to 13). If the interval
   still includes zero the verdict is `no-ship`. This happens at most once; a
   rerun with the same run id re-derives the same verdict without new calls.
   `--no-escalate` skips it. Failed cells block escalation and make the run
@@ -224,6 +225,15 @@ feeds no verdict.
   (exit 1), and again on the paired data. `--min-fixtures <n>` lowers the floor
   for tests only; a gate run that way is not valid.
 - Turn cap: capped cells (`hitMaxTurns`) are counted per arm in the report.
+- Warmup (ADR 0010): before every measured cell the runner makes one
+  one-turn `claude -p` call in the cell's own arm config and work dir, so the
+  cell's first request finds Claude Code's fixed prefix in the prompt cache.
+  The work dir is then emptied and the cell clones its fixture fresh. Warmup
+  records go to `<run dir>/warmup/` and enter no pairing, report or gate. A
+  failed warmup prints `WARN warmup ...` and the cell still runs. The estimate
+  counts warmups at the single-turn price. Each cell records
+  `diagnostics.firstCacheRead`; the summary note counts cold starts (0) per
+  arm. `--no-warmup` turns it off; runs before ADR 0010 had none.
 - Output: raw per-arm table (hidden-test passes, capped cells, Read chars,
   re-reads, turns, output tokens), then the gate lines and a `Verdict:` line.
   Once all planned cells exist, the summary note goes to `docs/research/` as

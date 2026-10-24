@@ -46,8 +46,12 @@ const USAGE = `usage: node bench/run.js --kind single-turn|agentic [options]
                       default ${cells.DEFAULT_CELL_TIMEOUT_MS / 1000} (single-turn), ${agentic.DEFAULT_CELL_TIMEOUT_MS / 1000} (agentic)
   --min-fixtures <n>  agentic: fixture floor below which the gate is
                       inconclusive; lowering it voids the gate      default 3
-  --no-escalate       agentic: never add seeds N+1..2N; a cost interval
+  --no-escalate       agentic: never add seeds N+1..max; a cost interval
                       that includes zero is then no-ship
+  --max-seeds <n>     agentic: seeds per fixture after the one escalation
+                      (ADR 0010 allows up to 13)                  default 2 x --seeds
+  --no-warmup         agentic: skip the one-turn warmup call before each
+                      cell (ADR 0010); cells may start with a cold cache
   --yes               start without asking (required when there is no TTY)
 
 Auth: ANTHROPIC_API_KEY, else a readable <config dir>/.credentials.json.
@@ -60,16 +64,19 @@ function parseArgs(argv) {
   const takesValue = {
     '--kind': 'kind', '--seeds': 'seeds', '--model': 'model', '--kit-dir': 'kitDir', '--run-id': 'runId',
     '--results-dir': 'resultsDir', '--research-dir': 'researchDir', '--cell-timeout': 'cellTimeout',
-    '--fixtures': 'fixtures', '--fixtures-dir': 'fixturesDir', '--min-fixtures': 'minFixtures',
+    '--fixtures': 'fixtures', '--fixtures-dir': 'fixturesDir', '--min-fixtures': 'minFixtures', '--max-seeds': 'maxSeeds',
   };
   for (let i = 0; i < argv.length; i++) {
     let arg = argv[i];
     let value;
     const eq = arg.indexOf('=');
     if (arg.startsWith('--') && eq > 0) { value = arg.slice(eq + 1); arg = arg.slice(0, eq); }
-    if (arg === '--yes' || arg === '--help' || arg === '-h' || arg === '--no-escalate') {
+    if (arg === '--yes' || arg === '--help' || arg === '-h' || arg === '--no-escalate' || arg === '--no-warmup') {
       if (value !== undefined) throw new UsageError(`${arg} takes no value`);
-      if (arg === '--yes') opts.yes = true; else if (arg === '--no-escalate') opts.noEscalate = true; else opts.help = true;
+      if (arg === '--yes') opts.yes = true;
+      else if (arg === '--no-escalate') opts.noEscalate = true;
+      else if (arg === '--no-warmup') opts.noWarmup = true;
+      else opts.help = true;
       continue;
     }
     const key = takesValue[arg];
@@ -105,6 +112,15 @@ function parseArgs(argv) {
     }
   }
   if (opts.noEscalate && opts.kind !== 'agentic') throw new UsageError('--no-escalate only applies to --kind agentic');
+  if (opts.noWarmup && opts.kind !== 'agentic') throw new UsageError('--no-warmup only applies to --kind agentic');
+  if (opts.maxSeeds !== undefined) {
+    if (opts.kind !== 'agentic') throw new UsageError('--max-seeds only applies to --kind agentic');
+    const max = Number(opts.maxSeeds);
+    if (!Number.isInteger(max) || max <= seeds) throw new UsageError(`--max-seeds must be an integer above --seeds (${seeds}), got ${opts.maxSeeds}`);
+    opts.maxSeeds = max;
+  } else {
+    opts.maxSeeds = seeds * 2;
+  }
   if (opts.minFixtures !== undefined) {
     if (opts.kind !== 'agentic') throw new UsageError('--min-fixtures only applies to --kind agentic');
     const min = Number(opts.minFixtures);
@@ -201,7 +217,7 @@ async function main() {
     }
   }
 
-  // Agentic escalation raises seedMax from N to 2N (at most once).
+  // Agentic escalation raises seedMax from N to --max-seeds (at most once).
   let seedMax = opts.seeds;
   const buildPlan = () => {
     const plan = [];
@@ -222,9 +238,9 @@ async function main() {
   if (isAgentic) {
     // Free (offline) reliability check, only for fixtures that still have
     // cells to run. A flaky fixture is dropped and reported, never kept.
-    // Includes escalation seeds N+1..2N (unless disabled), so a resumed run
+    // Includes escalation seeds N+1..max (unless disabled), so a resumed run
     // never pays for escalation cells on an unchecked fixture.
-    const checkSeedMax = opts.noEscalate ? seedMax : opts.seeds * 2;
+    const checkSeedMax = opts.noEscalate ? seedMax : opts.maxSeeds;
     const needsCheck = new Set();
     for (const arm of arms) {
       for (const item of items) {
@@ -255,7 +271,10 @@ async function main() {
 
   process.stdout.write(`Run ${runId} -> ${runDir}\n`);
   process.stdout.write(`${arms.length} arms x ${items.length} ${isAgentic ? 'fixtures' : 'tasks'} x ${opts.seeds} seeds, model ${opts.model}, auth ${auth.kind}\n`);
-  process.stdout.write(`${estimate.formatEstimate({ model: opts.model, pendingCalls: pending.length, doneCalls: plan.length - pending.length, kind: opts.kind })}\n`);
+  // ADR 0010: one warmup call before every measured agentic cell.
+  const warmup = isAgentic && !opts.noWarmup;
+  const warmupCalls = n => (warmup ? n : 0);
+  process.stdout.write(`${estimate.formatEstimate({ model: opts.model, pendingCalls: pending.length, doneCalls: plan.length - pending.length, kind: opts.kind, warmupCalls: warmupCalls(pending.length) })}\n`);
   const keyLength = (process.env.ANTHROPIC_API_KEY || '').length;
   if (isAgentic && keyLength > 0 && keyLength < agentic.MIN_SECRET_LENGTH) {
     process.stderr.write(`bench: ANTHROPIC_API_KEY is ${keyLength} chars (< ${agentic.MIN_SECRET_LENGTH}); not redacted from stored results\n`);
@@ -268,6 +287,10 @@ async function main() {
     for (const p of list) {
       const armConfig = isolation.buildArmConfig(p.arm, optionsFor(p.arm));
       try {
+        if (warmup) {
+          const warm = await agentic.runWarmup({ claudePath, armConfig, cell: p.cell, fixture: p.item, model: opts.model, runDir, timeoutMs });
+          if (!warm.ok) process.stderr.write(`WARN warmup ${cells.cellId(p.cell)}: ${warm.error}\n`);
+        }
         const res = isAgentic
           ? await agentic.runAgenticCell({
             claudePath, armConfig, cell: p.cell, fixture: p.item, model: opts.model, runId, runDir, testEnv: env, timeoutMs,
@@ -319,14 +342,14 @@ async function main() {
     const gateOpts = { minFixtures: opts.minFixtures, final: Boolean(opts.noEscalate) && failed === 0, noEscalate: Boolean(opts.noEscalate) };
     agenticGate = stats.agenticGate(done, gateOpts);
     // Escalation: only when the first interval includes zero, only once, and
-    // only for seeds N+1..2N (existing cells are skipped, so resume is safe).
+    // only for seeds N+1..max (existing cells are skipped, so resume is safe).
     if (agenticGate.escalate && failed === 0) {
       escalated = true;
-      seedMax = opts.seeds * 2;
+      seedMax = opts.maxSeeds;
       plan = buildPlan();
       const more = plan.filter(isPending);
       process.stdout.write(`\nCost interval includes zero after ${opts.seeds} seeds: escalating to seeds ${opts.seeds + 1}-${seedMax}\n`);
-      process.stdout.write(`${estimate.formatEstimate({ model: opts.model, pendingCalls: more.length, doneCalls: plan.length - more.length, kind: opts.kind })}\n`);
+      process.stdout.write(`${estimate.formatEstimate({ model: opts.model, pendingCalls: more.length, doneCalls: plan.length - more.length, kind: opts.kind, warmupCalls: warmupCalls(more.length) })}\n`);
       if (more.length > 0) {
         const answer = await estimate.confirm({ yes: opts.yes });
         if (!answer.proceed) {
@@ -345,7 +368,7 @@ async function main() {
     } else if (done.length === plan.length) {
       const date = new Date().toISOString().slice(0, 10);
       const note = report.agenticSummaryNote({
-        runId, kind: opts.kind, model: opts.model, seeds: opts.seeds, escalated,
+        runId, kind: opts.kind, model: opts.model, seeds: opts.seeds, maxSeeds: opts.maxSeeds, escalated, warmup,
         kitDir: opts.kitDir, kitCommit: kitCommit(opts.kitDir), runDir, date,
       }, done, agenticGate, excluded());
       const file = report.writeNote(opts.researchDir, `${date}-bench-${runId}.md`, note);

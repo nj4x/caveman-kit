@@ -15,14 +15,15 @@ The research note `docs/research/2026-10-23-context-diet-prompt-improvements.md`
 
 **Decision:**
 
-1. Before the first measured cell of each (arm, fixture) pair, the harness runs one warmup cell that is written to the run dir with `warmup: true` and excluded from every statistic and pairing. Each arm needs its own warmup, because the injected SessionStart text differs by arm and so does the cached prefix.
-2. The agentic gate may escalate to 13 seeds per fixture (52 pairs with 4 fixtures). The escalation rule is otherwise unchanged: 3 seeds first, then the next step only if the interval includes zero.
+1. Before every measured cell, the harness runs one warmup call: a one-turn `claude -p` in the cell's own arm config and work dir. Its record goes to `<run dir>/warmup/` with `warmup: true` and is excluded from every statistic and pairing. Warming every cell, not only the first of each (arm, fixture), is needed because cold starts also occur mid-run with cells 1 to 2 seconds apart (research note, "Cold-start cache misses dominate the noise"). A warm warmup reads the prefix from cache, so it costs far less than the cold start it prevents. A failed warmup is a warning, never a cell failure.
+2. The agentic gate may escalate to 13 seeds per fixture (52 pairs with 4 fixtures), set with `--max-seeds`. The escalation rule is otherwise unchanged: 3 seeds first, then one escalation only if the interval includes zero.
 3. The estimated cost printed before a run must include the warmup calls.
 4. The `cacheWeightedCost` formula (cache read 0.1x, cache write 1.25x) is unchanged. It is kept so results remain comparable with R1 and R2. The CLI's USD field is recorded but not used for the gate.
 
 **Consequences:**
 
 - Estimated cost per candidate is about $11 to $23 (research note, cell cost about $0.10). This is more than the earlier 6-seed cap allowed. Each run prints the estimate before it starts (ADR 0008 Consequences).
-- The warmup adds 4 calls per arm per run (one per fixture). These are paid, but outside the gate.
+- The warmup doubles the number of calls. The extra calls are short, paid, and outside the gate.
+- Each cell records `diagnostics.firstCacheRead`, and the summary note counts cold starts per arm, so a run can show whether the warmup worked.
 - Pairs from runs before this ADR have no warmup. Their cold-start outliers stay in the record. Results from before and after this ADR are not pooled for the gate.
-- Implementation (warmup flag in `bench/lib/agentic.js`, pairing that skips warmup cells, a cost estimate that counts warmups, and a bats test) is tracked in issue #11 and is not yet in code. Until it lands, the gate cannot be run under this ADR.
+- `--no-warmup` exists for tests and for reproducing pre-ADR runs. A gate run under this ADR keeps the warmup on.

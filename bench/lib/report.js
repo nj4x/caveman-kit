@@ -214,6 +214,13 @@ function agenticSummaryNote(params, cells, gate, excluded = []) {
   const arms = summarizeAgentic(cells, gate.arms.map(a => a.arm));
   const header = ['arm', 'cells', 'hidden_pass', 'max_turns', 'read_chars', 're_reads', 'turns', 'output'];
   const body = arms.map(r => [r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns), String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens)]);
+  const maxSeeds = params.maxSeeds || params.seeds * 2;
+  // Cold starts (ADR 0010): cells whose first request read nothing from the
+  // prompt cache. Older cells lack firstCacheRead and are not counted.
+  const known = cells.filter(c => c.diagnostics && Number.isFinite(c.diagnostics.firstCacheRead));
+  const cold = known.length === 0 ? [] : [
+    `- Cold starts (first request read 0 cached tokens): ${arms.map(r => `${r.arm} ${known.filter(c => c.arm === r.arm && c.diagnostics.firstCacheRead === 0).length}/${known.filter(c => c.arm === r.arm).length}`).join(', ')}`,
+  ];
   return [
     `# Bench agentic: ${params.runId}`,
     '',
@@ -223,16 +230,18 @@ function agenticSummaryNote(params, cells, gate, excluded = []) {
     '',
     `- Kind: ${params.kind}`,
     `- Model: ${params.model}`,
-    `- Seeds: ${params.seeds}${params.escalated ? ` (escalated to ${params.seeds * 2})` : ''}`,
+    `- Seeds: ${params.seeds}${params.escalated ? ` (escalated to ${maxSeeds})` : ''}`,
+    ...(params.warmup === undefined ? [] : [`- Warmup before each cell (ADR 0010): ${params.warmup ? 'on' : 'off'}`]),
     `- Kit dir: ${params.kitDir}`,
     `- Kit-dir commit: ${params.kitCommit}`,
     `- Raw cells: ${params.runDir}`,
+    ...cold,
     '',
     '## Gate',
     '',
     'Paired difference is full-diet minus full, paired by fixture and seed; both cells must have completed.',
     '`ship`: the 95% cost interval excludes zero below and full-diet pass rate is not lower than full.',
-    `\`no-ship\`: the interval excludes zero above, or the pass rate is lower, or the interval still includes zero after escalation (${params.seeds} to ${params.seeds * 2} seeds, once).`,
+    `\`no-ship\`: the interval excludes zero above, or the pass rate is lower, or the interval still includes zero after escalation (${params.seeds} to ${maxSeeds} seeds, once).`,
     `\`inconclusive\`: fewer than ${gate.minFixtures} fixtures remain; counts as no-ship.`,
     '',
     ...agenticGateLines(gate, excluded).map(l => `- ${l}`),

@@ -10,6 +10,9 @@
 //                 path in between (a change made through Bash is not seen)
 //   turns         result.num_turns, else the count of distinct assistant messages
 //   outputTokens  result.usage.output_tokens
+//   firstCacheRead cache_read_input_tokens of the first assistant message that
+//                 carries usage, else null; near 0 means the cell started with
+//                 a cold prompt cache (ADR 0010)
 'use strict';
 
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
@@ -52,6 +55,7 @@ function analyze(text) {
   const pending = new Map(); // Read tool_use id -> { file, range }, until its result arrives
   let readChars = 0;
   let reReads = 0;
+  let firstCacheRead = null;
 
   for (const ev of events) {
     if (ev.type === 'result') { result = ev; continue; }
@@ -59,6 +63,7 @@ function analyze(text) {
     if (!message || !Array.isArray(message.content)) continue;
     if (ev.type === 'assistant') {
       if (message.id) assistantIds.add(message.id); else assistantAnon += 1;
+      if (firstCacheRead === null && message.usage) firstCacheRead = Number(message.usage.cache_read_input_tokens) || 0;
       for (const block of message.content) {
         if (!block || block.type !== 'tool_use') continue;
         const input = block.input || {};
@@ -95,6 +100,7 @@ function analyze(text) {
       reReads,
       turns: result && Number.isFinite(result.num_turns) ? result.num_turns : assistantIds.size + assistantAnon,
       outputTokens: usage ? Number(usage.output_tokens) || 0 : 0,
+      firstCacheRead,
     },
   };
 }
