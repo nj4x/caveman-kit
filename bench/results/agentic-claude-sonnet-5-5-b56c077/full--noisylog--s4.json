@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 4,
+  "finishedAt": "2026-10-21T08:04:54.342Z",
+  "durationMs": 226412,
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 13417,
+    "cache_read_input_tokens": 159730,
+    "output_tokens": 1552,
+    "output_tokens_details": {
+      "thinking_tokens": 46
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 13417
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.08103250000000001,
+  "result": "I fixed the regression: a typo in a header name in `anthrouter/http_util.py:120`. The header the code reads was renamed from `anthropic-ratelimit-requests-remaining` to `anthropic-ratelimit-request-remaining`, which drops the \"s\". Anthropic sends the plural form, and so does the fake upstream in `tests/conftest.py:81`. As a result, `requests_remaining` was never parsed. Since `get_latest_ratelimit()` looks for that field, the rate-limit window was never recorded.\n\nThe fix restores `requests` (plural).\n\nThe full suite had 6 failures. I re-ran the three affected test files (`test_handlers.py`, `test_admin.py`, `test_config.py`), but not the whole suite:\n- **Now passing (3):** `test_status_reports_the_last_rate_limit_window`, `test_successful_request_records_usage_and_the_rate_limit_window` and `test_admin_requests_reflects_a_dispatched_request`.\n- **Still failing, left alone (3):** `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` (session tier cache), plus `test_editable_fields_live_editable_fields` (config). None of them touch rate limits, so they look like the earlier failures you mentioned.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 700,
+    "reReads": 0,
+    "turns": 8,
+    "outputTokens": 1552
+  }
+}

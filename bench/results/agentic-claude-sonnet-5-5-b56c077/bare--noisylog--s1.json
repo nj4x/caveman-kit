@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 1,
+  "finishedAt": "2026-10-21T06:20:19.814Z",
+  "durationMs": 306404,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 11173,
+    "cache_read_input_tokens": 225330,
+    "output_tokens": 2275,
+    "output_tokens_details": {
+      "thinking_tokens": 80
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 11173
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.09578450000000001,
+  "result": "I found and fixed the regression. The full suite now has 3 failures, down from 6, with 1125 passed.\n\n**Cause:** in `anthrouter/http_util.py:120`, the header name used to read requests-remaining was misspelled as `anthropic-ratelimit-request-remaining` (singular \"request\"). Anthropic actually sends `anthropic-ratelimit-requests-remaining`. Because the names didn't match, `requests_remaining` was never captured. The tokens-remaining and reset values were still read correctly, so only this one field was missing: it saved as NULL in the DB and was left out of the `/status` output.\n\n**Fix:** I corrected the header name. That's a one-word change in source; no tests were edited.\n\nThese three tests started passing:\n- `test_status_reports_the_last_rate_limit_window`\n- `test_successful_request_records_usage_and_the_rate_limit_window`\n- `test_admin_requests_reflects_a_dispatched_request`\n\nI left the three remaining failures alone. They look like the older failures you mentioned and have nothing to do with rate limits:\n- `test_config.py::test_editable_fields_live_editable_fields`: an extra editable field, `oauth_usage_poll_interval`, appears that the test doesn't expect.\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`: both expect the routing reason `session_cached_tier` but get `classifier_rules_trivial`.\n\nI haven't committed the change.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 498,
+    "reReads": 0,
+    "turns": 11,
+    "outputTokens": 2275
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 3,
+  "finishedAt": "2026-10-21T07:29:40.969Z",
+  "durationMs": 155279,
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 31003,
+    "cache_read_input_tokens": 125382,
+    "output_tokens": 1857,
+    "output_tokens_details": {
+      "thinking_tokens": 169
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 31003
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.1211739,
+  "result": "I added the `flagged` subcommand to `critic_ledger.py`. A quick manual run of six cases gave the expected output and exit codes:\n\n- **Valid input:** a fenced array and a bare `[]` both print the array as JSON and exit 0.\n- **Not an array:** `{\"a\":1}` exits 1 with `FLAGGED_DECISIONS_PARSE_ERROR: expected a JSON array`.\n- **Missing key:** `[{\"decision\":\"a\"}]` exits 1 with `FLAGGED_DECISIONS_PARSE_ERROR: item 0 needs decision and why_flagged`.\n- **Invalid JSON or missing file:** both exit 1 with a `PARSE_ERROR:` line.\n\nIt reuses the existing `_load_json` and `_strip_fence` helpers, so code-fence handling matches `validate`. I added a `validate_flagged` function and updated the module docstring.\n\nI also added `UnicodeDecodeError` to the exceptions `_load_json` catches. A non-UTF-8 file now gives `PARSE_ERROR:` instead of a traceback, and `validate` and `upsert` get the same fix. I didn't test that case.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.11s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "turns": 8,
+    "outputTokens": 1857
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 1,
+  "finishedAt": "2026-10-21T06:37:26.302Z",
+  "durationMs": 456088,
+  "usage": {
+    "input_tokens": 22,
+    "cache_creation_input_tokens": 15792,
+    "cache_read_input_tokens": 317707,
+    "output_tokens": 2753,
+    "output_tokens_details": {
+      "thinking_tokens": 228
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15792
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.1305954,
+  "result": "I fixed it with a one-line change. Activity-label prompts that come after a `<system-reminder>` block are detected again, and the 4 tests covering this now pass.\n\n**Root cause:** the bug was in `strip_reminders()` (`anthrouter/request_text.py:155`), not in `is_activity_label_prompt`. Its docstring says it removes the wrapper blocks *and trims outer whitespace*, but it never did the trimming. Removing `<system-reminder>…</system-reminder>` left the newline after it in place, so the text began with `\"\\nDescribe…\"` and the prefix check failed.\n\n**Fix:** `strip_reminders` now ends with `.strip()`, so it does what its docstring says. Because the fix is in the shared helper, the other callers get it too:\n- In the local-command handler (`handlers.py:105`, `:115`), `strip_reminders(content) or None` now treats a message that was only a reminder plus whitespace as empty, as intended.\n- In the router (`model_router.py:575`, `:592`, `:711`, `:731`), the classifier and transcript-fallback text no longer carry stray leading or trailing whitespace.\n\n**Verification:** I compared the full test suite with and without the change:\n- **Before:** 7 failed. Four were tied to this bug: two cases of the activity-label prefix test, `test_text_blocks_after_a_reminder_block_are_detected`, and `test_unclosed_reminder_suffix_stripped` in the router tests.\n- **After:** 3 failed, 1125 passed. The remaining failures were already failing before the change and aren't related to it: `test_editable_fields_live_editable_fields` and two tier-cache tests in `test_handlers.py`.\n- **Lint:** `ruff` passes on `request_text.py`. Running it on the whole repo reports 102 errors in other files, which I left alone.\n\nThere's no `python`, venv or `pytest` on this machine, so I ran the tests and lint through `uv run` instead of `make test` and `make lint`. I didn't touch any tests, and nothing is committed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 12,
+    "outputTokens": 2753
+  }
+}

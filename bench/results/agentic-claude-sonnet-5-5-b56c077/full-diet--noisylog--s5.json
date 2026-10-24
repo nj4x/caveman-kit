@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 5,
+  "finishedAt": "2026-10-21T08:29:36.524Z",
+  "durationMs": 166353,
+  "usage": {
+    "input_tokens": 14,
+    "cache_creation_input_tokens": 13565,
+    "cache_read_input_tokens": 187394,
+    "output_tokens": 1818,
+    "output_tokens_details": {
+      "thinking_tokens": 246
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 13565
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0895993,
+  "result": "I fixed the regression. The rate-limit parser in `anthrouter/http_util.py:120` read the header `anthropic-ratelimit-request-remaining`, missing the \"s\". The real upstream header is `anthropic-ratelimit-requests-remaining`, which is also what the test fixture sends. As a result, `requests_remaining` was never recorded.\n\nThe fix is a one-line rename of the header string.\n\n- **Fixed by this change:** `test_status_reports_the_last_rate_limit_window` and `test_successful_request_records_usage_and_the_rate_limit_window` failed before the fix and pass after it.\n- **Full suite after the fix:** 1125 passed, 1 skipped, 3 failed.\n- **Left alone:** the 3 remaining failures also fail without my change and are not about rate limits:\n  - `test_config.py::test_editable_fields_live_editable_fields`\n  - `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n  - `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "turns": 8,
+    "outputTokens": 1818
+  }
+}

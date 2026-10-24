@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "bigfile",
+  "seed": 3,
+  "finishedAt": "2026-10-21T06:15:12.058Z",
+  "durationMs": 205151,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 11257,
+    "cache_read_input_tokens": 229434,
+    "output_tokens": 1762,
+    "output_tokens_details": {
+      "thinking_tokens": 16
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 11257
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0916853,
+  "result": "I fixed it: a reply of `100` now routes on the score instead of falling back to the requested model.\n\n**Cause:** `parse_classifier_score` in `anthrouter/model_router.py:[redacted]3` checked the range with `0 <= value < 100`. That throws out 100, even though the docstring and the rest of the router treat [0, 100] as the valid range. A reply of `100` came back as `None` (unparseable), so the router fell back.\n\n**Fix:** I changed the check to `0 <= value <= 100`. That was the only edit; no tests were touched.\n\n**Checks:**\n- Called directly, the parser now returns 100 for `100`, 99 for `99` and 0 for `0`, and still rejects `101`.\n- The full test suite ran with 1125 passed, 3 failed and 1 skipped. The 3 failures are `test_editable_fields_live_editable_fields` in `tests/test_config.py`, plus `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`. All three also fail with my change removed, so they were already failing and aren't caused by this fix.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 2145,
+    "reReads": 0,
+    "turns": 10,
+    "outputTokens": 1762
+  }
+}

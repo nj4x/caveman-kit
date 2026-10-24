@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 5,
+  "finishedAt": "2026-10-21T07:45:19.358Z",
+  "durationMs": 187412,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 11715,
+    "cache_read_input_tokens": 226592,
+    "output_tokens": 2060,
+    "output_tokens_details": {
+      "thinking_tokens": 77
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 11715
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.09524189999999999,
+  "result": "I found and fixed the regression. It was a typo in `anthrouter/http_util.py:120`: the code looked for the response header `anthropic-ratelimit-request-remaining`, but the upstream sends `anthropic-ratelimit-requests-remaining`, with an \"s\". Because the name never matched, the remaining-request count was never captured. The DB column `ratelimit_requests_remaining` stayed `NULL`, and the `proxy-status` output only showed tokens remaining and the reset time.\n\nI corrected the header name, which was a one-character change. Both failing rate-limit tests now pass: `test_successful_request_records_usage_and_the_rate_limit_window` and `test_status_reports_the_last_rate_limit_window`.\n\nIn the full run, 1125 tests passed, 1 was skipped and 3 failed. None of the 3 is about rate limits, and they fail the same way with my change removed, so they were already broken. I left them alone as you asked:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI haven't committed the change.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 414,
+    "reReads": 0,
+    "turns": 10,
+    "outputTokens": 2060
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 6,
+  "finishedAt": "2026-10-21T07:59:12.385Z",
+  "durationMs": 222208,
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 15695,
+    "cache_read_input_tokens": 222422,
+    "output_tokens": 2539,
+    "output_tokens_details": {
+      "thinking_tokens": 196
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15695
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.10914390000000002,
+  "result": "I fixed it. The bug was in `strip_reminders()` in `anthrouter/request_text.py`, not in `is_activity_label_prompt` itself.\n\n**Root cause:** `strip_reminders()` says it will \"trim outer whitespace\", but it never did. Removing `<system-reminder>…</system-reminder>` left the `\\n` that followed it, so the text began `\"\\nDescribe your…\"`. The exact-prefix check `startswith(ACTIVITY_LABEL_PREFIX)` then failed.\n\n**Fix:** a one-line change at `anthrouter/request_text.py:170`. `strip_reminders()` now calls `.strip()` on its result, as its docstring promises.\n\nFixing it there also corrects the other callers that relied on the trim:\n- `handlers.py:105` and `:115` use `strip_reminders(...) or None` and the stripped text for local-command matching. Before the fix, a message that was only a reminder left whitespace that still counted as content.\n- In `model_router.py`, the classifier text and the transcript fallback (which kicks in when stripping leaves an empty string) now get clean, empty-when-empty text.\n\n**Verification:**\n- The example from your report now returns `True`.\n- Before the change, `tests/test_config.py` and `tests/test_handlers.py` had 6 failures. Three were activity-label tests for this bug, and they now pass.\n- The full suite now gives 1125 passed, 1 skipped, 3 failed. Those 3 also failed before my change and look unrelated: `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`.\n- `ruff check .` reports 102 errors. Lint was already failing before my change, which doesn't add any lint issues.\n\nI ran everything with `uv`, adding pytest and ruff, because `python`, pytest and ruff aren't installed in this environment. No tests were changed and nothing is committed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 9,
+    "outputTokens": 2539
+  }
+}

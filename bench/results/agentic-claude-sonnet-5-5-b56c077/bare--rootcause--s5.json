@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 5,
+  "finishedAt": "2026-10-21T07:55:28.736Z",
+  "durationMs": 209342,
+  "usage": {
+    "input_tokens": 18,
+    "cache_creation_input_tokens": 15480,
+    "cache_read_input_tokens": 253616,
+    "output_tokens": 2143,
+    "output_tokens_details": {
+      "thinking_tokens": 116
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15480
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.1108892,
+  "result": "Fixed. The bug was in `strip_reminders()` in `anthrouter/request_text.py`. Its docstring says it removes wrapper blocks and trims outer whitespace, but it never did the trimming. After a `<system-reminder>` block was removed, the newline that followed it was left in place, so the case-sensitive check `startswith(ACTIVITY_LABEL_PREFIX)` failed.\n\nThe fix is one line: `strip_reminders` now ends with `.strip()`, at `anthrouter/request_text.py:170`. Because the fix is in the shared helper, every caller gets trimmed text again, not just `is_activity_label_prompt`. That includes local-command matching in `handlers.py` and the classifier text extraction and transcript fallbacks in `model_router.py`.\n\n**Verification:**\n- Your example input now returns `True`.\n- `make` couldn't find `python` here, so I ran the suite through `uvx`: 1125 passed, 1 skipped, 3 failed.\n- The 3 failures also fail with my change removed, and they're about config editable fields and tier caching, not reminder handling:\n  - `test_config.py::test_editable_fields_live_editable_fields`\n  - `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n  - `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n- The activity-label tests that failed without the change now pass.\n- I couldn't run `make lint` because ruff isn't installed in this environment.\n\nNo tests were changed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 10,
+    "outputTokens": 2143
+  }
+}

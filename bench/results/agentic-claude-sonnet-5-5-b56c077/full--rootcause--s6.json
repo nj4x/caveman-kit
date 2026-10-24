@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "rootcause",
+  "seed": 6,
+  "finishedAt": "2026-10-21T08:21:31.561Z",
+  "durationMs": 25693,
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 15802,
+    "cache_read_input_tokens": 225539,
+    "output_tokens": 1395,
+    "output_tokens_details": {
+      "thinking_tokens": 150
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15802
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0985948,
+  "result": "I fixed it, and the example prompt is now answered locally again. I couldn't run the test suite or the linter: this machine has no `python`, no `pytest` and no `ruff`. I only checked the example by hand with `python3`: `is_activity_label_prompt` now returns `True` for it.\n\n**Root cause:** `strip_reminders` in `anthrouter/request_text.py` removes the `<system-reminder>` block but leaves the `\\n` that followed it. Its docstring says it trims outer whitespace, but it never did. So the text started with `\\n`, and the check for \"starts with `Describe your most recent action...`\" failed.\n\n**Fix:** one line, `anthrouter/request_text.py:170`:\n```python\n    return _LOCAL_COMMAND_WRAPPER_RE.sub('', text).strip()\n```\n\nEvery other caller of `strip_reminders` now gets trimmed text too: the local-command parsing in `handlers.py:105,115` and the classifier input in `model_router.py:575,592,711,731`. Leading and trailing whitespace can no longer break them, and text that is only whitespace after stripping now counts as empty.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "turns": 9,
+    "outputTokens": 1395
+  }
+}
