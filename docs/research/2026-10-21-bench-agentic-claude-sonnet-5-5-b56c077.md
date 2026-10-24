@@ -34,6 +34,8 @@ The pooled 48-pair analysis is in `docs/research/2026-10-23-bench-compare-8c9076
 
 ## Caveats
 
+- **Routing contamination (found 2026-10-24).** The run went through anthproxy `127.0.0.1:8083` with auto model routing on, so the requested model was rewritten per request. The proxy log shows bench requests on opus and sonnet: about 58% opus and 42% sonnet, and 9 of 24 gate pairs compared different models. The stream files still report `claude-sonnet-5-5`. This run does not measure the model the gate names; see ADR 0011 and `bench/README.md`, "Routing proxy". R1 (8c90768) is not in the proxy DB, so its routing is unknown.
+
 - `ANTHROPIC_API_KEY` was a short proxy placeholder. Redaction split on it and replaced ordinary digit runs in the stored streams and `result` text (321 `[redacted]` hits). Metrics are computed before redaction and are unaffected. The fix (no redaction below 20 chars) is in commit `93a5a08`; the stored files were not regenerated.
 - Pairs with a cold prompt cache in one cell of the pair inflate the variance. See ADR 0010 and `docs/research/2026-10-23-context-diet-prompt-improvements.md`.
 

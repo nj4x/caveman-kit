@@ -239,6 +239,44 @@ feeds no verdict.
   Once all planned cells exist, the summary note goes to `docs/research/` as
   for single-turn.
 
+## Routing proxy
+
+If `ANTHROPIC_BASE_URL` is set, the calls go through that proxy. A proxy with
+model routing on changes the requested model, so the run would measure a
+different model (ADR 0011: `full` and `full-diet` ran on opus and sonnet in
+the b56c077 run). Before any paid call the runner asks the proxy for its
+`proxy-status` (answered locally, no upstream call) and refuses when routing
+is on, or when the proxy does not answer. The check prints
+`Proxy <url>: model routing off (pass-through)`. Unset `ANTHROPIC_BASE_URL`
+means a direct run, with no check.
+
+`proxy-status` does not report the model lock. Check it in the proxy log: a
+bench run through a pass-through proxy must show no `Model lock:` line, and
+every `Routing economics:` line must read `routed=<requested model>
+reason=disabled`. The lock defaults to `claude-sonnet-4-6`, so pass
+`--lock-requested-model off`.
+
+Run a pass-through proxy for bench runs on its own port, with its own DB so
+bench requests stay apart from your other sessions:
+
+```bash
+python -m anthproxy --backends anthropic --port 8084 \
+  --lock-requested-model off --db-path ~/.anthproxy/bench.db
+ANTHROPIC_BASE_URL=http://127.0.0.1:8084 ANTHROPIC_API_KEY=<key> \
+  node bench/run.js --kind agentic ...
+```
+
+Verify a run in the DB (read-only; `routed_model` must equal the requested
+model, and the warm-start check reads `cache_read_tokens` on each cell's
+first request):
+
+```bash
+sqlite3 -readonly ~/.anthproxy/bench.db \
+  "select request_ts, requested_model, routed_model, cache_read_tokens from requests order by id desc limit 20"
+```
+
+Do not use `--record-bodies` for bench runs: bodies are stored uncapped.
+
 ## Isolation and auth
 
 Each call gets a fresh temp config dir (`0700`, removed on exit, error and
