@@ -27,5 +27,5 @@ The prompt cache is also per model: a warmup call that routes to another model c
 - A run started by mistake through a routing proxy is refused before any cost, instead of after a full run.
 - The check trusts the proxy's own report of routing. The model lock is not covered by an automated check, only by the log procedure.
 - Bench runs need a second proxy instance, or direct API access.
-- The check sends one extra request to the proxy. The `proxy-status` reply is local and reports zero tokens; whether the proxy logs it is not verified.
+- The check sends one extra request to the proxy. The `proxy-status` reply is local and reports zero tokens, but the proxy records it as a request row (17 rows for a 16-request run in `bench/results/warmup-check-8084c`).
 - `ANTHROPIC_BASE_URL` is commonly exported in a maintainer's shell. Runs from that shell are checked too, so a routing proxy there blocks them. This is intended.
