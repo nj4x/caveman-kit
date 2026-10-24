@@ -57,7 +57,8 @@ another model or kind is stale and rerun). Each agentic cell also records
 `hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`, `turns`,
 `outputTokens`); the raw stream sits beside it as `<cell>.stream.jsonl`.
 `ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
-and printed `FAIL` lines. The agentic gate is described under "Agentic gate".
+and printed `FAIL` lines. Keys under 20 characters are not redacted, because
+they match ordinary text; the run prints a warning at start. The agentic gate is described under "Agentic gate".
 
 **Turn cap.** Each agent run is capped at 40 turns (`MAX_TURNS` in
 `lib/agentic.js`); this cap is a harness choice, not in ADR 0008. The `claude` CLI
@@ -168,7 +169,10 @@ the kit-dir's HEAD commit, so uncommitted hook edits reuse the old id: pass
 After the calls the runner prints raw per-arm totals, then the gate table
 (`lib/stats.js`). Two co-primary metrics, lower is better for both:
 cache-weighted input cost (`input + 0.1 x cache read + 1.25 x cache write`
-tokens) and billed output tokens. Each candidate is paired with its reference
+tokens) and billed output tokens. The 0.1x cache-read weight matches the CLI's
+reported USD. Anthropic's pricing page lists 0.05x for Sonnet 5.5; the formula
+is kept at 0.1x so results stay comparable with the 8c90768 and b56c077 runs
+(see `docs/research/2026-10-23-context-diet-prompt-improvements.md`). Each candidate is paired with its reference
 by task and seed: `lite`, `full`, `ultra` against `bare`, and
 `ultra-no-focus` against `ultra`. Every candidate gets a row; one with fewer
 than 2 pairs has an infinite interval and is no-ship. The table shows both
