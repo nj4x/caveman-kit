@@ -55,7 +55,7 @@ only after it exits copy the hidden test in and run it. Cells use the same
 format as single-turn cells (`kind: "agentic"`, `model`, `usage`; a cell from
 another model or kind is stale and rerun). Each agentic cell also records
 `hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`,
-`testRuns`, `subagentCalls`, `subagentStarts`, `turns`, `outputTokens`); the raw stream sits beside it as
+`testRuns`, `testRunsExecuted`, `subagentCalls`, `subagentStarts`, `turns`, `outputTokens`); the raw stream sits beside it as
 `<cell>.stream.jsonl`. `testRuns` counts Bash calls that invoke a test runner
 (`pytest`, `python -m unittest`, `tox`, `make test`, `npm test` and the like,
 see `isTestCommand` in `lib/stream.js`). The match errs toward counting: a
@@ -64,7 +64,10 @@ runner called from inside a script is not seen, but a quoted runner name
 Makefile`) counts. The per-arm table shows it as `ran_tests`: cells with at
 least one test run out of the cells that record it (`n/a` for cells written
 before `testRuns` existed). It is a diagnostic, not part of the gate (ADR
-0012).
+0012). `testRunsExecuted` counts the test runs whose output shows tests ran
+(`testsExecuted` in `lib/stream.js`); a failed attempt such as `No module named
+pytest` counts in `testRuns` only. The table shows it as `tests_executed`, `n/a`
+for cells written before ADR 0014. Also a diagnostic.
 `subagentCalls` counts Task/Agent tool calls and `subagentStarts` counts
 SubagentStart hook fires (one per `hook_id`; an event without one counts on its own). The harness passes
 `--include-hook-events` so the stream carries them; a stream recorded without

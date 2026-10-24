@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 2,
+  "finishedAt": "2026-10-24T20:53:27.223Z",
+  "durationMs": 15174,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 191148,
+    "cache_creation_input_tokens": 12344,
+    "output_tokens": 1657
+  },
+  "totalCostUsd": 0.0856876,
+  "result": "Fixed in `anthrouter/pace.py`. September 2026 in UTC now gives a 22-workday denominator. I couldn't run the test suite because `pytest` isn't installed here. I only checked `workday_elapsed_pct` by hand for 2026-09-15: it returns `(45.45…, 22)` for UTC, up from 23 workdays before.\n\n**Cause:** `period_workday_dates` treated `period_end` as inclusive. `period_end` is the first instant of the next month, so Oct 1 (a Thursday) was counted as a September workday.\n\n**Fix:** The end date is now taken from the last instant before `period_end`. A trailing-boundary workday is no longer counted.\n\nAmerica/Los_Angeles still returns 23 for September 2026. That count was already correct, because the period's local range there is Aug 31 to Sep 30, which contains 23 weekdays.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5723,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1657,
+    "firstCacheRead": 19133
+  }
+}

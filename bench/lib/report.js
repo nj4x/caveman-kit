@@ -157,10 +157,13 @@ function writeNote(dir, name, text) {
 // stream diagnostics. No statistics: the agentic gate is judged by lib/stats.js.
 // ranTests counts cells with testRuns > 0 out of testRunsKnown, the cells
 // that record testRuns at all (cells written before issue #12 do not).
+// executedCells counts cells with testRunsExecuted > 0 out of executedKnown:
+// runs whose output shows tests ran, not just attempts (cells written before
+// ADR 0014 lack the field).
 // subagentCells counts cells with subagentStarts > 0 out of subagentKnown;
 // subagentStarts and subagentCalls sum over those known cells (issue #13).
 function summarizeAgentic(cells, armOrder = []) {
-  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, ranTests: 0, testRunsKnown: 0, subagentCells: 0, subagentKnown: 0, subagentStarts: 0, subagentCalls: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
+  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, ranTests: 0, testRunsKnown: 0, executedCells: 0, executedKnown: 0, subagentCells: 0, subagentKnown: 0, subagentStarts: 0, subagentCalls: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
   const byArm = new Map(armOrder.map(name => [name, blank(name)]));
   for (const cell of cells) {
     if (!byArm.has(cell.arm)) byArm.set(cell.arm, blank(cell.arm));
@@ -173,6 +176,10 @@ function summarizeAgentic(cells, armOrder = []) {
       row.testRunsKnown += 1;
       if (d.testRuns > 0) row.ranTests += 1;
     }
+    if (Number.isFinite(d.testRunsExecuted)) {
+      row.executedKnown += 1;
+      if (d.testRunsExecuted > 0) row.executedCells += 1;
+    }
     if (Number.isFinite(d.subagentStarts)) {
       row.subagentKnown += 1;
       if (d.subagentStarts > 0) row.subagentCells += 1;
@@ -184,12 +191,13 @@ function summarizeAgentic(cells, armOrder = []) {
   return [...byArm.values()];
 }
 
-const AGENTIC_HEADER = ['arm', 'cells', 'hidden_pass', 'max_turns', 'ran_tests', 'subagent_start', 'read_chars', 're_reads', 'turns', 'output'];
+const AGENTIC_HEADER = ['arm', 'cells', 'hidden_pass', 'max_turns', 'ran_tests', 'tests_executed', 'subagent_start', 'read_chars', 're_reads', 'turns', 'output'];
 
 function agenticRow(r) {
   return [
     r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns),
     r.testRunsKnown ? `${r.ranTests}/${r.testRunsKnown}` : 'n/a',
+    r.executedKnown ? `${r.executedCells}/${r.executedKnown}` : 'n/a',
     r.subagentKnown ? `${r.subagentCells}/${r.subagentKnown}` : 'n/a',
     String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens),
   ];

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "suitecheck",
+  "seed": 4,
+  "finishedAt": "2026-10-24T20:52:09.780Z",
+  "durationMs": 14798,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 180926,
+    "cache_creation_input_tokens": 10612,
+    "output_tokens": 1441
+  },
+  "totalCostUsd": 0.07715320000000002,
+  "result": "I fixed the off-by-one in `anthrouter/pace.py`. For September 2026 in UTC, `workday_elapsed_pct` now divides by 22 workdays instead of 23.\n\n**Cause:** `period_workday_dates` ran from the start date through the end date inclusive. But `period_bounds` returns the end as the first instant of the next month, which is exclusive. So Thursday 1 October 2026 was counted as a September workday. This hit UTC hardest. In US timezones the end instant falls on 30 September locally, so they didn't see it.\n\n**Fix:** the end date is now the local date of the last instant before `period_end`. I also updated the docstring to say the end is exclusive.\n\n**Checked:**\n- A direct call for 15 September 2026 with `ZoneInfo('UTC')` returns `(45.45…, 22)`.\n- I haven't run the test suite, because pytest isn't installed in this environment.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1441,
+    "firstCacheRead": 19135
+  }
+}

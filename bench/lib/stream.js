@@ -20,6 +20,10 @@
 //                 0 means the agent never ran tests through Bash, so "skipped
 //                 verification" shows even when the hidden test passes (issue #12).
 //                 A runner hidden inside a script the agent calls is not seen.
+//   testRunsExecuted  testRuns whose tool_result shows tests ran (testsExecuted).
+//                 A failed attempt ("No module named pytest") counts in testRuns
+//                 only; its is_error flag is no signal, because the agent often
+//                 pipes the command through tail (ADR 0014).
 //   subagentCalls tool_use blocks of the Task or Agent tool (a subagent spawn)
 //   subagentStarts SubagentStart hook fires: hook_started system events with
 //                 hook_event SubagentStart, once per hook_id (an event without
@@ -99,6 +103,33 @@ function parseEvents(text) {
   return events;
 }
 
+// Output of a test runner that ran tests: a pytest/jest summary count, pytest
+// "collected N items", unittest "Ran N tests", go "ok|FAIL <pkg> <time>", cargo
+// "test result:", rspec "N examples", or a TAP plan line. A missing runner
+// ("No module named pytest", "command not found"), "no tests ran" and a usage
+// error print none of these. The match errs toward counting: any such text in
+// the output counts, also when a command only prints it.
+const TESTS_EXECUTED_RE = new RegExp([
+  String.raw`\b[1-9]\d*\s+(?:passed|failed|skipped|deselected|xfailed|xpassed)\b`,
+  String.raw`\b[1-9]\d*\s+errors?\s+in\s+[\d.]+s\b`,
+  String.raw`\bcollected\s+[1-9]\d*\s+items?\b`,
+  String.raw`^Ran\s+[1-9]\d*\s+tests?\b`,
+  String.raw`^(?:ok|FAIL)\s+\S+\s+[\d.]+s\b`,
+  String.raw`\btest result:\s+(?:ok|FAILED)\b`,
+  String.raw`\b[1-9]\d*\s+examples?,\s+\d+\s+failures?\b`,
+  String.raw`^1\.\.[1-9]\d*$`,
+].join('|'), 'm');
+
+function testsExecuted(output) {
+  return typeof output === 'string' && TESTS_EXECUTED_RE.test(output);
+}
+
+function contentText(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) return content.map(part => (typeof part === 'string' ? part : (part && typeof part.text === 'string' ? part.text : ''))).join('\n');
+  return '';
+}
+
 function contentLength(content) {
   if (typeof content === 'string') return content.length;
   if (Array.isArray(content)) {
@@ -128,6 +159,8 @@ function analyze(text) {
   let readChars = 0;
   let reReads = 0;
   let testRuns = 0;
+  let testRunsExecuted = 0;
+  const testIds = new Set(); // tool_use id of each test-runner Bash call, until its result arrives
   let subagentCalls = 0;
   const subagentHooks = new Set(); // hook_id of each SubagentStart hook_started
   let subagentHooksNoId = 0;
@@ -147,7 +180,10 @@ function analyze(text) {
       for (const block of message.content) {
         if (!block || block.type !== 'tool_use') continue;
         const input = block.input || {};
-        if (block.name === 'Bash' && isTestCommand(input.command)) testRuns += 1;
+        if (block.name === 'Bash' && isTestCommand(input.command)) {
+          testRuns += 1;
+          if (block.id) testIds.add(block.id);
+        }
         if (SUBAGENT_TOOLS.has(block.name)) subagentCalls += 1;
         const file = input.file_path || input.notebook_path;
         if (block.name === 'Read' && typeof file === 'string') {
@@ -163,6 +199,7 @@ function analyze(text) {
       }
     } else if (ev.type === 'user') {
       for (const block of message.content) {
+        if (block && block.type === 'tool_result' && testIds.delete(block.tool_use_id) && testsExecuted(contentText(block.content))) testRunsExecuted += 1;
         if (block && block.type === 'tool_result' && readIds.has(block.tool_use_id)) {
           readChars += contentLength(block.content);
           // Only a successful Read covers lines; an errored one gave the model nothing.
@@ -182,6 +219,7 @@ function analyze(text) {
       readChars,
       reReads,
       testRuns,
+      testRunsExecuted,
       subagentCalls,
       subagentStarts: subagentHooks.size + subagentHooksNoId,
       turns: result && Number.isFinite(result.num_turns) ? result.num_turns : assistantIds.size + assistantAnon,
@@ -191,4 +229,4 @@ function analyze(text) {
   };
 }
 
-module.exports = { analyze, isTestCommand, parseEvents };
+module.exports = { analyze, isTestCommand, parseEvents, testsExecuted };
