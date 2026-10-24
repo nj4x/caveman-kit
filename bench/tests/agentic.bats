@@ -53,7 +53,7 @@ teardown() { bench_teardown; }
   '
 }
 
-@test "agentic-diagnostics: canned stream-json yields the expected Read chars, re-reads, turns, output tokens" {
+@test "agentic-diagnostics: canned stream-json yields the expected Read chars, re-reads, test runs, turns, output tokens" {
   run run_agentic --seeds 1
   [ "$status" -eq 0 ]
 
@@ -62,11 +62,12 @@ teardown() { bench_teardown; }
     const assert = require("assert");
     const dir = process.env.RESULTS + "/" + fs.readdirSync(process.env.RESULTS)[0];
     // Reads: 100 + 100 (re-read) + 120 (after an Edit, fresh) + 30 + 20 (re-read of a covered range) = 370.
-    // The 999-char Bash result is not a Read.
+    // The 999-char Bash result is not a Read. Of the two Bash calls only the
+    // pytest one is a test run.
     const expected = { bare: 501, full: 301, "full-diet": 201 };
     for (const [arm, out] of Object.entries(expected)) {
       const cell = JSON.parse(fs.readFileSync(dir + "/" + arm + "--tiny--s1.json", "utf8"));
-      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
+      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, testRuns: 1, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
       assert.strictEqual(cell.usage.cache_read_input_tokens, arm === "full-diet" ? 1000 : 2000);
       assert.ok(fs.existsSync(dir + "/" + arm + "--tiny--s1.stream.jsonl"));
     }
@@ -85,8 +86,8 @@ teardown() { bench_teardown; }
       JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "2", content: "ef" }] } }),
       JSON.stringify({ type: "result", is_error: false, usage: { output_tokens: 9 } }),
     ].join("\n");
-    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, turns: 2, outputTokens: 9, firstCacheRead: null });
-    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
+    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, testRuns: 0, turns: 2, outputTokens: 9, firstCacheRead: null });
+    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, testRuns: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
 
     // firstCacheRead comes from the first assistant message with usage only.
     const msg = (id, read) => JSON.stringify({ type: "assistant", message: { id, content: [], usage: { cache_read_input_tokens: read } } });
@@ -105,6 +106,51 @@ teardown() { bench_teardown; }
       use("5", { file_path: "/z", offset: null, limit: 50 }), res("5"),
     ].join("\n");
     assert.strictEqual(analyze(stream).diagnostics.reReads, 1);
+  '
+}
+
+@test "agentic-test-runs: Bash calls that invoke a test runner count as test runs, other Bash calls do not" {
+  node -e '
+    const assert = require("assert");
+    const { analyze, isTestCommand } = require(process.env.BENCH_DIR + "/lib/stream");
+    for (const cmd of ["pytest -x -q", "python3 -m pytest tests/test_pace.py", "cd /w && uv run pytest", "python -m unittest discover",
+      "py.test", "tox -e py312", "make test", "npm test", "npm run test", "go test ./...", "cargo test", "bats tests/",
+      "timeout 300 pytest", "env X=1 pytest -q", "uv run --with pytest pytest -q", "bash -c \"pytest -q\"", "bash -c '\''pytest'\''",
+      "python -X dev -m pytest", "make -C sub test", "npx jest", "ls\npytest -q", ".venv/bin/pytest"]) {
+      assert.ok(isTestCommand(cmd), cmd);
+    }
+    // Looser by design: a two-word form or a quoted runner name counts even
+    // when only mentioned.
+    assert.ok(isTestCommand("grep \"make test\" Makefile"));
+    assert.ok(isTestCommand("rg \"pytest\" ."));
+
+    // A long run of --key=value words must not backtrack exponentially.
+    const started = Date.now();
+    assert.ok(!isTestCommand("; " + "--a=b ".repeat(2000) + "x"));
+    assert.ok(Date.now() - started < 1000, `took ${Date.now() - started} ms`);
+    for (const cmd of ["ls", "git status", "cat pytest.ini", "rg -n pytest pyproject.toml", "pip install pytest-cov", "make build", "echo protest", "", undefined]) {
+      assert.ok(!isTestCommand(cmd), String(cmd));
+    }
+    const bash = (id, command) => JSON.stringify({ type: "assistant", message: { id, content: [{ type: "tool_use", id, name: "Bash", input: { command } }] } });
+    const stream = [bash("1", "pytest -q"), bash("2", "ls"), bash("3", "python3 -m pytest -q tests/test_x.py")].join("\n");
+    assert.strictEqual(analyze(stream).diagnostics.testRuns, 2);
+  '
+}
+
+@test "agentic-report-ran-tests: the per-arm table counts cells that ran tests, n/a when no cell records it" {
+  node -e '
+    const assert = require("assert");
+    const report = require(process.env.BENCH_DIR + "/lib/report");
+    const cell = (arm, testRuns) => ({ arm, hiddenTest: { pass: true }, diagnostics: testRuns === undefined ? {} : { testRuns } });
+    const rows = report.summarizeAgentic([cell("bare", 2), cell("bare", 0), cell("full", 1), cell("full", undefined), cell("full-diet", undefined)], ["bare", "full", "full-diet"]);
+    const table = report.formatAgenticTable(rows);
+    const lines = table.split("\n");
+    assert.ok(/\bran_tests\b/.test(lines[0]), lines[0]);
+    const col = lines[0].split(/\s+/).indexOf("ran_tests");
+    const value = arm => lines.find(l => l.split(/\s+/)[0] === arm).split(/\s+/)[col];
+    assert.strictEqual(value("bare"), "1/2");
+    assert.strictEqual(value("full"), "1/1");
+    assert.strictEqual(value("full-diet"), "n/a");
   '
 }
 

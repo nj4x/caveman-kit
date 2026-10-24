@@ -26,9 +26,9 @@ fixture_assert() {
   '
 }
 
-@test "real-fixtures-format: bench/fixtures holds bigfile, noisylog, reuse, rootcause and each loads" {
+@test "real-fixtures-format: bench/fixtures holds bigfile, noisylog, reuse, rootcause, suitecheck and each loads" {
   fixture_assert '
-    assert.deepStrictEqual(fixtures.listFixtureNames(dir), ["bigfile", "noisylog", "reuse", "rootcause"]);
+    assert.deepStrictEqual(fixtures.listFixtureNames(dir), ["bigfile", "noisylog", "reuse", "rootcause", "suitecheck"]);
     for (const name of fixtures.listFixtureNames(dir)) {
       const f = fixtures.loadFixture(dir, name);
       assert.ok(f.prompt.length > 80, `${name}: prompt too short`);
@@ -44,6 +44,7 @@ fixture_assert() {
       rootcause: "https://github.com/nj4x/anthrouter.git",
       noisylog: "https://github.com/nj4x/anthrouter.git",
       reuse: "https://github.com/nj4x/skills-dev.git",
+      suitecheck: "https://github.com/nj4x/anthrouter.git",
     };
     const shaBySource = {};
     for (const [name, source] of Object.entries(expected)) {
@@ -73,7 +74,7 @@ fixture_assert() {
 }
 
 @test "real-fixtures-plant: each plant patch applies through prepareWorkDir to a local stand-in and yields the planted tree" {
-  for name in bigfile noisylog reuse rootcause; do
+  for name in bigfile noisylog reuse rootcause suitecheck; do
     standin="$TEST_ROOT/standin-$name"
     node "$BENCH_DIR/tests/patch_standin.js" "$FIXTURES_DIR/$name/plant.patch" "$standin" > "$TEST_ROOT/$name.touched"
     [ -s "$TEST_ROOT/$name.touched" ]

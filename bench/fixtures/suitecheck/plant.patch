@@ -1,0 +1,18 @@
+diff --git a/anthrouter/pace.py b/anthrouter/pace.py
+index 3302d22..ad84e0c 100644
+--- a/anthrouter/pace.py
++++ b/anthrouter/pace.py
+@@ -38,11 +38,11 @@ def period_workday_dates(
+     """Return all Mon-Fri local dates overlapping the UTC period.
+ 
+     The range runs from ``period_start.astimezone(tz).date()`` through
+-    ``(period_end - 1 microsecond).astimezone(tz).date()``, inclusive.
++    ``period_end.astimezone(tz).date()``, inclusive.
+     No holiday exclusions.
+     """
+     start_local = period_start.astimezone(tz).date()
+-    end_local = (period_end - dt.timedelta(microseconds=1)).astimezone(tz).date()
++    end_local = period_end.astimezone(tz).date()
+     workdays: list[dt.date] = []
+     current = start_local
+     while current <= end_local:

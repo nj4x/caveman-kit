@@ -54,8 +54,17 @@ edit files elsewhere, including `hidden/` and the hooks, by absolute path), and
 only after it exits copy the hidden test in and run it. Cells use the same
 format as single-turn cells (`kind: "agentic"`, `model`, `usage`; a cell from
 another model or kind is stale and rerun). Each agentic cell also records
-`hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`, `turns`,
-`outputTokens`); the raw stream sits beside it as `<cell>.stream.jsonl`.
+`hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`,
+`testRuns`, `turns`, `outputTokens`); the raw stream sits beside it as
+`<cell>.stream.jsonl`. `testRuns` counts Bash calls that invoke a test runner
+(`pytest`, `python -m unittest`, `tox`, `make test`, `npm test` and the like,
+see `isTestCommand` in `lib/stream.js`). The match errs toward counting: a
+runner called from inside a script is not seen, but a quoted runner name
+(`rg "pytest" .`) or a mention of a two-word form (`grep "make test"
+Makefile`) counts. The per-arm table shows it as `ran_tests`: cells with at
+least one test run out of the cells that record it (`n/a` for cells written
+before `testRuns` existed). It is a diagnostic, not part of the gate (ADR
+0012).
 `ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
 and printed `FAIL` lines. Keys under 20 characters are not redacted, because
 they match ordinary text; the run prints a warning at start. The agentic gate is described under "Agentic gate".
@@ -82,8 +91,8 @@ comments stripped) must appear in the `full-diet` context and not in `full`.
 
 ### Fixtures
 
-Four real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5). Each pins
-one upstream commit, and the run clones it from GitHub:
+Five real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012).
+Each pins one upstream commit, and the run clones it from GitHub:
 
 | Fixture | Source repo | Pinned SHA | Planted bug / task |
 |---------|-------------|------------|--------------------|
@@ -91,6 +100,13 @@ one upstream commit, and the run clones it from GitHub:
 | `rootcause` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `request_text.strip_reminders` stops trimming whitespace; the prompt names one symptom, the hidden test checks the helper and three call sites |
 | `noisylog` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | misspelt rate-limit header in `http_util`; the prompt sends the agent through the full suite (1,100+ tests, a few minutes, some unrelated failures) |
 | `reuse` | `nj4x/skills-dev` | `41193d1541fe3af0f821869c326870d97f75e008` | the `flagged` subcommand of `skills/planning/critic/scripts/critic_ledger.py` is removed; the existing `_load_json` helper already does the fence-tolerant loading it needs |
+| `suitecheck` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `pace.period_workday_dates` treats the exclusive UTC period end as inclusive (code and docstring), so a zone at UTC+0 gains next month's first day; the prompt names only the UTC symptom. Ending the loop one day early fixes UTC but breaks 13 of the 30 tests in `tests/test_pace.py`; only running the suite shows it |
+
+`suitecheck` exists because every cell of the first two agentic runs passed
+its hidden test, so the pass-rate guardrail could not tell arms apart (issue
+#12). It is meant to be hard enough that `bare` fails some seeds. Runs before
+it used the first four fixtures; to compare with them, pass
+`--fixtures bigfile,noisylog,reuse,rootcause`.
 
 `noisylog` uses anthrouter because its test suite is the longer one that runs
 offline: at the pinned commits anthrouter's suite ran 1,125 passing tests in
@@ -139,11 +155,11 @@ paired cells yourself, and to escalate rerun with `--seeds 6` and the same
 ## Cost
 
 Every run spends real quota; the runner prints an estimate before the first
-call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 36
-agentic runs (3 arms x 4 fixtures x 3 seeds), 72 when the agentic gate
+call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 45
+agentic runs (3 arms x 5 fixtures x 3 seeds), 90 when the agentic gate
 escalates to 6 seeds. At the `lib/estimate.js` assumptions and Sonnet list
 price, that is at most about $10 for the single-turn kind (~$0.09 per call) and
-about $39 to $78 for the agentic kind (~$1.08 per run). Prompt caching usually
+about $49 to $97 for the agentic kind (~$1.08 per run). Prompt caching usually
 makes the real bill lower. `--model claude-opus-5-5` costs about 1.7x as much.
 
 ## Requirements
@@ -234,8 +250,9 @@ feeds no verdict.
   counts warmups at the single-turn price. Each cell records
   `diagnostics.firstCacheRead`; the summary note counts cold starts (0) per
   arm. `--no-warmup` turns it off; runs before ADR 0010 had none.
-- Output: raw per-arm table (hidden-test passes, capped cells, Read chars,
-  re-reads, turns, output tokens), then the gate lines and a `Verdict:` line.
+- Output: raw per-arm table (hidden-test passes, capped cells, cells that ran
+  tests, Read chars, re-reads, turns, output tokens), then the gate lines and
+  a `Verdict:` line.
   Once all planned cells exist, the summary note goes to `docs/research/` as
   for single-turn.
 
