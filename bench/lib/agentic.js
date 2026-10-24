@@ -24,6 +24,10 @@ const MAX_TURNS_SUBTYPE = 'error_max_turns';
 // An agentic run takes many turns: its default --cell-timeout is longer than
 // the single-turn one.
 const DEFAULT_CELL_TIMEOUT_MS = 30 * 60 * 1000;
+// Redaction splits on the key value, so a short key (a proxy placeholder such
+// as "123") matches ordinary text and corrupts stored results. Keys shorter
+// than this are not redacted; run.js warns once at start.
+const MIN_SECRET_LENGTH = 20;
 
 // The injected form of the diet file: HTML comments stripped, trimmed. This
 // is what preflight requires in `full-diet` and forbids in `full`.
@@ -74,7 +78,8 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   // Diagnostics are parsed from the unredacted stream. Redact before any
   // truncation, so a cut never leaves a key fragment split() cannot match.
   const secret = armConfig.env.ANTHROPIC_API_KEY;
-  const redact = text => (secret && typeof text === 'string' ? text.split(secret).join('[redacted]') : text);
+  const redactable = secret && secret.length >= MIN_SECRET_LENGTH ? secret : null;
+  const redact = text => (redactable && typeof text === 'string' ? text.split(redactable).join('[redacted]') : text);
   if (res.timedOut) {
     return { ok: false, error: `timed out after ${timeoutMs / 1000}s (${res.signal ? `killed by ${res.signal}` : `exit ${res.status}`})` };
   }
@@ -112,4 +117,4 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   return { ok: true, record };
 }
 
-module.exports = { DEFAULT_CELL_TIMEOUT_MS, DIET_FILE, MAX_TURNS, dietText, runAgenticCell };
+module.exports = { DEFAULT_CELL_TIMEOUT_MS, DIET_FILE, MAX_TURNS, MIN_SECRET_LENGTH, dietText, runAgenticCell };

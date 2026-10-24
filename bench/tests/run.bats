@@ -98,7 +98,7 @@ teardown() { bench_teardown; }
   log_assert '
     for (const e of entries) {
       assert.strictEqual(e.credentialsCopied, false);
-      assert.strictEqual(e.env.ANTHROPIC_API_KEY, "test-key");
+      assert.strictEqual(e.env.ANTHROPIC_API_KEY, "sk-ant-test-0123456789abcdef");
     }
   '
 }

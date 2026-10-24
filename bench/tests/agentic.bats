@@ -349,7 +349,7 @@ teardown() { bench_teardown; }
 
   STUB_LEAK=1 run run_agentic --seeds 1
   [ "$status" -eq 0 ]
-  ! grep -q 'test-key' "$(agentic_cell bare tiny 1)" || false
+  ! grep -q 'sk-ant-test-0123456789abcdef' "$(agentic_cell bare tiny 1)" || false
   grep -q 'leaked \[redacted\]' "$(agentic_cell bare tiny 1)"
   node -e '
     const cell = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
@@ -359,18 +359,28 @@ teardown() { bench_teardown; }
   STUB_LEAK=1 STUB_EXIT=2 run run_agentic --seeds 1 --run-id leak-fail
   [ "$status" -ne 0 ]
   [[ "$output" == *"stub stderr [redacted]"* ]] || false
-  [[ "$output" != *"test-key"* ]] || false
+  [[ "$output" != *"sk-ant-test-0123456789abcdef"* ]] || false
 
   # The 500-char cut falls inside the key: redaction must happen first, so no
-  # fragment ("t-key") survives.
+  # fragment ("bcdef") survives.
   STUB_LEAK=1 STUB_EXIT=2 STUB_STDERR_PAD=495 run run_agentic --seeds 1 --run-id leak-cut
   [ "$status" -ne 0 ]
   [[ "$output" == *"FAIL bare--tiny--s1: exit 2: cted]ppp"* ]] || false
-  [[ "$output" != *"t-keyppp"* ]] || false
+  [[ "$output" != *"bcdefppp"* ]] || false
 
   stream="$(ls -d "$RESULTS"/agentic-*)/bare--tiny--s1.stream.jsonl"
   grep -q '\[redacted\]' "$stream"
-  ! grep -q 'test-key' "$stream" || false
+  ! grep -q 'sk-ant-test-0123456789abcdef' "$stream" || false
+}
+
+@test "agentic-stream-redaction: a key under 20 chars is not redacted and run.js warns" {
+  printf '%s\n' 'cat leak.txt; grep -qx good value.txt' > "$FIXTURES/tiny/hidden/check.sh"
+
+  ANTHROPIC_API_KEY=test-key STUB_LEAK=1 run run_agentic --seeds 1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ANTHROPIC_API_KEY is 8 chars (< 20); not redacted"* ]] || false
+  stream="$(ls -d "$RESULTS"/agentic-*)/bare--tiny--s1.stream.jsonl"
+  grep -q 'test-key' "$stream"
 }
 
 @test "fixture-relative-source: a relative source resolves against the fixture dir" {

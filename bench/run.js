@@ -256,6 +256,10 @@ async function main() {
   process.stdout.write(`Run ${runId} -> ${runDir}\n`);
   process.stdout.write(`${arms.length} arms x ${items.length} ${isAgentic ? 'fixtures' : 'tasks'} x ${opts.seeds} seeds, model ${opts.model}, auth ${auth.kind}\n`);
   process.stdout.write(`${estimate.formatEstimate({ model: opts.model, pendingCalls: pending.length, doneCalls: plan.length - pending.length, kind: opts.kind })}\n`);
+  const keyLength = (process.env.ANTHROPIC_API_KEY || '').length;
+  if (isAgentic && keyLength > 0 && keyLength < agentic.MIN_SECRET_LENGTH) {
+    process.stderr.write(`bench: ANTHROPIC_API_KEY is ${keyLength} chars (< ${agentic.MIN_SECRET_LENGTH}); not redacted from stored results\n`);
+  }
 
   const timeoutMs = opts.cellTimeout * 1000;
   // Runs the given pending plan items; returns the number of failed cells.
