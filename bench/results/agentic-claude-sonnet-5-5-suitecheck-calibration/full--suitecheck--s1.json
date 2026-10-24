@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 1,
+  "finishedAt": "2026-10-24T20:53:07.987Z",
+  "durationMs": 14174,
+  "usage": {
+    "input_tokens": 12,
+    "cache_read_input_tokens": 159940,
+    "cache_creation_input_tokens": 12191,
+    "output_tokens": 1457
+  },
+  "totalCostUsd": 0.0770595,
+  "result": "Fixed in `anthrouter/pace.py`. `period_workday_dates` treated `period_end` (midnight on the 1st of the next month, exclusive) as an inclusive date. For UTC users that counted Oct 1 2026, a Thursday, as a September workday.\n\nIt now uses the local date of `period_end - 1µs`. For UTC, September 2026 now gives 22 workdays; a check on 2026-09-15 returned `(45.45, 22)`. Zones behind UTC still end on the last local day of the month, as before.\n\nI couldn't run the test suite: `pytest` isn't installed in this environment's `python3`. I haven't added a test for the new behavior.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5723,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1457,
+    "firstCacheRead": 19133
+  }
+}

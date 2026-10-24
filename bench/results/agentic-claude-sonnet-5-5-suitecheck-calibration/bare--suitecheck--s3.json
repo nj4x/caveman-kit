@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "suitecheck",
+  "seed": 3,
+  "finishedAt": "2026-10-24T20:51:51.121Z",
+  "durationMs": 18403,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 240432,
+    "cache_creation_input_tokens": 11021,
+    "output_tokens": 1811
+  },
+  "totalCostUsd": 0.0937849,
+  "result": "I fixed it in `anthrouter/pace.py`. For a UTC meter, September 2026 now divides by 22 workdays instead of 23. I checked that with a quick run on 2026-09-15, which gave 22 workdays and 45.45% elapsed. I couldn't run the test suite because pytest isn't installed here, so the existing tests are unchecked.\n\n**Cause:** `period_workday_dates` treated the end of the month as inclusive. `period_bounds` returns the first instant of the next month, so for UTC the count included Thursday 1 October as a September workday.\n\n**Fix:** the end date is now the local date of the last instant before `period_end`. I also updated the docstring to say the end bound is exclusive.\n\nOther timezones should be unaffected. Offsets behind UTC, such as Los Angeles, already ended on the last day of the month. Offsets ahead of UTC, such as Tokyo, still include the first of the next month, since that day does overlap the period in local time.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1811,
+    "firstCacheRead": 19135
+  }
+}

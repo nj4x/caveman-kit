@@ -69,7 +69,7 @@ teardown() { bench_teardown; }
     const expected = { bare: 501, full: 301, "full-diet": 201 };
     for (const [arm, out] of Object.entries(expected)) {
       const cell = JSON.parse(fs.readFileSync(dir + "/" + arm + "--tiny--s1.json", "utf8"));
-      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, testRuns: 1, subagentCalls: 1, subagentStarts: 1, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
+      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, testRuns: 1, testRunsExecuted: 1, subagentCalls: 1, subagentStarts: 1, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
       assert.strictEqual(cell.usage.cache_read_input_tokens, arm === "full-diet" ? 1000 : 2000);
       assert.ok(fs.existsSync(dir + "/" + arm + "--tiny--s1.stream.jsonl"));
     }
@@ -88,8 +88,8 @@ teardown() { bench_teardown; }
       JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "2", content: "ef" }] } }),
       JSON.stringify({ type: "result", is_error: false, usage: { output_tokens: 9 } }),
     ].join("\n");
-    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, testRuns: 0, subagentCalls: 0, subagentStarts: 0, turns: 2, outputTokens: 9, firstCacheRead: null });
-    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, testRuns: 0, subagentCalls: 0, subagentStarts: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
+    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, testRuns: 0, testRunsExecuted: 0, subagentCalls: 0, subagentStarts: 0, turns: 2, outputTokens: 9, firstCacheRead: null });
+    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, testRuns: 0, testRunsExecuted: 0, subagentCalls: 0, subagentStarts: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
 
     // firstCacheRead comes from the first assistant message with usage only.
     const msg = (id, read) => JSON.stringify({ type: "assistant", message: { id, content: [], usage: { cache_read_input_tokens: read } } });
@@ -153,6 +153,65 @@ teardown() { bench_teardown; }
     assert.strictEqual(value("bare"), "1/2");
     assert.strictEqual(value("full"), "1/1");
     assert.strictEqual(value("full-diet"), "n/a");
+  '
+}
+
+@test "agentic-tests-executed: a test command counts as executed only when its output shows tests ran" {
+  node -e '
+    const assert = require("assert");
+    const { analyze, testsExecuted } = require(process.env.BENCH_DIR + "/lib/stream");
+    for (const out of ["== 3 passed in 0.12s ==", "1 failed, 29 passed in 4.50s", "collected 30 items", "2 errors in 0.31s",
+      "Ran 5 tests in 0.004s\n\nOK", "ok  \texample.com/pkg\t0.012s", "test result: ok. 3 passed; 0 failed", "FAIL\texample.com/pkg\t0.3s",
+      "Tests:       2 failed, 4 passed, 6 total", "3 examples, 0 failures", "1..4\nok 1 a"]) {
+      assert.ok(testsExecuted(out), out);
+    }
+    // The attempt failed or only mentioned a runner: nothing ran.
+    for (const out of ["/opt/homebrew/bin/python3.14: No module named pytest", "(eval):1: command not found: python", "pytest: command not found",
+      "error: Failed to spawn: `pytest`", "ERROR: file or directory not found: tests/x.py", "no tests ran in 0.01s", "", undefined, null,
+      // Zero tests collected or run is not a test run, and a type checker is not a runner.
+      "collected 0 items\n\n=== no tests ran in 0.01s ===", "0 passed", "Ran 0 tests in 0.000s", "1..0", "0 examples, 0 failures",
+      "Found 2 errors in 1 file (checked 4 source files)"]) {
+      assert.ok(!testsExecuted(out), String(out));
+    }
+    const use = (id, command) => JSON.stringify({ type: "assistant", message: { id, content: [{ type: "tool_use", id, name: "Bash", input: { command } }] } });
+    const res = (id, content, extra) => JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, content, ...extra }] } });
+    const stream = [
+      use("1", "python3 -m pytest tests -q 2>&1 | tail -3"), res("1", "/opt/homebrew/bin/python3.14: No module named pytest"),
+      use("2", "pytest -q"), res("2", [{ type: "text", text: "30 passed in 2s" }]),
+      use("3", "uv run pytest"), res("3", "1 failed in 0.1s", { is_error: true }),
+      use("4", "ls"), res("4", "5 passed (not a test command)"),
+      use("5", "pytest -q"),
+    ].join("\n");
+    const d = analyze(stream).diagnostics;
+    assert.strictEqual(d.testRuns, 4);
+    assert.strictEqual(d.testRunsExecuted, 2);
+
+    // A duplicate tool_result counts once; a call without an id never counts as executed.
+    const dup = [use("1", "pytest"), res("1", "3 passed in 1s"), res("1", "3 passed in 1s")].join("\n");
+    assert.strictEqual(analyze(dup).diagnostics.testRunsExecuted, 1);
+    const noId = JSON.stringify({ type: "assistant", message: { id: "m", content: [{ type: "tool_use", name: "Bash", input: { command: "pytest" } }] } });
+    const noIdRes = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", content: "3 passed in 1s" }] } });
+    const n = analyze([noId, noId, noIdRes].join("\n")).diagnostics;
+    assert.strictEqual(n.testRuns, 2);
+    assert.strictEqual(n.testRunsExecuted, 0);
+  '
+}
+
+@test "agentic-report-tests-executed: the per-arm table counts cells whose test runs executed, n/a for older cells" {
+  node -e '
+    const assert = require("assert");
+    const report = require(process.env.BENCH_DIR + "/lib/report");
+    const cell = (arm, testRuns, testRunsExecuted) => ({ arm, hiddenTest: { pass: true }, diagnostics: testRuns === undefined ? {} : { testRuns, testRunsExecuted } });
+    const rows = report.summarizeAgentic([cell("bare", 2, 0), cell("bare", 1, 1), cell("full", 1, 1), cell("full", 3, undefined), cell("full-diet", 1, undefined)], ["bare", "full", "full-diet"]);
+    const lines = report.formatAgenticTable(rows).split("\n");
+    const head = lines[0].split(/\s+/);
+    assert.ok(head.includes("tests_executed"), lines[0]);
+    const value = (arm, name) => lines.find(l => l.split(/\s+/)[0] === arm).split(/\s+/)[head.indexOf(name)];
+    // ran_tests (attempts) keeps its meaning; tests_executed is the stricter column.
+    assert.strictEqual(value("bare", "ran_tests"), "2/2");
+    assert.strictEqual(value("bare", "tests_executed"), "1/2");
+    assert.strictEqual(value("full", "tests_executed"), "1/1");
+    assert.strictEqual(value("full-diet", "tests_executed"), "n/a");
   '
 }
 
