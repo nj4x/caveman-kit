@@ -25,6 +25,7 @@ const report = require('./lib/report');
 const stats = require('./lib/stats');
 const nofocus = require('./lib/nofocus');
 const agentic = require('./lib/agentic');
+const proxy = require('./lib/proxy');
 const fixtures = require('./lib/fixtures');
 const { SINGLE_TURN_ARMS, AGENTIC_ARMS } = require('./lib/arms');
 const SINGLE_TURN_TASKS = require('./tasks/single-turn');
@@ -174,6 +175,14 @@ async function main() {
   const skillRoot = isolation.resolveSkillRoot(env);
   const claudePath = cells.resolveClaude(env);
   if (!claudePath) throw new isolation.BenchError('`claude` not found on PATH');
+
+  // ADR 0011: a routing proxy would change the model under test. Checked before
+  // any paid call; direct runs (ANTHROPIC_BASE_URL unset) skip it.
+  const proxyUrl = proxy.proxyBaseUrl(env);
+  if (proxyUrl) {
+    const status = await proxy.checkProxy(proxyUrl);
+    process.stdout.write(`Proxy ${proxyUrl}: model routing ${status.routing} (pass-through)\n`);
+  }
 
   const isAgentic = opts.kind === 'agentic';
   const arms = isAgentic ? AGENTIC_ARMS : SINGLE_TURN_ARMS;
