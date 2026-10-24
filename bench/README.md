@@ -57,7 +57,8 @@ another model or kind is stale and rerun). Each agentic cell also records
 `hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`, `turns`,
 `outputTokens`); the raw stream sits beside it as `<cell>.stream.jsonl`.
 `ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
-and printed `FAIL` lines. The agentic gate is described under "Agentic gate".
+and printed `FAIL` lines. Keys under 20 characters are not redacted, because
+they match ordinary text; the run prints a warning at start. The agentic gate is described under "Agentic gate".
 
 **Turn cap.** Each agent run is capped at 40 turns (`MAX_TURNS` in
 `lib/agentic.js`); this cap is a harness choice, not in ADR 0008. The `claude` CLI
@@ -168,7 +169,10 @@ the kit-dir's HEAD commit, so uncommitted hook edits reuse the old id: pass
 After the calls the runner prints raw per-arm totals, then the gate table
 (`lib/stats.js`). Two co-primary metrics, lower is better for both:
 cache-weighted input cost (`input + 0.1 x cache read + 1.25 x cache write`
-tokens) and billed output tokens. Each candidate is paired with its reference
+tokens) and billed output tokens. The 0.1x cache-read weight matches the CLI's
+reported USD. Anthropic's pricing page lists 0.05x for Sonnet 5.5; the formula
+is kept at 0.1x so results stay comparable with the 8c90768 and b56c077 runs
+(see `docs/research/2026-10-23-context-diet-prompt-improvements.md`). Each candidate is paired with its reference
 by task and seed: `lite`, `full`, `ultra` against `bare`, and
 `ultra-no-focus` against `ultra`. Every candidate gets a row; one with fewer
 than 2 pairs has an infinite interval and is no-ship. The table shows both
@@ -208,7 +212,8 @@ feeds no verdict.
   lower. No extra seeds are run.
 - Escalation: if the interval includes zero after `--seeds` N seeds (default
   3), the runner prints a new estimate, asks again (unless `--yes`) and runs
-  seeds N+1..2N, skipping cells that exist, then recomputes. If the interval
+  seeds N+1..M, skipping cells that exist, then recomputes. M is
+  `--max-seeds` (default 2N; ADR 0010 allows up to 13). If the interval
   still includes zero the verdict is `no-ship`. This happens at most once; a
   rerun with the same run id re-derives the same verdict without new calls.
   `--no-escalate` skips it. Failed cells block escalation and make the run
@@ -220,6 +225,15 @@ feeds no verdict.
   (exit 1), and again on the paired data. `--min-fixtures <n>` lowers the floor
   for tests only; a gate run that way is not valid.
 - Turn cap: capped cells (`hitMaxTurns`) are counted per arm in the report.
+- Warmup (ADR 0010): before every measured cell the runner makes one
+  one-turn `claude -p` call in the cell's own arm config and work dir, so the
+  cell's first request finds Claude Code's fixed prefix in the prompt cache.
+  The work dir is then emptied and the cell clones its fixture fresh. Warmup
+  records go to `<run dir>/warmup/` and enter no pairing, report or gate. A
+  failed warmup prints `WARN warmup ...` and the cell still runs. The estimate
+  counts warmups at the single-turn price. Each cell records
+  `diagnostics.firstCacheRead`; the summary note counts cold starts (0) per
+  arm. `--no-warmup` turns it off; runs before ADR 0010 had none.
 - Output: raw per-arm table (hidden-test passes, capped cells, Read chars,
   re-reads, turns, output tokens), then the gate lines and a `Verdict:` line.
   Once all planned cells exist, the summary note goes to `docs/research/` as

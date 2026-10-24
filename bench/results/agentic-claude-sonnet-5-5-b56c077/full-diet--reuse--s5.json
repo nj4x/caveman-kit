@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 5,
+  "finishedAt": "2026-10-21T08:35:39.040Z",
+  "durationMs": 26487,
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 14466,
+    "cache_read_input_tokens": 129189,
+    "output_tokens": 2319,
+    "output_tokens_details": {
+      "thinking_tokens": 147
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 14466
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0852128,
+  "result": "I added the `flagged` subcommand to `skills/planning/critic/scripts/critic_ledger.py`, and it behaves as specified in a quick manual test.\n\nI ran five inputs: a fenced valid array, a non-array (`{}`), an item missing `why_flagged`, invalid JSON, and a missing file. The valid input printed the array and exited 0. The other four exited 1 with the matching `PARSE_ERROR:` or `FLAGGED_DECISIONS_PARSE_ERROR:` line on stderr.\n\nIt reuses the existing `_load_json`, which already strips code fences.\n\nI also changed `_load_json` to catch `ValueError` instead of only `json.JSONDecodeError`. A file with non-UTF-8 bytes raises `UnicodeDecodeError`, which would otherwise have crashed with a traceback instead of `PARSE_ERROR:`. This also affects `validate` and `upsert`, but only to turn that crash into the normal error.\n\nI added the usage line to the module docstring too.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.16s\n"
+  },
+  "diagnostics": {
+    "readChars": 5169,
+    "reReads": 0,
+    "turns": 9,
+    "outputTokens": 2319
+  }
+}

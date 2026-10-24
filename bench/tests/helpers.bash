@@ -36,7 +36,7 @@ SKILL
   echo '{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"echo real-user-hook"}]}]}}' > "$HOME/.claude/settings.json"
 
   export PATH="$BENCH_DIR/tests/stub:$PATH"
-  export ANTHROPIC_API_KEY="test-key"
+  export ANTHROPIC_API_KEY="sk-ant-test-0123456789abcdef"
   unset CLAUDE_CONFIG_DIR CLAUDE_PLUGIN_ROOT CAVEMAN_DEFAULT_MODE CAVEMAN_CONTEXT_DIET CAVEMAN_BENCH_SKILL_ROOT
   unset STUB_FAIL STUB_FAIL_ARM STUB_SLEEP STUB_MARK STUB_FLAT STUB_IGNORE_TERM
 }

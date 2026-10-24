@@ -34,6 +34,10 @@ Evidence the maintainer weighed: the hidden-test pass rate is equal in both arms
 
 Follow-up: a ticket to analyze why the cost effect is not significant and to improve the section. See follow-up issue #11.
 
+**Addendum (2026-10-23):** The replication run `b56c077` (`docs/research/2026-10-21-bench-agentic-claude-sonnet-5-5-b56c077.md`) reproduced `no-ship` with the opposite cost sign (+2703 [-1600, +7006]). Its turns went from 199 to 206, which does not support the turns evidence above. The pooled 48-pair difference is -504 [-3910, +2902] (`docs/research/2026-10-23-bench-compare-8c90768-vs-b56c077.md`). The override stands as recorded; the evidence for it is weaker than this note stated.
+
+**Caveat:** the stored streams and `result` fields of this run contain redaction artifacts (`[redacted]` replacing digit runs), because the key was a short proxy placeholder. The fix is in commit `93a5a08`. Metrics are unaffected.
+
 ## Diagnostics per arm
 
 | arm | cells | hidden_pass | max_turns | read_chars | re_reads | turns | output |

@@ -24,6 +24,13 @@ const MAX_TURNS_SUBTYPE = 'error_max_turns';
 // An agentic run takes many turns: its default --cell-timeout is longer than
 // the single-turn one.
 const DEFAULT_CELL_TIMEOUT_MS = 30 * 60 * 1000;
+// Redaction splits on the key value, so a short key (a proxy placeholder such
+// as "123") matches ordinary text and corrupts stored results. Keys shorter
+// than this are not redacted; run.js warns once at start.
+const MIN_SECRET_LENGTH = 20;
+// Warmup call (ADR 0010): a one-turn prompt that needs no tools.
+const WARMUP_PROMPT = 'Reply with the single word OK. Do not use any tools.';
+const WARMUP_DIR = 'warmup';
 
 // The injected form of the diet file: HTML comments stripped, trimmed. This
 // is what preflight requires in `full-diet` and forbids in `full`.
@@ -51,6 +58,47 @@ function writeTextAtomic(file, text) {
   fs.renameSync(tmp, file);
 }
 
+// Warmup records live in a subdir: readCells never sees them, so they enter
+// no pairing, report or gate.
+function warmupPath(runDir, cell) {
+  return path.join(runDir, WARMUP_DIR, `${cells.cellId(cell)}.json`);
+}
+
+// One-turn call just before a measured cell (ADR 0010), in the cell's own arm
+// config and work dir, so the cell's first request finds Claude Code's fixed
+// prefix in the prompt cache. The work dir is emptied afterwards: the cell
+// clones its fixture fresh. Returns { ok: true } or { ok: false, error }; a
+// failed warmup never fails the cell.
+async function runWarmup({ claudePath, armConfig, cell, fixture, model, runDir, timeoutMs = DEFAULT_CELL_TIMEOUT_MS }) {
+  try {
+    fixtures.prepareWorkDir(fixture, armConfig.workDir);
+    const args = [
+      '-p', WARMUP_PROMPT,
+      '--output-format', 'stream-json', '--verbose',
+      '--model', model,
+      '--permission-mode', 'bypassPermissions',
+      '--max-turns', '1',
+    ];
+    const res = await cells.invoke(claudePath, args, armConfig, timeoutMs);
+    if (res.timedOut) return { ok: false, error: `timed out after ${timeoutMs / 1000}s` };
+    const { result, diagnostics } = stream.analyze(res.stdout);
+    if (res.status !== 0 || !result || !result.usage) return { ok: false, error: `exit ${res.status}, no usable result event` };
+    cells.writeJsonAtomic(warmupPath(runDir, cell), {
+      kind: 'agentic-warmup', warmup: true, model,
+      arm: cell.arm, task: cell.task, seed: cell.seed,
+      finishedAt: new Date().toISOString(),
+      usage: result.usage,
+      firstCacheRead: diagnostics.firstCacheRead,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  } finally {
+    fs.rmSync(armConfig.workDir, { recursive: true, force: true });
+    fs.mkdirSync(armConfig.workDir, { recursive: true, mode: 0o700 });
+  }
+}
+
 // Returns { ok: true, record } after writing the cell file, or
 // { ok: false, error } and writes nothing (a hidden-test failure is a result,
 // not a cell failure).
@@ -74,7 +122,8 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   // Diagnostics are parsed from the unredacted stream. Redact before any
   // truncation, so a cut never leaves a key fragment split() cannot match.
   const secret = armConfig.env.ANTHROPIC_API_KEY;
-  const redact = text => (secret && typeof text === 'string' ? text.split(secret).join('[redacted]') : text);
+  const redactable = secret && secret.length >= MIN_SECRET_LENGTH ? secret : null;
+  const redact = text => (redactable && typeof text === 'string' ? text.split(redactable).join('[redacted]') : text);
   if (res.timedOut) {
     return { ok: false, error: `timed out after ${timeoutMs / 1000}s (${res.signal ? `killed by ${res.signal}` : `exit ${res.status}`})` };
   }
@@ -112,4 +161,4 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   return { ok: true, record };
 }
 
-module.exports = { DEFAULT_CELL_TIMEOUT_MS, DIET_FILE, MAX_TURNS, dietText, runAgenticCell };
+module.exports = { DEFAULT_CELL_TIMEOUT_MS, DIET_FILE, MAX_TURNS, MIN_SECRET_LENGTH, WARMUP_DIR, WARMUP_PROMPT, dietText, runAgenticCell, runWarmup };

@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 3,
+  "finishedAt": "2026-10-21T07:26:02.861Z",
+  "durationMs": 184808,
+  "usage": {
+    "input_tokens": 20,
+    "cache_creation_input_tokens": 15136,
+    "cache_read_input_tokens": 273943,
+    "output_tokens": 2228,
+    "output_tokens_details": {
+      "thinking_tokens": 118
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 15136
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.1149486,
+  "result": "Fixed. The regression was a typo in a header name in `anthrouter/http_util.py`. `_RATELIMIT_HEADERS` was reading `anthropic-ratelimit-request-remaining`, but upstream sends `anthropic-ratelimit-requests-remaining`. So `requests_remaining` was never recorded.\n\n```python\n    ('requests_remaining', 'anthropic-ratelimit-requests-remaining'),\n```\n\nFull suite after the fix: 1125 passed, 3 failed, 1 skipped. Both rate-limit tests now pass:\n- `test_successful_request_records_usage_and_the_rate_limit_window`\n- `test_status_reports_the_last_rate_limit_window`\n\nThe 3 remaining failures also fail without my change, so they predate this regression. I left them alone:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe fix is not committed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 2010,
+    "reReads": 0,
+    "turns": 11,
+    "outputTokens": 2228
+  }
+}

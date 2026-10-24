@@ -161,7 +161,7 @@ function armSummary(cells, arm) {
 // opts.minFixtures (default 3): fewer paired fixtures is 'inconclusive'.
 // opts.final: when the cost interval includes zero and no escalation is left,
 // the verdict is 'no-ship'; when not final it is 'pending' with
-// escalate: true (the runner then adds seeds N+1..2N, once).
+// escalate: true (the runner then adds seeds N+1..--max-seeds, once).
 // opts.noEscalate only words the reason: escalation was disabled, not done.
 // Verdicts: ship | no-ship | inconclusive | pending.
 function agenticGate(cells, opts = {}) {

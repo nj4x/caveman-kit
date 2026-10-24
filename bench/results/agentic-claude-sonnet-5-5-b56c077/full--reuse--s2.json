@@ -1,0 +1,48 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-b56c077",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 2,
+  "finishedAt": "2026-10-21T06:58:24.900Z",
+  "durationMs": 23706,
+  "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 16905,
+    "cache_read_input_tokens": 107445,
+    "output_tokens": 2166,
+    "output_tokens_details": {
+      "thinking_tokens": 155
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 16905
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "totalCostUsd": 0.0854275,
+  "result": "Added `flagged` subcommand to `critic_ledger.py`. I ran it on six inputs and each gave the expected output and exit code:\n\n- **Valid input:** a fenced array prints as JSON and exits 0.\n- **Not an array:** a JSON object gives `FLAGGED_DECISIONS_PARSE_ERROR: expected a JSON array`.\n- **Missing key:** an item without `why_flagged` gives `FLAGGED_DECISIONS_PARSE_ERROR: item 0 missing why_flagged`.\n- **Bad JSON, non-UTF-8 file, missing file:** each gives `PARSE_ERROR: ...`.\n\nI also changed `_load_json`, which `validate` and `upsert` use too. It now catches `ValueError` instead of only `JSONDecodeError`, so a non-UTF-8 file gives `PARSE_ERROR` instead of a traceback. It also collapses the error message onto one line. I added the usage line to the module docstring.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 13196,
+    "reReads": 0,
+    "turns": 7,
+    "outputTokens": 2166
+  }
+}
