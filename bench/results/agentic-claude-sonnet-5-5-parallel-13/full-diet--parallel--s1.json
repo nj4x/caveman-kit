@@ -1,0 +1,36 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-parallel-13",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "parallel",
+  "seed": 1,
+  "finishedAt": "2026-10-24T19:47:49.390Z",
+  "durationMs": 20897,
+  "usage": {
+    "input_tokens": 32,
+    "cache_read_input_tokens": 296370,
+    "cache_creation_input_tokens": 26190,
+    "output_tokens": 2971
+  },
+  "totalCostUsd": 0.154523,
+  "result": "Both fixes applied. I haven't run the tests.\n\n1. **Score 100:** `anthrouter/model_router.py:1233`. The range check in `parse_classifier_score` was `0 <= value < 100`, so it rejected 100. It is now `<= 100`.\n2. **Requests remaining:** `anthrouter/http_util.py:120`. The header name was misspelled as `anthropic-ratelimit-request-remaining`. It is now `anthropic-ratelimit-requests-remaining`, with the plural. Rows recorded while the typo was live keep NULL for this column.\n\nAn existing test may expect `None` for a \"100\" reply. If one does, it will now fail. I left the tests alone, as you asked.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 574,
+    "reReads": 0,
+    "testRuns": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 8,
+    "outputTokens": 2971,
+    "firstCacheRead": 19139
+  }
+}

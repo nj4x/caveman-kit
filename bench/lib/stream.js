@@ -1,7 +1,15 @@
 // caveman-kit bench — diagnostics from `claude --output-format stream-json`.
 //
-// Pure: takes the raw stdout text (one JSON event per line), returns the final
+// Pure: takes the raw stdout text (one JSON event per line), returns the merged
 // result event plus per-cell diagnostics. Unparseable lines are skipped.
+//
+// A run whose background subagents report back after the main thread stopped
+// emits one result event per segment (issue #13). Each event's usage and
+// num_turns cover its own segment and the main thread only; modelUsage on the
+// last one is cumulative and includes the subagents. The returned result is
+// the last event with usage replaced by the modelUsage sum (else the sum of
+// the segments' usage, when there are several) and num_turns summed. In the
+// single-segment b56c077 streams modelUsage equals usage.
 //
 //   readChars     characters in the tool_result of every Read call
 //   reReads       Read calls whose line range is already covered by an earlier
@@ -12,14 +20,50 @@
 //                 0 means the agent never ran tests through Bash, so "skipped
 //                 verification" shows even when the hidden test passes (issue #12).
 //                 A runner hidden inside a script the agent calls is not seen.
-//   turns         result.num_turns, else the count of distinct assistant messages
-//   outputTokens  result.usage.output_tokens
+//   subagentCalls tool_use blocks of the Task or Agent tool (a subagent spawn)
+//   subagentStarts SubagentStart hook fires: hook_started system events with
+//                 hook_event SubagentStart, once per hook_id (an event without
+//                 hook_id counts on its own). The CLI emits
+//                 them only under --include-hook-events, so a stream recorded
+//                 without that flag reads 0 even when the hook ran (issue #13).
+//   turns         result.num_turns (summed), else the count of distinct assistant messages
+//   outputTokens  result.usage.output_tokens (whole session, see above)
 //   firstCacheRead cache_read_input_tokens of the first assistant message that
 //                 carries usage, else null; near 0 means the cell started with
 //                 a cold prompt cache (ADR 0010)
 'use strict';
 
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+// CLI 2.1.287 lists the subagent tool as `Task` in its init event but names
+// the tool_use blocks `Agent`; both count.
+const SUBAGENT_TOOLS = new Set(['Task', 'Agent']);
+
+// [result usage key, modelUsage key]
+const USAGE_FIELDS = [
+  ['input_tokens', 'inputTokens'],
+  ['cache_read_input_tokens', 'cacheReadInputTokens'],
+  ['cache_creation_input_tokens', 'cacheCreationInputTokens'],
+  ['output_tokens', 'outputTokens'],
+];
+
+// Merges the result events of one stream; see the header comment.
+function mergeResults(results) {
+  if (results.length === 0) return null;
+  const last = results[results.length - 1];
+  const models = last.modelUsage && typeof last.modelUsage === 'object' ? Object.values(last.modelUsage) : [];
+  // A last event without usage stays unusable, as callers expect.
+  let usage = last.usage;
+  if (!usage) return last;
+  if (models.length > 0) {
+    usage = Object.fromEntries(USAGE_FIELDS.map(([key, model]) => [key, models.reduce((n, m) => n + (Number(m && m[model]) || 0), 0)]));
+  } else if (results.length > 1) {
+    usage = Object.fromEntries(USAGE_FIELDS.map(([key]) => [key, results.reduce((n, r) => n + (Number(r.usage && r.usage[key]) || 0), 0)]));
+  }
+  const turns = results.map(r => r.num_turns);
+  const merged = { ...last, usage };
+  if (turns.every(Number.isFinite)) merged.num_turns = turns.reduce((a, b) => a + b, 0);
+  return merged;
+}
 
 // The match errs toward counting. A bare runner name (`pytest`, `tox`, `bats`,
 // `jest`, ...) counts as a command word: at the start of a line, after a
@@ -75,7 +119,7 @@ function readRange(input) {
 
 function analyze(text) {
   const events = parseEvents(text);
-  let result = null;
+  const results = [];
   const readIds = new Set();
   const assistantIds = new Set();
   let assistantAnon = 0;
@@ -84,10 +128,17 @@ function analyze(text) {
   let readChars = 0;
   let reReads = 0;
   let testRuns = 0;
+  let subagentCalls = 0;
+  const subagentHooks = new Set(); // hook_id of each SubagentStart hook_started
+  let subagentHooksNoId = 0;
   let firstCacheRead = null;
 
   for (const ev of events) {
-    if (ev.type === 'result') { result = ev; continue; }
+    if (ev.type === 'result') { results.push(ev); continue; }
+    if (ev.type === 'system' && ev.subtype === 'hook_started' && ev.hook_event === 'SubagentStart') {
+      if (ev.hook_id) subagentHooks.add(ev.hook_id); else subagentHooksNoId += 1;
+      continue;
+    }
     const message = ev.message;
     if (!message || !Array.isArray(message.content)) continue;
     if (ev.type === 'assistant') {
@@ -97,6 +148,7 @@ function analyze(text) {
         if (!block || block.type !== 'tool_use') continue;
         const input = block.input || {};
         if (block.name === 'Bash' && isTestCommand(input.command)) testRuns += 1;
+        if (SUBAGENT_TOOLS.has(block.name)) subagentCalls += 1;
         const file = input.file_path || input.notebook_path;
         if (block.name === 'Read' && typeof file === 'string') {
           readIds.add(block.id);
@@ -122,6 +174,7 @@ function analyze(text) {
     }
   }
 
+  const result = mergeResults(results);
   const usage = (result && result.usage) || null;
   return {
     result,
@@ -129,6 +182,8 @@ function analyze(text) {
       readChars,
       reReads,
       testRuns,
+      subagentCalls,
+      subagentStarts: subagentHooks.size + subagentHooksNoId,
       turns: result && Number.isFinite(result.num_turns) ? result.num_turns : assistantIds.size + assistantAnon,
       outputTokens: usage ? Number(usage.output_tokens) || 0 : 0,
       firstCacheRead,

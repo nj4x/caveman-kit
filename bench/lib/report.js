@@ -157,8 +157,10 @@ function writeNote(dir, name, text) {
 // stream diagnostics. No statistics: the agentic gate is judged by lib/stats.js.
 // ranTests counts cells with testRuns > 0 out of testRunsKnown, the cells
 // that record testRuns at all (cells written before issue #12 do not).
+// subagentCells counts cells with subagentStarts > 0 out of subagentKnown;
+// subagentStarts and subagentCalls sum over those known cells (issue #13).
 function summarizeAgentic(cells, armOrder = []) {
-  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, ranTests: 0, testRunsKnown: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
+  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, ranTests: 0, testRunsKnown: 0, subagentCells: 0, subagentKnown: 0, subagentStarts: 0, subagentCalls: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
   const byArm = new Map(armOrder.map(name => [name, blank(name)]));
   for (const cell of cells) {
     if (!byArm.has(cell.arm)) byArm.set(cell.arm, blank(cell.arm));
@@ -171,17 +173,24 @@ function summarizeAgentic(cells, armOrder = []) {
       row.testRunsKnown += 1;
       if (d.testRuns > 0) row.ranTests += 1;
     }
+    if (Number.isFinite(d.subagentStarts)) {
+      row.subagentKnown += 1;
+      if (d.subagentStarts > 0) row.subagentCells += 1;
+      row.subagentStarts += d.subagentStarts;
+      row.subagentCalls += Number(d.subagentCalls) || 0;
+    }
     for (const k of ['readChars', 'reReads', 'turns', 'outputTokens']) row[k] += Number(d[k]) || 0;
   }
   return [...byArm.values()];
 }
 
-const AGENTIC_HEADER = ['arm', 'cells', 'hidden_pass', 'max_turns', 'ran_tests', 'read_chars', 're_reads', 'turns', 'output'];
+const AGENTIC_HEADER = ['arm', 'cells', 'hidden_pass', 'max_turns', 'ran_tests', 'subagent_start', 'read_chars', 're_reads', 'turns', 'output'];
 
 function agenticRow(r) {
   return [
     r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns),
     r.testRunsKnown ? `${r.ranTests}/${r.testRunsKnown}` : 'n/a',
+    r.subagentKnown ? `${r.subagentCells}/${r.subagentKnown}` : 'n/a',
     String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens),
   ];
 }
@@ -231,6 +240,14 @@ function agenticSummaryNote(params, cells, gate, excluded = []) {
   const cold = known.length === 0 ? [] : [
     `- Cold starts (first request read 0 cached tokens): ${arms.map(r => `${r.arm} ${known.filter(c => c.arm === r.arm && c.diagnostics.firstCacheRead === 0).length}/${known.filter(c => c.arm === r.arm).length}`).join(', ')}`,
   ];
+  // SubagentStart fires (issue #13): shows whether the run exercised the
+  // SubagentStart half of the injection. A fire means the hook ran, not that
+  // it injected text: bare arms fire too and inject nothing. Older cells lack
+  // subagentStarts.
+  const subagents = !arms.some(r => r.subagentKnown) ? [] : [
+    `- SubagentStart hook fires per arm: ${arms.map(r => (r.subagentKnown ? `${r.arm} ${r.subagentStarts} in ${r.subagentCells}/${r.subagentKnown} cells` : `${r.arm} n/a`)).join(', ')}; `
+      + `Task/Agent calls: ${arms.map(r => `${r.arm} ${r.subagentKnown ? r.subagentCalls : 'n/a'}`).join(', ')}`,
+  ];
   return [
     `# Bench agentic: ${params.runId}`,
     '',
@@ -246,6 +263,7 @@ function agenticSummaryNote(params, cells, gate, excluded = []) {
     `- Kit-dir commit: ${params.kitCommit}`,
     `- Raw cells: ${params.runDir}`,
     ...cold,
+    ...subagents,
     '',
     '## Gate',
     '',

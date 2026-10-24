@@ -12,7 +12,9 @@
 // those paths exist in cwd (hidden-test check); STUB_FIX_ARMS=<arm,arm> makes
 // those arms write "good" to cwd/value.txt (a passing hidden test); output is
 // a canned stream with 5 Read results (370 chars), 2 re-reads, 1 test run
-// (one of two Bash calls), 7 turns.
+// (one of two Bash calls), 1 Agent call, 7 turns, and a SessionStart hook
+// event pair; like the real CLI, the SubagentStart pair only with
+// --include-hook-events.
 // full-diet reads less cache (1000 vs 2000), so its cost is lower, unless STUB_FLAT=1.
 // STUB_MAX_TURNS=1 ends it with subtype error_max_turns, is_error, exit 1;
 // STUB_RESULT_ERROR=1 ends it with subtype error_during_execution, is_error;
@@ -80,7 +82,15 @@ function finish() {
     const out = ev => process.stdout.write(JSON.stringify(ev) + '\n');
     const use = (id, name, input) => out({ type: 'assistant', message: { id: 'm-' + id, content: [{ type: 'tool_use', id, name, input }] } });
     const res = (id, content) => out({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: id, content }] } });
+    const hookEvents = process.argv.includes('--include-hook-events');
+    const hook = (id, event, name) => {
+      for (const subtype of ['hook_started', 'hook_response']) out({ type: 'system', subtype, hook_id: id, hook_name: name, hook_event: event });
+    };
+    hook('h1', 'SessionStart', 'SessionStart:startup');
     out({ type: 'system', subtype: 'init' });
+    use('t0', 'Agent', { description: 'look', prompt: 'look around' });
+    if (hookEvents) hook('h2', 'SubagentStart', 'SubagentStart:general-purpose');
+    res('t0', 'found it');
     use('t1', 'Read', { file_path: '/w/a.py' }); res('t1', 'x'.repeat(100));
     use('t2', 'Read', { file_path: '/w/a.py' }); res('t2', 'x'.repeat(100));
     use('t3', 'Edit', { file_path: '/w/a.py' }); res('t3', 'edited');
