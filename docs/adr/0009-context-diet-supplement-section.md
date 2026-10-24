@@ -28,6 +28,7 @@ Tool output is re-sent on every later request, and the largest part of it is who
 - The `full` arm runs the same hooks with `CAVEMAN_CONTEXT_DIET=0`, the user-facing opt-out from Decision 3. No benchmark-only switch is added.
 - The benchmark must measure the file actually injected by the hook, not a copy of it.
 - Until the gate passes, `hooks/caveman-context-diet.md` and the `caveman-activate.js` change live only on a feature branch, at their final paths. The harness runs against that branch checkout. They merge to `master` only after the gate passes and its result note is committed. If the gate fails, the branch is not merged.
+- The 8c90768 and b56c077 runs never fired SubagentStart, so its half of the injection was unmeasured. ADR 0013 adds the `parallel` fixture and a fire count; a headless `claude -p` run does start subagents and fire SubagentStart reliably when the prompt asks for them.
 - The section does not change the caveman boundary rule that code is written normally.
 
 **Source SRS:** none (repo uses `lineage-rules: exempt`).

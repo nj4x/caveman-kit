@@ -1,0 +1,32 @@
+{
+  "kind": "agentic-warmup",
+  "warmup": true,
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "task": "parallel",
+  "seed": 1,
+  "finishedAt": "2026-10-24T19:46:09.494Z",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 8918,
+    "cache_read_input_tokens": 17156,
+    "output_tokens": 4,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 8918
+    },
+    "inference_geo": "global",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "firstCacheRead": 17156
+}

@@ -47,6 +47,8 @@ teardown() { bench_teardown; }
     assert.strictEqual(entries.length, 3);
     for (const e of entries) {
       assert.ok(e.argv.includes("stream-json"), e.argv.join(" "));
+      // Without it the stream shows SessionStart hook events only (issue #13).
+      assert.ok(e.argv.includes("--include-hook-events"), e.argv.join(" "));
       assert.strictEqual(e.argv[e.argv.indexOf("-p") + 1], "Fix the bug in value.txt.");
       assert.strictEqual(e.value, "bad\n", "plant patch applied in the work dir");
     }
@@ -63,11 +65,11 @@ teardown() { bench_teardown; }
     const dir = process.env.RESULTS + "/" + fs.readdirSync(process.env.RESULTS)[0];
     // Reads: 100 + 100 (re-read) + 120 (after an Edit, fresh) + 30 + 20 (re-read of a covered range) = 370.
     // The 999-char Bash result is not a Read. Of the two Bash calls only the
-    // pytest one is a test run.
+    // pytest one is a test run. One Agent call fires one SubagentStart hook.
     const expected = { bare: 501, full: 301, "full-diet": 201 };
     for (const [arm, out] of Object.entries(expected)) {
       const cell = JSON.parse(fs.readFileSync(dir + "/" + arm + "--tiny--s1.json", "utf8"));
-      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, testRuns: 1, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
+      assert.deepStrictEqual(cell.diagnostics, { readChars: 370, reReads: 2, testRuns: 1, subagentCalls: 1, subagentStarts: 1, turns: 7, outputTokens: out, firstCacheRead: null }, arm);
       assert.strictEqual(cell.usage.cache_read_input_tokens, arm === "full-diet" ? 1000 : 2000);
       assert.ok(fs.existsSync(dir + "/" + arm + "--tiny--s1.stream.jsonl"));
     }
@@ -86,8 +88,8 @@ teardown() { bench_teardown; }
       JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "2", content: "ef" }] } }),
       JSON.stringify({ type: "result", is_error: false, usage: { output_tokens: 9 } }),
     ].join("\n");
-    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, testRuns: 0, turns: 2, outputTokens: 9, firstCacheRead: null });
-    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, testRuns: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
+    assert.deepStrictEqual(analyze(lines).diagnostics, { readChars: 6, reReads: 1, testRuns: 0, subagentCalls: 0, subagentStarts: 0, turns: 2, outputTokens: 9, firstCacheRead: null });
+    assert.deepStrictEqual(analyze("").diagnostics, { readChars: 0, reReads: 0, testRuns: 0, subagentCalls: 0, subagentStarts: 0, turns: 0, outputTokens: 0, firstCacheRead: null });
 
     // firstCacheRead comes from the first assistant message with usage only.
     const msg = (id, read) => JSON.stringify({ type: "assistant", message: { id, content: [], usage: { cache_read_input_tokens: read } } });
@@ -151,6 +153,102 @@ teardown() { bench_teardown; }
     assert.strictEqual(value("bare"), "1/2");
     assert.strictEqual(value("full"), "1/1");
     assert.strictEqual(value("full-diet"), "n/a");
+  '
+}
+
+@test "agentic-subagents: SubagentStart hook_started events count once per hook_id, Task and Agent calls count as subagent calls" {
+  node -e '
+    const assert = require("assert");
+    const { analyze } = require(process.env.BENCH_DIR + "/lib/stream");
+    const hook = (subtype, id, event) => JSON.stringify({ type: "system", subtype, hook_id: id, hook_name: event, hook_event: event });
+    const use = (id, name) => JSON.stringify({ type: "assistant", message: { id, content: [{ type: "tool_use", id, name, input: { prompt: "look" } }] } });
+    const stream = [
+      hook("hook_started", "s", "SessionStart"), hook("hook_response", "s", "SessionStart"),
+      use("1", "Task"), hook("hook_started", "a", "SubagentStart"), hook("hook_response", "a", "SubagentStart"),
+      use("2", "Agent"), hook("hook_started", "b", "SubagentStart"), hook("hook_started", "b", "SubagentStart"),
+      hook("hook_started", "c", "UserPromptSubmit"),
+      // A response without its hook_started is not a fire.
+      hook("hook_response", "z", "SubagentStart"),
+      use("3", "Bash"),
+    ].join("\n");
+    const d = analyze(stream).diagnostics;
+    assert.strictEqual(d.subagentCalls, 2);
+    assert.strictEqual(d.subagentStarts, 2);
+    // A hook_started without hook_id still counts once per event.
+    const noId = JSON.stringify({ type: "system", subtype: "hook_started", hook_event: "SubagentStart" });
+    assert.strictEqual(analyze([noId, noId].join("\n")).diagnostics.subagentStarts, 2);
+    // A stream without hook events (a run before issue #13) shows calls but no fires.
+    assert.strictEqual(analyze(use("1", "Task")).diagnostics.subagentStarts, 0);
+  '
+}
+
+@test "agentic-result-segments: a stream with several result events yields the whole session usage and turns, subtype from the last" {
+  node -e '
+    const assert = require("assert");
+    const { analyze } = require(process.env.BENCH_DIR + "/lib/stream");
+    const usage = (i, r, c, o) => ({ input_tokens: i, cache_read_input_tokens: r, cache_creation_input_tokens: c, output_tokens: o, service_tier: "standard" });
+    const result = (subtype, turns, u, modelUsage) => JSON.stringify({ type: "result", subtype, is_error: subtype !== "success", num_turns: turns, result: subtype, total_cost_usd: 1, usage: u, ...(modelUsage ? { modelUsage } : {}) });
+    // A background subagent resumes the main thread: one result per segment.
+    // usage is per segment and main thread only; modelUsage on the last
+    // result is cumulative and includes the subagents.
+    const withModel = [
+      result("success", 3, usage(1, 100, 10, 5), { m: { inputTokens: 1, cacheReadInputTokens: 150, cacheCreationInputTokens: 20, outputTokens: 9 } }),
+      result("error_max_turns", 4, usage(2, 200, 20, 7), {
+        m: { inputTokens: 3, cacheReadInputTokens: 700, cacheCreationInputTokens: 60, outputTokens: 30 },
+        h: { inputTokens: 1, cacheReadInputTokens: 0, cacheCreationInputTokens: 5, outputTokens: 2 } }),
+    ].join("\n");
+    const a = analyze(withModel);
+    assert.deepStrictEqual(a.result.usage, { input_tokens: 4, cache_read_input_tokens: 700, cache_creation_input_tokens: 65, output_tokens: 32 });
+    assert.strictEqual(a.result.num_turns, 7);
+    assert.strictEqual(a.result.subtype, "error_max_turns");
+    assert.strictEqual(a.diagnostics.turns, 7);
+    assert.strictEqual(a.diagnostics.outputTokens, 32);
+
+    // Without modelUsage the segments are summed.
+    const b = analyze([result("success", 3, usage(1, 100, 10, 5)), result("success", 4, usage(2, 200, 20, 7))].join("\n"));
+    assert.deepStrictEqual(b.result.usage, { input_tokens: 3, cache_read_input_tokens: 300, cache_creation_input_tokens: 30, output_tokens: 12 });
+    assert.strictEqual(b.result.num_turns, 7);
+
+    // A single result event without modelUsage keeps its usage object unchanged;
+    // with modelUsage (which subagent tokens enter) the modelUsage sum wins.
+    const one = usage(1, 100, 10, 5);
+    assert.deepStrictEqual(analyze(result("success", 3, one)).result.usage, one);
+    const c = analyze(result("success", 3, one, { m: { inputTokens: 2, cacheReadInputTokens: 180, cacheCreationInputTokens: 10, outputTokens: 8 } }));
+    assert.deepStrictEqual(c.result.usage, { input_tokens: 2, cache_read_input_tokens: 180, cache_creation_input_tokens: 10, output_tokens: 8 });
+    assert.strictEqual(c.result.num_turns, 3);
+  '
+}
+
+@test "agentic-report-subagents: the per-arm table and the summary note report SubagentStart fires per arm, n/a for older cells" {
+  node -e '
+    const assert = require("assert");
+    const report = require(process.env.BENCH_DIR + "/lib/report");
+    const cell = (arm, fixture, seed, starts, calls) => ({ arm, task: fixture, seed, hiddenTest: { pass: true }, usage: {},
+      diagnostics: starts === undefined ? {} : { subagentStarts: starts, subagentCalls: calls } });
+    const cells = [cell("bare", "f", 1, 2, 2), cell("bare", "f", 2, 0, 0), cell("full", "f", 1, 3, 2), cell("full", "f", 2, undefined), cell("full-diet", "f", 1, undefined)];
+    const lines = report.formatAgenticTable(report.summarizeAgentic(cells, ["bare", "full", "full-diet"])).split("\n");
+    const col = lines[0].split(/\s+/).indexOf("subagent_start");
+    assert.ok(col > 0, lines[0]);
+    const value = arm => lines.find(l => l.split(/\s+/)[0] === arm).split(/\s+/)[col];
+    assert.strictEqual(value("bare"), "1/2");
+    assert.strictEqual(value("full"), "1/1");
+    assert.strictEqual(value("full-diet"), "n/a");
+
+    const gate = { arms: [{ arm: "bare", cells: 2, passed: 2, capped: 0, costMean: 1 }, { arm: "full", cells: 2, capped: 0 }, { arm: "full-diet", cells: 1, capped: 0 }],
+      cost: { candidateMean: 1, referenceMean: 1, ci: { mean: 0, lo: -1, hi: 1 } }, pass: {}, unpaired: [], fixtures: ["f"], pairs: 1, minFixtures: 3,
+      candidate: "full-diet", reference: "full", verdict: "inconclusive", reason: "test" };
+    const note = report.agenticSummaryNote({ runId: "r", date: "d", kind: "agentic", model: "m", seeds: 3, kitDir: "k", kitCommit: "c", runDir: "x" }, cells, gate);
+    const line = note.split("\n").find(l => l.startsWith("- SubagentStart"));
+    assert.ok(line, note);
+    assert.ok(line.includes("bare 2 in 1/2 cells"), line);
+    assert.ok(line.includes("full 3 in 1/1 cells"), line);
+    assert.ok(line.includes("full-diet n/a"), line);
+    assert.ok(line.includes("Task/Agent calls: bare 2, full 2, full-diet n/a"), line);
+
+    // Cells written before issue #13 record nothing: no line at all.
+    const old = report.agenticSummaryNote({ runId: "r", date: "d", kind: "agentic", model: "m", seeds: 3, kitDir: "k", kitCommit: "c", runDir: "x" },
+      cells.map(c => ({ ...c, diagnostics: {} })), gate);
+    assert.ok(!old.includes("SubagentStart"), old);
   '
 }
 

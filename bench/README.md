@@ -55,7 +55,7 @@ only after it exits copy the hidden test in and run it. Cells use the same
 format as single-turn cells (`kind: "agentic"`, `model`, `usage`; a cell from
 another model or kind is stale and rerun). Each agentic cell also records
 `hiddenTest.pass`, `hitMaxTurns` and `diagnostics` (`readChars`, `reReads`,
-`testRuns`, `turns`, `outputTokens`); the raw stream sits beside it as
+`testRuns`, `subagentCalls`, `subagentStarts`, `turns`, `outputTokens`); the raw stream sits beside it as
 `<cell>.stream.jsonl`. `testRuns` counts Bash calls that invoke a test runner
 (`pytest`, `python -m unittest`, `tox`, `make test`, `npm test` and the like,
 see `isTestCommand` in `lib/stream.js`). The match errs toward counting: a
@@ -65,6 +65,17 @@ Makefile`) counts. The per-arm table shows it as `ran_tests`: cells with at
 least one test run out of the cells that record it (`n/a` for cells written
 before `testRuns` existed). It is a diagnostic, not part of the gate (ADR
 0012).
+`subagentCalls` counts Task/Agent tool calls and `subagentStarts` counts
+SubagentStart hook fires (one per `hook_id`; an event without one counts on its own). The harness passes
+`--include-hook-events` so the stream carries them; a stream recorded without
+it reads 0 fires. The table column `subagent_start` is the cells with at least
+one fire out of the cells that record it (`n/a` for older cells), and the
+summary note lists fires and calls per arm. Only the `parallel` fixture asks
+for subagents, so the other fixtures normally read 0 (ADR 0013). Diagnostic
+only. A fire means the hook ran, not that it injected text: `bare` fires too.
+A run with background subagents emits one `result` event per main-thread
+segment; the cell's `usage` is the cumulative `modelUsage` of the last one
+(subagents included; without `modelUsage`, the sum of the segments, main thread only) and `turns` sums the segments (ADR 0013 decision 5).
 `ANTHROPIC_API_KEY` is redacted from the stream, `result`, `hiddenTest.tail`
 and printed `FAIL` lines. Keys under 20 characters are not redacted, because
 they match ordinary text; the run prints a warning at start. The agentic gate is described under "Agentic gate".
@@ -91,7 +102,7 @@ comments stripped) must appear in the `full-diet` context and not in `full`.
 
 ### Fixtures
 
-Five real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012).
+Six real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012, ADR 0013).
 Each pins one upstream commit, and the run clones it from GitHub:
 
 | Fixture | Source repo | Pinned SHA | Planted bug / task |
@@ -101,12 +112,14 @@ Each pins one upstream commit, and the run clones it from GitHub:
 | `noisylog` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | misspelt rate-limit header in `http_util`; the prompt sends the agent through the full suite (1,100+ tests, a few minutes, some unrelated failures) |
 | `reuse` | `nj4x/skills-dev` | `41193d1541fe3af0f821869c326870d97f75e008` | the `flagged` subcommand of `skills/planning/critic/scripts/critic_ledger.py` is removed; the existing `_load_json` helper already does the fence-tolerant loading it needs |
 | `suitecheck` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `pace.period_workday_dates` treats the exclusive UTC period end as inclusive (code and docstring), so a zone at UTC+0 gains next month's first day; the prompt names only the UTC symptom. Ending the loop one day early fixes UTC but breaks 13 of the 30 tests in `tests/test_pace.py`; only running the suite shows it |
+| `parallel` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | the `bigfile` and `noisylog` plants together; the prompt asks for one Task subagent per bug, so SubagentStart fires (issue #13, ADR 0013) |
 
 `suitecheck` exists because every cell of the first two agentic runs passed
 its hidden test, so the pass-rate guardrail could not tell arms apart (issue
 #12). It is meant to be hard enough that `bare` fails some seeds. Runs before
 it used the first four fixtures; to compare with them, pass
-`--fixtures bigfile,noisylog,reuse,rootcause`.
+`--fixtures bigfile,noisylog,reuse,rootcause` (add `suitecheck` for the
+5-fixture set of ADR 0012).
 
 `noisylog` uses anthrouter because its test suite is the longer one that runs
 offline: at the pinned commits anthrouter's suite ran 1,125 passing tests in
@@ -155,11 +168,11 @@ paired cells yourself, and to escalate rerun with `--seeds 6` and the same
 ## Cost
 
 Every run spends real quota; the runner prints an estimate before the first
-call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 45
-agentic runs (3 arms x 5 fixtures x 3 seeds), 90 when the agentic gate
+call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 54
+agentic runs (3 arms x 6 fixtures x 3 seeds), 108 when the agentic gate
 escalates to 6 seeds. At the `lib/estimate.js` assumptions and Sonnet list
 price, that is at most about $10 for the single-turn kind (~$0.09 per call) and
-about $49 to $97 for the agentic kind (~$1.08 per run). Prompt caching usually
+about $58 to $117 for the agentic kind (~$1.08 per run). Prompt caching usually
 makes the real bill lower. `--model claude-opus-5-5` costs about 1.7x as much.
 
 ## Requirements

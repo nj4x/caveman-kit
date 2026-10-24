@@ -1,0 +1,36 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-parallel-13",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "parallel",
+  "seed": 3,
+  "finishedAt": "2026-10-24T19:46:06.627Z",
+  "durationMs": 21943,
+  "usage": {
+    "input_tokens": 30,
+    "cache_read_input_tokens": 268837,
+    "cache_creation_input_tokens": 23546,
+    "output_tokens": 3430
+  },
+  "totalCostUsd": 0.14699239999999997,
+  "result": "I fixed both bugs, but I couldn't run the tests. `make test` failed because there's no `python` on the PATH, and `python3` has no pytest installed.\n\n1. **Score 100 dropped:** In `anthrouter/model_router.py:1233`, `parse_classifier_score` checked `0 <= value < 100`, which rejects exactly 100. I changed it to `<= 100`, which matches its docstring and the sibling JSON parser.\n2. **Requests-remaining not recorded:** In `anthrouter/http_util.py:120`, the header name was misspelled as `anthropic-ratelimit-request-remaining`. Anthropic sends `anthropic-ratelimit-requests-remaining`, so the lookup always came back empty. I corrected the spelling. The database and display code already read the `requests_remaining` key, so nothing else needed changing.\n\nI changed no existing tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 2153,
+    "reReads": 1,
+    "testRuns": 2,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 10,
+    "outputTokens": 3430,
+    "firstCacheRead": 19135
+  }
+}

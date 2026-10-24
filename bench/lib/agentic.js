@@ -111,6 +111,9 @@ async function runAgenticCell({ claudePath, armConfig, cell, fixture, model, run
   const args = [
     '-p', fixture.prompt,
     '--output-format', 'stream-json', '--verbose',
+    // Without it the stream carries SessionStart hook events only, so
+    // SubagentStart fires would be invisible (issue #13).
+    '--include-hook-events',
     '--model', model,
     '--permission-mode', 'bypassPermissions',
     '--max-turns', String(MAX_TURNS),

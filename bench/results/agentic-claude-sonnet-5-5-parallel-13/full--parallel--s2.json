@@ -1,0 +1,36 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-parallel-13",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "parallel",
+  "seed": 2,
+  "finishedAt": "2026-10-24T19:46:56.953Z",
+  "durationMs": 19798,
+  "usage": {
+    "input_tokens": 32,
+    "cache_read_input_tokens": 340750,
+    "cache_creation_input_tokens": 25874,
+    "output_tokens": 2882
+  },
+  "totalCostUsd": 0.161719,
+  "result": "Both fixes applied. I haven't run the tests.\n\n1. **Score 100:** `anthrouter/model_router.py:1233` rejected `100` because the check was `0 <= value < 100`. It's now `<= 100`.\n2. **Requests remaining:** `anthrouter/http_util.py:120` looked for the header `anthropic-ratelimit-request-remaining`, but Anthropic sends `anthropic-ratelimit-requests-remaining` (plural). The lookup returned nothing, so the DB stored NULL. The spelling is corrected.\n\nI changed no tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 718,
+    "reReads": 0,
+    "testRuns": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 10,
+    "outputTokens": 2882,
+    "firstCacheRead": 19133
+  }
+}
