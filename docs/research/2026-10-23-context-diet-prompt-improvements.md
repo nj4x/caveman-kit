@@ -252,6 +252,8 @@ Pooled paired SDs from R1 + R2 (pairs needed for 80% power at two-sided 95%: `n 
 
 ## Caveats
 
+- **Mixed-model data (added 2026-10-24).** The cost decomposition, the cold-start table and the candidate estimates use the 8c90768 and b56c077 runs. b56c077 went through a routing proxy, so its bench requests ran on a mix of opus and sonnet (about 58% and 42%; see `docs/research/2026-10-21-bench-agentic-claude-sonnet-5-5-b56c077.md`, Caveats). Per-request costs and the "2.7k units per request" slope mix two models, so treat the absolute numbers as indicative. The ranking of candidates is unchanged, because it depends on request counts and tool-result size, not on the model. ADR 0011 requires pass-through runs from now on.
+
 - Attributed per-tool cost uses chars/3.5 as tokens and ignores tokenizer variation. It is an estimate of the cost structure, not a billed figure.
 - The cold-start adjustment assumes the missed prefix is the 17,156-token warm read seen in every warm cell.
 - The verification side effect (bigfile 9/12 vs 5/12 no-test cells) rests on 12 cells per arm and may be chance.
