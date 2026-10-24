@@ -155,8 +155,10 @@ function writeNote(dir, name, text) {
 
 // Agentic raw totals per arm: hidden-test passes, turn-cap hits and the
 // stream diagnostics. No statistics: the agentic gate is judged by lib/stats.js.
+// ranTests counts cells with testRuns > 0 out of testRunsKnown, the cells
+// that record testRuns at all (cells written before issue #12 do not).
 function summarizeAgentic(cells, armOrder = []) {
-  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
+  const blank = arm => ({ arm, cells: 0, passed: 0, hitMaxTurns: 0, ranTests: 0, testRunsKnown: 0, readChars: 0, reReads: 0, turns: 0, outputTokens: 0 });
   const byArm = new Map(armOrder.map(name => [name, blank(name)]));
   for (const cell of cells) {
     if (!byArm.has(cell.arm)) byArm.set(cell.arm, blank(cell.arm));
@@ -165,17 +167,27 @@ function summarizeAgentic(cells, armOrder = []) {
     row.cells += 1;
     if (cell.hiddenTest && cell.hiddenTest.pass) row.passed += 1;
     if (cell.hitMaxTurns) row.hitMaxTurns += 1;
+    if (Number.isFinite(d.testRuns)) {
+      row.testRunsKnown += 1;
+      if (d.testRuns > 0) row.ranTests += 1;
+    }
     for (const k of ['readChars', 'reReads', 'turns', 'outputTokens']) row[k] += Number(d[k]) || 0;
   }
   return [...byArm.values()];
 }
 
+const AGENTIC_HEADER = ['arm', 'cells', 'hidden_pass', 'max_turns', 'ran_tests', 'read_chars', 're_reads', 'turns', 'output'];
+
+function agenticRow(r) {
+  return [
+    r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns),
+    r.testRunsKnown ? `${r.ranTests}/${r.testRunsKnown}` : 'n/a',
+    String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens),
+  ];
+}
+
 function formatAgenticTable(rows) {
-  const header = ['arm', 'cells', 'hidden_pass', 'max_turns', 'read_chars', 're_reads', 'turns', 'output'];
-  const body = rows.map(r => [
-    r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns), String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens),
-  ]);
-  return alignTable(header, body);
+  return alignTable(AGENTIC_HEADER, rows.map(agenticRow));
 }
 
 const pct = x => (Number.isFinite(x) ? `${(x * 100).toFixed(0)}%` : 'n/a');
@@ -212,8 +224,6 @@ function formatAgenticGate(gate, excluded = []) {
 // escalated (bool). cells: the cells the gate judged (for diagnostics).
 function agenticSummaryNote(params, cells, gate, excluded = []) {
   const arms = summarizeAgentic(cells, gate.arms.map(a => a.arm));
-  const header = ['arm', 'cells', 'hidden_pass', 'max_turns', 'read_chars', 're_reads', 'turns', 'output'];
-  const body = arms.map(r => [r.arm, String(r.cells), `${r.passed}/${r.cells}`, String(r.hitMaxTurns), String(r.readChars), String(r.reReads), String(r.turns), String(r.outputTokens)]);
   const maxSeeds = params.maxSeeds || params.seeds * 2;
   // Cold starts (ADR 0010): cells whose first request read nothing from the
   // prompt cache. Older cells lack firstCacheRead and are not counted.
@@ -248,9 +258,9 @@ function agenticSummaryNote(params, cells, gate, excluded = []) {
     '',
     '## Diagnostics per arm',
     '',
-    `| ${header.join(' | ')} |`,
-    `| ${header.map(() => '---').join(' | ')} |`,
-    ...body.map(r => `| ${r.join(' | ')} |`),
+    `| ${AGENTIC_HEADER.join(' | ')} |`,
+    `| ${AGENTIC_HEADER.map(() => '---').join(' | ')} |`,
+    ...arms.map(r => `| ${agenticRow(r).join(' | ')} |`),
     '',
   ].join('\n');
 }

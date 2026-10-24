@@ -8,6 +8,10 @@
 //                 successful Read of the same path (no limit = first 2000
 //                 lines), with no Edit/Write/MultiEdit/NotebookEdit of that
 //                 path in between (a change made through Bash is not seen)
+//   testRuns      Bash calls whose command invokes a test runner (isTestCommand);
+//                 0 means the agent never ran tests through Bash, so "skipped
+//                 verification" shows even when the hidden test passes (issue #12).
+//                 A runner hidden inside a script the agent calls is not seen.
 //   turns         result.num_turns, else the count of distinct assistant messages
 //   outputTokens  result.usage.output_tokens
 //   firstCacheRead cache_read_input_tokens of the first assistant message that
@@ -16,6 +20,30 @@
 'use strict';
 
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+
+// The match errs toward counting. A bare runner name (`pytest`, `tox`, `bats`,
+// `jest`, ...) counts as a command word: at the start of a line, after a
+// separator or quote (`cd x && pytest`, `bash -c 'pytest'`), or after a
+// launcher (`uv run`, `exec`, `timeout 300`, `env X=1`), skipping flags,
+// numbers and VAR=value words. An unquoted bare name inside another program's
+// arguments (`cat pytest.ini`, `rg -n pytest`) does not count, but a quoted one
+// does (`rg "pytest" .`). The two-word forms (`python -m pytest`, `make test`,
+// `make check`, `npm test`, `go test`) count wherever they appear, so a quoted
+// mention such as `grep "make test" Makefile` counts too.
+// The skipped-word alternatives start with disjoint characters (`-`, a digit,
+// a letter or `_`), so each word parses one way only: overlapping ones
+// backtrack exponentially on a long run of `--key=value` words.
+const TEST_COMMAND_RE = new RegExp([
+  String.raw`(?:^|[\n;&|(\x60'"]|\b(?:run|exec|timeout|env|nice|time|xargs|npx)\b)\s*(?:(?:-\S+|\d\S*|[A-Za-z_]\w*=\S*)\s+)*(?:\S*/)?(?:pytest|py\.test|tox|nox|bats|jest|vitest|mocha|rspec)(?=\s|$|[;&|)'"])`,
+  String.raw`\bpython[\d.]*\b[^;&|\n]*?\s-m\s+(?:pytest|unittest)\b`,
+  String.raw`\bmake\b[^;&|\n]*?\s(?:test|check)\b`,
+  String.raw`\b(?:npm|yarn|pnpm)\s+(?:run\s+)?test\b`,
+  String.raw`\b(?:go|cargo)\s+test\b`,
+].join('|'), 'm');
+
+function isTestCommand(command) {
+  return typeof command === 'string' && TEST_COMMAND_RE.test(command);
+}
 
 function parseEvents(text) {
   const events = [];
@@ -55,6 +83,7 @@ function analyze(text) {
   const pending = new Map(); // Read tool_use id -> { file, range }, until its result arrives
   let readChars = 0;
   let reReads = 0;
+  let testRuns = 0;
   let firstCacheRead = null;
 
   for (const ev of events) {
@@ -67,6 +96,7 @@ function analyze(text) {
       for (const block of message.content) {
         if (!block || block.type !== 'tool_use') continue;
         const input = block.input || {};
+        if (block.name === 'Bash' && isTestCommand(input.command)) testRuns += 1;
         const file = input.file_path || input.notebook_path;
         if (block.name === 'Read' && typeof file === 'string') {
           readIds.add(block.id);
@@ -98,6 +128,7 @@ function analyze(text) {
     diagnostics: {
       readChars,
       reReads,
+      testRuns,
       turns: result && Number.isFinite(result.num_turns) ? result.num_turns : assistantIds.size + assistantAnon,
       outputTokens: usage ? Number(usage.output_tokens) || 0 : 0,
       firstCacheRead,
@@ -105,4 +136,4 @@ function analyze(text) {
   };
 }
 
-module.exports = { analyze, parseEvents };
+module.exports = { analyze, isTestCommand, parseEvents };

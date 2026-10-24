@@ -11,7 +11,8 @@
 // Agentic (--output-format stream-json): STUB_ABSENT=<rel,rel> records whether
 // those paths exist in cwd (hidden-test check); STUB_FIX_ARMS=<arm,arm> makes
 // those arms write "good" to cwd/value.txt (a passing hidden test); output is
-// a canned stream with 5 Read results (370 chars), 2 re-reads, 7 turns.
+// a canned stream with 5 Read results (370 chars), 2 re-reads, 1 test run
+// (one of two Bash calls), 7 turns.
 // full-diet reads less cache (1000 vs 2000), so its cost is lower, unless STUB_FLAT=1.
 // STUB_MAX_TURNS=1 ends it with subtype error_max_turns, is_error, exit 1;
 // STUB_RESULT_ERROR=1 ends it with subtype error_during_execution, is_error;
@@ -87,6 +88,7 @@ function finish() {
     use('t5', 'Read', { file_path: '/w/b.py', offset: 1, limit: 10 }); res('t5', 'z'.repeat(30));
     use('t6', 'Read', { file_path: '/w/b.py', offset: 3, limit: 5 }); res('t6', 'z'.repeat(20));
     use('t7', 'Bash', { command: 'ls' }); res('t7', 'q'.repeat(999));
+    use('t8', 'Bash', { command: 'python3 -m pytest -q tests' }); res('t8', '1 passed');
     const maxTurns = process.env.STUB_MAX_TURNS === '1';
     const resultError = process.env.STUB_RESULT_ERROR === '1';
     const leak = process.env.STUB_LEAK ? process.env.ANTHROPIC_API_KEY : '';
