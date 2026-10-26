@@ -144,6 +144,44 @@ function isCompleted(cell) {
 
 const meanOf = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 
+// Hidden-test guardrail (ADR 0016): non-inferiority margin. The candidate may
+// pass up to ceil(rate x pairs) fewer paired cells than the reference before
+// the gate reads the drop as a regression; a strict "any fewer" rule gave a
+// false no-ship on about a third of same-rate runs (issue #18).
+const PASS_MARGIN_RATE = 0.1;
+
+function passMargin(pairs, rate = PASS_MARGIN_RATE) {
+  // A NaN or negative rate would make `net > margin` never hold: refuse it.
+  if (!(Number.isFinite(rate) && rate >= 0)) throw new RangeError(`passMarginRate must be a number >= 0, got ${rate}`);
+  return Math.ceil(rate * pairs);
+}
+
+// candPass/refPass: paired booleans in pair order. net is reference passes
+// minus candidate passes (positive = candidate behind); lower when net exceeds
+// the margin. discordant counts the pairs that disagree, each direction.
+function passGuardrail(candPass, refPass, opts = {}) {
+  const pairs = candPass.length;
+  const count = list => list.filter(p => p).length;
+  const rate = list => (list.length ? count(list) / list.length : NaN);
+  const candidate = count(candPass);
+  const reference = count(refPass);
+  const net = reference - candidate;
+  const margin = passMargin(pairs, opts.passMarginRate);
+  return {
+    candidate,
+    reference,
+    candidateRate: rate(candPass),
+    referenceRate: rate(refPass),
+    net,
+    margin,
+    lower: pairs > 0 && net > margin,
+    discordant: {
+      candidateOnly: candPass.filter((p, i) => p && !refPass[i]).length,
+      referenceOnly: refPass.filter((p, i) => p && !candPass[i]).length,
+    },
+  };
+}
+
 // Arm summary over completed cells, for the capped-cell and bare reference
 // lines. Not used in any verdict.
 function armSummary(cells, arm) {
@@ -163,6 +201,7 @@ function armSummary(cells, arm) {
 // the verdict is 'no-ship'; when not final it is 'pending' with
 // escalate: true (the runner then adds seeds N+1..--max-seeds, once).
 // opts.noEscalate only words the reason: escalation was disabled, not done.
+// opts.passMarginRate (default PASS_MARGIN_RATE): the hidden-test margin.
 // Verdicts: ship | no-ship | inconclusive | pending.
 function agenticGate(cells, opts = {}) {
   const minFixtures = opts.minFixtures === undefined ? MIN_FIXTURES : opts.minFixtures;
@@ -174,12 +213,11 @@ function agenticGate(cells, opts = {}) {
   const cand = pairs.map(p => cacheWeightedCost(p.candidate.usage));
   const ref = pairs.map(p => cacheWeightedCost(p.reference.usage));
   const ci = confidenceInterval(cand.map((v, i) => v - ref[i]));
-  const rate = list => (list.length ? list.filter(p => p).length / list.length : NaN);
-  const candPass = pairs.map(p => p.candidate.hiddenTest.pass);
-  const refPass = pairs.map(p => p.reference.hiddenTest.pass);
-  const passCandidate = rate(candPass);
-  const passReference = rate(refPass);
-  const passLower = pairs.length > 0 && passCandidate < passReference;
+  const pass = passGuardrail(
+    pairs.map(p => p.candidate.hiddenTest.pass),
+    pairs.map(p => p.reference.hiddenTest.pass),
+    { passMarginRate: opts.passMarginRate },
+  );
   const dir = direction(ci);
 
   let verdict;
@@ -191,12 +229,12 @@ function agenticGate(cells, opts = {}) {
   } else if (dir === 'bad') {
     verdict = 'no-ship';
     reason = 'cost interval excludes zero in the bad direction';
-  } else if (passLower) {
+  } else if (pass.lower) {
     verdict = 'no-ship';
-    reason = 'hidden-test pass rate is lower than full';
+    reason = `hidden-test passes drop by ${pass.net} of ${pairs.length} pairs, beyond the margin of ${pass.margin}`;
   } else if (dir === 'good') {
     verdict = 'ship';
-    reason = 'cost interval excludes zero in the good direction and pass rate is not lower';
+    reason = 'cost interval excludes zero in the good direction and hidden-test passes are within the margin';
   } else if (opts.final) {
     verdict = 'no-ship';
     reason = opts.noEscalate ? 'cost interval includes zero (escalation disabled)' : 'cost interval includes zero after escalation';
@@ -212,12 +250,7 @@ function agenticGate(cells, opts = {}) {
     fixtures,
     unpaired: [...unpaired, ...incomplete],
     cost: { candidateMean: meanOf(cand), referenceMean: meanOf(ref), ci, direction: dir },
-    pass: {
-      candidate: candPass.filter(p => p).length,
-      reference: refPass.filter(p => p).length,
-      candidateRate: passCandidate,
-      referenceRate: passReference,
-    },
+    pass,
     arms: [AGENTIC_BARE, AGENTIC_PAIR.reference, AGENTIC_PAIR.candidate].map(a => armSummary(cells, a)),
     minFixtures,
     verdict,
@@ -229,6 +262,7 @@ function agenticGate(cells, opts = {}) {
 module.exports = {
   AGENTIC_PAIR,
   MIN_FIXTURES,
+  PASS_MARGIN_RATE,
   agenticGate,
   isCompleted,
   METRICS,
@@ -239,6 +273,8 @@ module.exports = {
   direction,
   outputTokens,
   pairCells,
+  passGuardrail,
+  passMargin,
   singleTurnGate,
   singleTurnVerdict,
   tCritical95,

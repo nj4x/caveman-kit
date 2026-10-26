@@ -24,7 +24,7 @@ Tool output is re-sent on every later request, and the largest part of it is who
 **Consequences:**
 
 - Every SessionStart and SubagentStart adds roughly 300–500 characters, even when the section does nothing useful. This cost is why the gate exists.
-- The section gates on ADR 0008 Decision 8, agentic harness. The 95% confidence interval of the paired difference (`full` + Context Diet minus `full`, paired by fixture and seed) in cache-weighted input cost must exclude zero in the good direction. The agentic hidden-test pass rate must not drop. Otherwise the file is not shipped.
+- The section gates on ADR 0008 Decision 8, agentic harness. The 95% confidence interval of the paired difference (`full` + Context Diet minus `full`, paired by fixture and seed) in cache-weighted input cost must exclude zero in the good direction. The agentic hidden-test pass rate must not drop by more than the margin of ADR 0016. Otherwise the file is not shipped.
 - The `full` arm runs the same hooks with `CAVEMAN_CONTEXT_DIET=0`, the user-facing opt-out from Decision 3. No benchmark-only switch is added.
 - The benchmark must measure the file actually injected by the hook, not a copy of it.
 - Until the gate passes, `hooks/caveman-context-diet.md` and the `caveman-activate.js` change live only on a feature branch, at their final paths. The harness runs against that branch checkout. They merge to `master` only after the gate passes and its result note is committed. If the gate fails, the branch is not merged.

@@ -222,7 +222,8 @@ function agenticGateLines(gate, excluded = []) {
     `Cost (cache-weighted input): ${gate.candidate} ${num(c.candidateMean)}, ${gate.reference} ${num(c.referenceMean)}, `
       + `paired diff ${signed(c.ci.mean)}, 95% CI [${signed(c.ci.lo)}, ${signed(c.ci.hi)}]`,
     `Pass rate over paired cells: ${gate.candidate} ${gate.pass.candidate}/${gate.pairs} (${pct(gate.pass.candidateRate)}), `
-      + `${gate.reference} ${gate.pass.reference}/${gate.pairs} (${pct(gate.pass.referenceRate)})`,
+      + `${gate.reference} ${gate.pass.reference}/${gate.pairs} (${pct(gate.pass.referenceRate)}); `
+      + `net drop ${gate.pass.net}, margin ${gate.pass.margin} (${gate.pass.lower ? 'exceeded' : 'within'})`,
     `Turn-capped cells (hitMaxTurns): ${gate.arms.map(a => `${a.arm} ${a.capped}/${a.cells}`).join(', ')}`,
     `Bare arm (reference only, feeds no verdict): ${bare.cells} cells, ${bare.passed} hidden-test passes, mean cost ${num(bare.costMean)}`,
   ];
@@ -276,8 +277,8 @@ function agenticSummaryNote(params, cells, gate, excluded = []) {
     '## Gate',
     '',
     'Paired difference is full-diet minus full, paired by fixture and seed; both cells must have completed.',
-    '`ship`: the 95% cost interval excludes zero below and full-diet pass rate is not lower than full.',
-    `\`no-ship\`: the interval excludes zero above, or the pass rate is lower, or the interval still includes zero after escalation (${params.seeds} to ${maxSeeds} seeds, once).`,
+    `\`ship\`: the 95% cost interval excludes zero below and full-diet passes at most ${gate.pass.margin} fewer paired cells than full (margin ceil(10% of pairs), ADR 0016).`,
+    `\`no-ship\`: the interval excludes zero above, or the pass drop exceeds the margin, or the interval still includes zero after escalation (${params.seeds} to ${maxSeeds} seeds, once).`,
     `\`inconclusive\`: fewer than ${gate.minFixtures} fixtures remain; counts as no-ship.`,
     '',
     ...agenticGateLines(gate, excluded).map(l => `- ${l}`),
