@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-4",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 2,
+  "finishedAt": "2026-10-26T01:31:10.707Z",
+  "durationMs": 297727,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 324581,
+    "cache_creation_input_tokens": 15195,
+    "output_tokens": 2213
+  },
+  "totalCostUsd": 0.1250777,
+  "result": "Fixed. Two bugs:\n\n1. `should_retry` in `anthrouter/http_util.py` was inverted. It retried a 429 only when the upstream gave *no* retry guidance, so a 429 with `retry-after-ms` went straight to the client. It now retries only when guidance is present.\n2. `anthrouter/transport.py` ignored upstream guidance when sleeping. It always used exponential backoff, so the retry would have waited 1s, not 1.5s. It now sleeps for `retry_delay(resp, attempt)`.\n\nI checked the two functions with fake responses. A 429 with `retry-after-ms: 1500` is retried with a 1.5s delay. A 429 with no headers is still not retried. I did not run a live request through the proxy.\n\nThe full suite has 3 failures: 1125 passed, 1 skipped.\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py` also fail with my changes stashed.\n- `test_editable_fields_live_editable_fields` in `tests/test_config.py` fails on an extra `oauth_usage_poll_interval` field. It involves no retry code, and I did not run it with my changes stashed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2213,
+    "firstCacheRead": 19133
+  }
+}

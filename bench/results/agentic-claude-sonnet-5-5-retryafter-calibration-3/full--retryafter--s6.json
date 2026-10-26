@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-25T23:03:33.979Z",
+  "durationMs": 240007,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 318167,
+    "cache_creation_input_tokens": 14061,
+    "output_tokens": 1722
+  },
+  "totalCostUsd": 0.1160499,
+  "result": "Fixed two bugs. A 429 with `retry-after-ms: 1500` now retries after 1.5s.\n\n- **Retry:** `should_retry` in `anthrouter/http_util.py` had the 429 check inverted. It retried only when there was no retry guidance, so a 429 carrying `retry-after-ms` went straight to the client. It now returns `parse_retry_after(resp) is not None`.\n- **Wait:** the retry loop in `anthrouter/transport.py` ignored the header and always used exponential backoff (1s, 2s, 4s). It now calls `retry_delay(resp, attempt)`, which uses the upstream value and falls back to backoff. I added the `retry_delay` import.\n\nI didn't run a test of the 429 case itself.\n\nThe full suite gave 1125 passed, 3 failed, 1 skipped. The failures are in `tests/test_handlers.py`, in tier-routing tests. Two of them fail the same way with my changes stashed, so they predate the fix. I only saw the names of two of the three failures (`test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`) and didn't identify the third.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1722,
+    "firstCacheRead": 19133
+  }
+}

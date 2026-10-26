@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 3,
+  "finishedAt": "2026-10-24T22:10:18.943Z",
+  "durationMs": 191639,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 258129,
+    "cache_creation_input_tokens": 13973,
+    "output_tokens": 1841
+  },
+  "totalCostUsd": 0.10500430000000001,
+  "result": "Fixed in `anthrouter/pace.py`. `period_workday_dates` counted the period end date as a workday, but `period_end` is exclusive. For UTC, `period_end` is Oct 1 00:00, so Thu Oct 1 got counted and September 2026 came out as 23 workdays. The function now drops that last date when `period_end` lands exactly on local midnight. September 2026 now gives 22. Non-UTC zones are unaffected, since their period end isn't at midnight.\n\nThe full suite showed 3 failures. Two are in `tests/test_handlers.py` and fail the same way without my change. I only re-ran that one file on the stashed tree, so the third failure is unconfirmed. Its name was cut off in the output I checked. The pace and usage tests pass (67).",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5723,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1841,
+    "firstCacheRead": 19141
+  }
+}

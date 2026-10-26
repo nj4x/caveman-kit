@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-25T17:38:49.746Z",
+  "durationMs": 186932,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 278305,
+    "cache_creation_input_tokens": 12252,
+    "output_tokens": 1609
+  },
+  "totalCostUsd": 0.10242100000000001,
+  "result": "Full suite: 1125 passed, 3 failed, 1 skipped. The 3 failures look unrelated to my change:\n\n- **`tests/test_handlers.py`:** `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` also fail with my change stashed.\n- **`tests/test_config.py`:** `test_editable_fields_live_editable_fields` also failed in the full run. I didn't re-run it on the original code, so I haven't confirmed it was already failing.\n\nMy changes are the two fixes in `anthrouter/http_util.py` and nothing else.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1609,
+    "firstCacheRead": 19139
+  }
+}

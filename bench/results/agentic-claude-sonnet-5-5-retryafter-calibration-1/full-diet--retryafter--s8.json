@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 8,
+  "finishedAt": "2026-10-25T18:56:33.439Z",
+  "durationMs": 392143,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 414198,
+    "cache_creation_input_tokens": 15074,
+    "output_tokens": 3052
+  },
+  "totalCostUsd": 0.1511006,
+  "result": "Fixed in `anthrouter/http_util.py`. A 429 with `retry-after-ms: 1500` is now retried after 1.5 seconds. The full suite ends with 3 failures, and the same 3 fail without my change.\n\n- **Unit bug:** `parse_retry_after` returned the `retry-after-ms` value as seconds. It now divides by 1000, so 1500 gives 1.5 seconds instead of 1500.\n- **Inverted check:** `should_retry` retried a 429 only when there was no timing guidance, which is the opposite of its docstring. It now retries a 429 only when guidance is present.\n\nThe 3 failures are `test_editable_fields_live_editable_fields` in `tests/test_config.py`, plus `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`. I didn't look into them.\n\nYour report said 429s with other timing guidance already retry. With the inverted check they didn't, because `should_retry` returned False whenever guidance was present. The ms conversion alone would not have fixed your case.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5628,
+    "reReads": 0,
+    "testRuns": 7,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 16,
+    "outputTokens": 3052,
+    "firstCacheRead": 19139
+  }
+}

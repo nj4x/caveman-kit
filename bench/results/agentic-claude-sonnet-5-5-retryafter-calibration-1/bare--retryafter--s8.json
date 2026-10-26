@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 8,
+  "finishedAt": "2026-10-25T18:12:48.402Z",
+  "durationMs": 243355,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 232979,
+    "cache_creation_input_tokens": 10285,
+    "output_tokens": 1571
+  },
+  "totalCostUsd": 0.08805429999999999,
+  "result": "A 429 with `retry-after-ms: 1500` now waits 1.5 seconds and retries instead of going straight back to the client. The fix is in `anthrouter/http_util.py`, in two places:\n\n- **Unit bug:** `parse_retry_after` returned the `retry-after-ms` value as seconds, so 1500 became a 1500-second delay. It now divides by 1000.\n- **Inverted condition:** `should_retry` retried a 429 only when there was no timing guidance, which is the opposite of its docstring. It now retries when guidance is present.\n\nThe full suite ends with 1125 passed, 1 skipped and 3 failed. The failing tests are `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. I stashed my change and ran them again, and the same three fail without it, so they aren't caused by this fix. I didn't look into why they fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1571,
+    "firstCacheRead": 19135
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-25T17:26:31.315Z",
+  "durationMs": 142889,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 186230,
+    "cache_creation_input_tokens": 10657,
+    "output_tokens": 1044
+  },
+  "totalCostUsd": 0.07435649999999999,
+  "result": "Fix applied in `anthrouter/http_util.py`. The test suite is still running in the background, so I don't have results yet.\n\nTwo bugs in the 429 retry path:\n- **Milliseconds:** `parse_retry_after` returned the `retry-after-ms` value as seconds, so 1500 would have meant 1500 seconds. It now divides by 1000.\n- **Inverted check:** `should_retry` retried a 429 only when there was no timing guidance, which is the reverse of its docstring. It now retries when guidance is present. This is why the 429 with `retry-after-ms: 1500` went straight to the client.\n\nI'll report the test results when they finish.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1044,
+    "firstCacheRead": 19133
+  }
+}

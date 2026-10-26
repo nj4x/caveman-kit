@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-25T22:59:27.988Z",
+  "durationMs": 249765,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 314132,
+    "cache_creation_input_tokens": 13538,
+    "output_tokens": 1730
+  },
+  "totalCostUsd": 0.11401540000000002,
+  "result": "Two bugs, both fixed:\n\n- **Retry decision:** `should_retry` in `anthrouter/http_util.py` was inverted for 429. It retried only when there was no retry guidance, so `retry-after-ms: 1500` went straight to the client. It now retries when guidance is present (`is not None`).\n- **Wait time:** `anthrouter/transport.py` ignored the header and always used exponential backoff. It now calls `retry_delay(resp, attempt)`, which returns 1.5s for `retry-after-ms: 1500` and falls back to backoff when there's no header.\n\nThe full suite gave 1125 passed and 3 failed. Two of the failures (the `test_handlers.py` tier tests) also fail without my change. I didn't check `test_config.py::test_editable_fields_live_editable_fields` on the original code. None of the three touch retry code, and the retry and transport tests pass.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1730,
+    "firstCacheRead": 19133
+  }
+}

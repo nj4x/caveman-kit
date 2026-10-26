@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 7,
+  "finishedAt": "2026-10-25T18:08:40.327Z",
+  "durationMs": 156844,
+  "usage": {
+    "input_tokens": 26,
+    "cache_read_input_tokens": 319527,
+    "cache_creation_input_tokens": 10877,
+    "output_tokens": 1951
+  },
+  "totalCostUsd": 0.1106599,
+  "result": "The full suite finished with 1125 passed, 1 skipped and 3 failed:\n\n- `tests/test_config.py::test_editable_fields_live_editable_fields`\n- `tests/test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `tests/test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe same three fail with my change stashed, so they were already failing and have nothing to do with the retry fix. I didn't investigate why they fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 1951,
+    "firstCacheRead": 19135
+  }
+}

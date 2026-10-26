@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 4,
+  "finishedAt": "2026-10-25T17:41:18.431Z",
+  "durationMs": 143892,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 217592,
+    "cache_creation_input_tokens": 11370,
+    "output_tokens": 1396
+  },
+  "totalCostUsd": 0.08593540000000001,
+  "result": "Fixes are in, but I haven't seen test results yet. The suite is still running in the background.\n\nBoth bugs are in `anthrouter/http_util.py`:\n- **`parse_retry_after`:** it treated `retry-after-ms` as seconds. `1500` meant a 1500-second wait. It now divides by 1000, so `1500` gives 1.5 s.\n- **`should_retry`:** the 429 check was inverted (`is None`). It retried 429s with no timing guidance and surfaced 429s that had guidance, which is what you saw. It now uses `is not None`, matching its docstring.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1396,
+    "firstCacheRead": 19139
+  }
+}

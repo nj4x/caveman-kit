@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 4,
+  "finishedAt": "2026-10-25T16:59:08.713Z",
+  "durationMs": 147141,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 205655,
+    "cache_creation_input_tokens": 10117,
+    "output_tokens": 1634
+  },
+  "totalCostUsd": 0.08279550000000001,
+  "result": "I fixed two bugs in `anthrouter/http_util.py`. I haven't confirmed the fix, because the test suite run was still going when I stopped. It timed out in the foreground and is now running in the background.\n\n- **Unit mix-up:** `parse_retry_after` returned `retry-after-ms` values as seconds without dividing by 1000. A 1500 ms hint would have meant a 1500-second sleep. It now divides by 1000, so `retry-after-ms: 1500` waits 1.5 seconds.\n- **Inverted check:** `should_retry` retried a 429 only when there was *no* timing guidance, which is the opposite of its own docstring. I changed `is None` to `is not None`, so a 429 with guidance is retried and one without is passed straight through.\n\nI didn't touch any tests. The background run's output is in `/private/tmp/claude-501/-private-var-folders-85-3h1d22k952v10p9g4kd4nzqc0000gn-T-caveman-bench-5RXDqt-bare-60374-7-work/cf84e12a-63d9-447d-828a-c13c634df71a/tasks/bfmjsktdf.output`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1634,
+    "firstCacheRead": 19135
+  }
+}

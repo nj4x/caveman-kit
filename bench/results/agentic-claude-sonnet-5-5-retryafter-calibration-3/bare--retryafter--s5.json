@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-25T22:35:41.657Z",
+  "durationMs": 243891,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 297782,
+    "cache_creation_input_tokens": 12177,
+    "output_tokens": 2103
+  },
+  "totalCostUsd": 0.1110729,
+  "result": "I fixed both problems: anthrouter now retries a 429 that carries `retry-after-ms`, and it waits the time upstream asked for. I didn't add a test that sends a 429 with `retry-after-ms: 1500`, so the fix isn't checked directly. The full suite gives 1125 passed and 3 failed. The same 3 tests fail with my changes stashed, so they predate this fix:\n- `tests/test_config.py::test_editable_fields_live_editable_fields`\n- `tests/test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `tests/test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\n- **Retry decision:** in `should_retry` (`anthrouter/http_util.py`), the 429 check was inverted. It retried only when upstream gave no timing guidance and returned the 429 to the client when it did give guidance. It now retries only when guidance is present, which is what the docstring says.\n- **Wait time:** the retry loop in `anthrouter/transport.py` ignored the header and always used its own exponential backoff (1s on the first retry). It now calls `retry_delay()`, which uses `retry-after-ms` or `Retry-After` and falls back to backoff when neither is present. A 429 with `retry-after-ms: 1500` now waits 1.5s.\n\nThe wait uses the upstream value as given, with no cap. A very large `Retry-After` would make the request wait that long. This also applies to 5xx responses that send those headers, which previously used plain backoff.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2103,
+    "firstCacheRead": 19135
+  }
+}

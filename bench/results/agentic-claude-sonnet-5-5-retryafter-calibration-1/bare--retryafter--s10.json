@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 10,
+  "finishedAt": "2026-10-25T18:17:42.386Z",
+  "durationMs": 146964,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 175940,
+    "cache_creation_input_tokens": 8966,
+    "output_tokens": 1126
+  },
+  "totalCostUsd": 0.06889100000000001,
+  "result": "I made two fixes in `anthrouter/http_util.py`, but I haven't seen a passing test run yet. The first attempt failed because pytest isn't installed. The `uv run` attempt timed out at 120 seconds and is still running in the background.\n\n- **Unit bug:** `parse_retry_after` returned `retry-after-ms` as if it were seconds. A value of `1500` would have meant a 1500-second wait, so I now divide it by 1000.\n- **Inverted check:** `should_retry` retried a 429 only when there was *no* timing guidance, which is the opposite of its own docstring. A 429 carrying `retry-after-ms: 1500` was therefore returned straight to the client. I changed `is None` to `is not None`. This also affects 429s with a plain `Retry-After` header, which now get retried.\n\nI'll report the test result once the background run finishes.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1126,
+    "firstCacheRead": 19135
+  }
+}

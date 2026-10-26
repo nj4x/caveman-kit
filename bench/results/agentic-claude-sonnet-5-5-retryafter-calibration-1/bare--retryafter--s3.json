@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-25T16:56:36.259Z",
+  "durationMs": 236726,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 292944,
+    "cache_creation_input_tokens": 12008,
+    "output_tokens": 2117
+  },
+  "totalCostUsd": 0.1098228,
+  "result": "A 429 with `retry-after-ms: 1500` now gets retried after 1.5 seconds instead of going straight to the client. The full suite ends at 1125 passed, 3 failed, 1 skipped. Those same 3 tests also fail with my change stashed, so they predate it; I didn't investigate them. They are `test_editable_fields_live_editable_fields` in `tests/test_config.py`, and `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`.\n\nThere were two bugs in `anthrouter/http_util.py`, and both had to be fixed:\n\n- **Wrong units:** `parse_retry_after` returned the `retry-after-ms` value as seconds, so 1500 became a 1500-second sleep. It now divides by 1000.\n- **Inverted condition:** `should_retry` retried a 429 only when there was no timing guidance, the opposite of its own docstring. It now retries only when guidance is present.\n\nI didn't add a test for the 429 retry. This also means a 429 with no timing header now goes to the client instead of being retried, which matches the docstring.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2117,
+    "firstCacheRead": 19135
+  }
+}
