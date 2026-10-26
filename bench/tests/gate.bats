@@ -63,6 +63,31 @@ verdict_of() {
   '
 }
 
+@test "stats: passMargin is ceil(10% of pairs); passGuardrail flags a net drop beyond it (ADR 0016)" {
+  node_assert '
+    assert.deepStrictEqual([0, 1, 9, 10, 12, 21, 42].map(n => stats.passMargin(n)), [0, 1, 1, 1, 2, 3, 5]);
+    assert.strictEqual(stats.passMargin(12, 0.25), 3);
+    for (const bad of [NaN, -0.1, null, Infinity]) assert.throws(() => stats.passMargin(12, bad), RangeError);
+    const g = stats.passGuardrail;
+    const pass = n => Array(n).fill(true), fail = n => Array(n).fill(false);
+    // 12 pairs, margin 2: a net drop of 2 is within, 3 is beyond.
+    let r = g([...pass(10), ...fail(2)], pass(12));
+    assert.deepStrictEqual([r.candidate, r.reference, r.net, r.margin, r.lower], [10, 12, 2, 2, false]);
+    r = g([...pass(9), ...fail(3)], pass(12));
+    assert.deepStrictEqual([r.net, r.margin, r.lower], [3, 2, true]);
+    // Only the net count matters: discordant pairs in both directions cancel.
+    r = g([...pass(9), ...fail(3)], [...fail(2), ...pass(10)]);
+    assert.deepStrictEqual([r.net, r.lower, r.discordant], [1, false, { candidateOnly: 2, referenceOnly: 3 }]);
+    // A candidate that passes more is never lower; no pairs gives NaN rates and no flag.
+    assert.strictEqual(g(pass(3), fail(3)).lower, false);
+    r = g([], []);
+    assert.deepStrictEqual([r.lower, r.margin, Number.isNaN(r.candidateRate)], [false, 0, true]);
+    // 3 pairs: margin 1, so a single failed cell no longer trips the guardrail.
+    assert.strictEqual(g([true, true, false], pass(3)).lower, false);
+    assert.strictEqual(g([true, false, false], pass(3)).lower, true);
+  '
+}
+
 @test "verdict: ship needs one good interval and no bad one; else no-ship" {
   node_assert '
     const good = { lo: -9, hi: -1 }, zero = { lo: -1, hi: 1 }, bad = { lo: 1, hi: 9 };

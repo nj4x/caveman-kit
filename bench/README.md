@@ -162,9 +162,9 @@ git worktree remove ../caveman-kit-context-diet   # when done
 The run id carries that worktree's HEAD short SHA, so a run on a new
 `context-diet` commit starts fresh cells. Agentic gate (spec #1): the paired
 difference `full-diet` minus `full` by fixture and seed passes when the 95%
-interval of cache-weighted input cost lies below zero and the `full-diet`
-hidden-test pass rate is not lower than `full`'s. An interval that includes
-zero after 3 seeds earns one rerun with up to 6 seeds, then `no-ship`. Fewer
+interval of cache-weighted input cost lies below zero and `full-diet` passes
+at most ceil(10% of pairs) fewer hidden tests than `full` (ADR 0016). An
+interval that includes zero after 3 seeds earns one rerun with up to 6 seeds, then `no-ship`. Fewer
 than 3 fixtures left after drops is `inconclusive`; `bare` is reference only.
 The runner does not compute this gate or escalate seeds by itself: read the
 paired cells yourself, and to escalate rerun with `--seeds 6` and the same
@@ -232,7 +232,7 @@ with the run's cells under `bench/results/<run-id>/`.
 
 For `--kind agentic` the gate judges `full-diet` against `full` on
 cache-weighted input cost (lower is better), with the hidden-test pass rate as
-a guardrail (ADR 0008, ADR 0009). The `bare` arm is reported for reference and
+a guardrail (ADR 0008, ADR 0009, ADR 0016). The `bare` arm is reported for reference and
 feeds no verdict.
 
 - Pairing: by fixture and seed. A pair counts only when both cells completed
@@ -240,10 +240,15 @@ feeds no verdict.
   incomplete cell file, or cells of a fixture dropped after some were paid for)
   are excluded and listed in the report. Pass rates use paired cells only, so
   both arms share a denominator.
+- Guardrail (ADR 0016): net drop = `full` passes minus `full-diet` passes over
+  the paired cells; margin = ceil(10% of pairs), so 1 at 9 pairs, 2 at 12, 3
+  at 21. The guardrail trips when the net drop exceeds the margin. A strict
+  "any fewer" rule fired on about a third of same-rate runs from seed noise
+  alone. The report prints the net drop, the margin and whether it held.
 - `ship`: the 95% t-interval of the paired cost difference excludes zero below
-  and the `full-diet` pass rate is not lower than `full`'s.
-- `no-ship` at once: the interval excludes zero above, or the pass rate is
-  lower. No extra seeds are run.
+  and the guardrail holds.
+- `no-ship` at once: the interval excludes zero above, or the guardrail trips.
+  No extra seeds are run.
 - Escalation: if the interval includes zero after `--seeds` N seeds (default
   3), the runner prints a new estimate, asks again (unless `--yes`) and runs
   seeds N+1..M, skipping cells that exist, then recomputes. M is
@@ -273,6 +278,11 @@ feeds no verdict.
   a `Verdict:` line.
   Once all planned cells exist, the summary note goes to `docs/research/` as
   for single-turn.
+- Offline replay: `node bench/replay-gate.js [--results <dir>] [--subset <k>]`
+  re-judges every committed run, and every k-seed subset of it (default 3),
+  under the strict rule and the margin rule, prints the verdict flips, then an
+  exact false-alarm and power table for both rules at those pair sizes. Reads
+  cells only; no API call. Run it before changing the guardrail.
 
 ## Routing proxy
 

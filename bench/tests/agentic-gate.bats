@@ -61,6 +61,37 @@ GATE_JS='
   '
 }
 
+@test "agentic-guardrail: one failed full-diet cell among 9 pairs is within the margin; a net drop beyond it is no-ship (ADR 0016)" {
+  node_assert "$GATE_JS"'
+    const diet = (t, s) => ({ input: 800 + jitter(t, s) });
+    // 9 pairs, margin ceil(0.9) = 1: full-diet fails fa/s1 only.
+    const one = build((arm, t, s) => ({ ...(arm === "full-diet" ? diet(t, s) : { input: 1000 + jitter(t, s) }), pass: !(arm === "full-diet" && t === "fa" && s === 1) }));
+    let gate = stats.agenticGate(one);
+    assert.deepStrictEqual([gate.pass.candidate, gate.pass.reference, gate.pass.net, gate.pass.margin, gate.pass.lower], [8, 9, 1, 1, false]);
+    assert.strictEqual(gate.verdict, "ship");
+    assert.ok(gate.reason.includes("within the margin"), gate.reason);
+    assert.ok(report.formatAgenticGate(gate).includes("net drop 1, margin 1 (within)"), report.formatAgenticGate(gate));
+    // Two failed full-diet cells: net drop 2 exceeds margin 1.
+    const two = build((arm, t, s) => ({ ...(arm === "full-diet" ? diet(t, s) : { input: 1000 + jitter(t, s) }), pass: !(arm === "full-diet" && s === 1 && t !== "fc") }));
+    gate = stats.agenticGate(two);
+    assert.deepStrictEqual([gate.pass.net, gate.pass.margin, gate.pass.lower], [2, 1, true]);
+    assert.strictEqual(gate.verdict, "no-ship");
+    assert.strictEqual(gate.escalate, false);
+    assert.strictEqual(gate.reason, "hidden-test passes drop by 2 of 9 pairs, beyond the margin of 1");
+    assert.ok(report.formatAgenticGate(gate).includes("net drop 2, margin 1 (exceeded)"));
+    // A matching full failure cancels one: net drop 1 again, within.
+    const cancel = two.map(c => (c.arm === "full" && c.task === "fc" && c.seed === 2 ? { ...c, hiddenTest: { pass: false } } : c));
+    gate = stats.agenticGate(cancel);
+    assert.deepStrictEqual([gate.pass.net, gate.pass.lower, gate.pass.discordant], [1, false, { candidateOnly: 1, referenceOnly: 2 }]);
+    assert.strictEqual(gate.verdict, "ship");
+    // The guardrail still blocks a ship: no effect on cost but a drop beyond margin is no-ship, not pending.
+    const flat = build((arm, t, s) => ({ input: 1000 + jitter(t, s), pass: !(arm === "full-diet" && s === 1 && t !== "fc") }));
+    assert.strictEqual(stats.agenticGate(flat).verdict, "no-ship");
+    // opts.passMarginRate widens the margin.
+    assert.strictEqual(stats.agenticGate(two, { passMarginRate: 0.25 }).verdict, "ship");
+  '
+}
+
 @test "agentic-bare: the bare arm is reported but feeds no verdict" {
   node_assert "$GATE_JS"'
     const base = build((arm, t, s) => ({ input: (arm === "full-diet" ? 800 : 1000) + jitter(t, s) }));
@@ -135,7 +166,8 @@ GATE_JS='
 
   [ "$status" -eq 0 ]
   [ "$(stub_calls)" -eq 0 ]
-  [[ "$output" == *"Verdict: no-ship (hidden-test pass rate is lower than full)"* ]] || false
+  [[ "$output" == *"Verdict: no-ship (hidden-test passes drop by 9 of 9 pairs, beyond the margin of 1)"* ]] || false
+  grep -q 'ADR 0016' "$RESEARCH"/*-bench-g.md
   [[ "$output" != *"escalating"* ]] || false
 }
 
