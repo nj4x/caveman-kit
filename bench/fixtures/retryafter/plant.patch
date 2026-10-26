@@ -1,0 +1,34 @@
+diff --git a/anthrouter/http_util.py b/anthrouter/http_util.py
+index 3baed01..40a211b 100644
+--- a/anthrouter/http_util.py
++++ b/anthrouter/http_util.py
+@@ -175,7 +175,7 @@ def should_retry(status: int, resp) -> bool:
+     if status not in RETRYABLE_STATUSES:
+         return False
+     if status == 429:
+-        return parse_retry_after(resp) is not None
++        return parse_retry_after(resp) is None
+     return True
+ 
+ 
+diff --git a/anthrouter/transport.py b/anthrouter/transport.py
+index 311f364..f4b1659 100644
+--- a/anthrouter/transport.py
++++ b/anthrouter/transport.py
+@@ -21,7 +21,6 @@ from .http_util import (
+     handle_error_response,
+     parse_ratelimit_headers,
+     read_sse_lines,
+-    retry_delay,
+     should_retry,
+ )
+ from .mapper.anthropic_transform import (
+@@ -148,7 +147,7 @@ class AnthropicTransport:
+                 return conn, resp
+ 
+             if should_retry(resp.status, resp) and attempt < MAX_RETRIES:
+-                delay = retry_delay(resp, attempt)
++                delay = min(RETRY_BASE_DELAY * (2 ** attempt), RETRY_MAX_DELAY)
+                 resp.read()
+                 conn.close()
+                 logger.warning('Upstream HTTP %d (attempt %d/%d) — retrying in %.1fs',
