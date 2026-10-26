@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-25T22:44:14.672Z",
+  "durationMs": 259548,
+  "usage": {
+    "input_tokens": 26,
+    "cache_read_input_tokens": 393278,
+    "cache_creation_input_tokens": 15991,
+    "output_tokens": 2523
+  },
+  "totalCostUsd": 0.1439151,
+  "result": "Fixed two bugs, both in the 429 retry path:\n\n- **No retry:** `should_retry` in `anthrouter/http_util.py` returned `parse_retry_after(resp) is None` for a 429, so a 429 with `retry-after-ms` was never retried. It now uses `is not None`: a 429 is retried only when upstream gave timing guidance.\n- **Wrong wait:** `anthrouter/transport.py` ignored the header and always used exponential backoff, which is 1.0s on the first attempt. It now calls `retry_delay(resp, attempt)`, which returns the 1.5s from `retry-after-ms` and falls back to backoff when there is no header.\n\nI ran the full suite: 1125 passed, 3 failed, 1 skipped. The retry and transport tests pass (165 passed). Two of the failures are in `tests/test_handlers.py` (the cached-tier and locked-baseline tests) and also fail with my change stashed. The third is `tests/test_config.py::test_editable_fields_live_editable_fields`. I didn't re-run it without my change, but it's a config test and my diff only touches the two retry files. I didn't run `ruff`; it isn't installed here.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 8536,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 15,
+    "outputTokens": 2523,
+    "firstCacheRead": 19133
+  }
+}

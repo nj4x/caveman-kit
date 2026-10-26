@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 2,
+  "finishedAt": "2026-10-25T23:11:55.478Z",
+  "durationMs": 243682,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 319356,
+    "cache_creation_input_tokens": 14710,
+    "output_tokens": 2147
+  },
+  "totalCostUsd": 0.12216020000000001,
+  "result": "Fixed two bugs, so a 429 with `retry-after-ms: 1500` is now retried after waiting 1.5s. The test suite shows 1125 passed and 3 failed. Those 3 also fail with my changes stashed, so they predate this fix. They are `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. I didn't look into them.\n\n- **Retry decision:** in `anthrouter/http_util.py`, `should_retry` had its 429 check inverted. It retried a 429 only when there was no retry guidance, so a 429 with `retry-after-ms` went straight to the client.\n- **Wait time:** in `anthrouter/transport.py`, the retry path computed its own exponential backoff and ignored `retry_delay()`, so it never waited the 1.5s upstream asked for. It now calls `retry_delay(resp, attempt)`, which reads `retry-after-ms` and `Retry-After` and falls back to backoff.\n\nI haven't run `ruff`; it isn't installed here.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 5700,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2147,
+    "firstCacheRead": 19139
+  }
+}

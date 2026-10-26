@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 9,
+  "finishedAt": "2026-10-25T18:15:11.506Z",
+  "durationMs": 138538,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 174955,
+    "cache_creation_input_tokens": 8628,
+    "output_tokens": 988
+  },
+  "totalCostUsd": 0.066469,
+  "result": "I fixed two bugs in `anthrouter/http_util.py`, but I haven't seen the test results yet. The test run (`uv run --no-project --with pytest python -m pytest tests -q`) went to the background after the 120s timeout, and I'm still waiting on it.\n\nA 429 with `retry-after-ms: 1500` was going straight back to the client because of both bugs together:\n\n- **Inverted check:** `should_retry` retried a 429 only when there was no timing guidance. It now retries when guidance is present, which is what its docstring says.\n- **Wrong unit:** `parse_retry_after` returned the `retry-after-ms` value without converting it, so 1500 would have meant 1500 seconds. It now divides by 1000, so the wait is 1.5 seconds.\n\nI haven't changed any tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 988,
+    "firstCacheRead": 19135
+  }
+}

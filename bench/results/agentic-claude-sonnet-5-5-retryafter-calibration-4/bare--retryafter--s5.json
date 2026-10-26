@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-4",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-26T01:17:50.049Z",
+  "durationMs": 239424,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 242411,
+    "cache_creation_input_tokens": 12310,
+    "output_tokens": 1640
+  },
+  "totalCostUsd": 0.0956932,
+  "result": "A 429 with `retry-after-ms` (or `Retry-After`) is now retried after the delay the upstream asked for. Both bugs were in the retry path, and I didn't send a real request through the proxy to confirm it. The full suite finishes with 1125 passed and 3 failed. Those same 3 tests fail without my changes: `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`.\n\n- **`anthrouter/http_util.py`:** `should_retry` had its 429 check inverted. It retried a 429 only when there was no retry guidance, which is the opposite of what its docstring says. It now retries when guidance is present.\n- **`anthrouter/transport.py`:** the retry loop ignored the upstream delay and always used its own exponential backoff. It now sleeps for `retry_delay(resp, attempt)`, which uses the upstream header and falls back to backoff when there isn't one.\n\nThe upstream delay isn't capped. A large `Retry-After` value will make the proxy sleep that long before retrying.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1640,
+    "firstCacheRead": 19135
+  }
+}

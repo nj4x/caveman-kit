@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-25T21:52:44.688Z",
+  "durationMs": 148741,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 292503,
+    "cache_creation_input_tokens": 10949,
+    "output_tokens": 1727
+  },
+  "totalCostUsd": 0.10319110000000002,
+  "result": "The full suite finished: 1125 passed, 1 skipped, 3 failed. My change didn't cause the failures.\n\nI stashed my change and re-ran the same three tests, and they fail without it too:\n- `tests/test_config.py::test_editable_fields_live_editable_fields`\n- `tests/test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `tests/test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI didn't look into why they fail. The one-line `should_retry()` fix in `anthrouter/http_util.py` is the only change in the working tree.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": "at_long_then_retries ________\n\nsleeps = [1.0]\n\n    def test_429_with_retry_after_seconds_waits_that_long_then_retries(sleeps):\n        with StubUpstream([(429, {'Retry-After': '7'}), (200, {})]) as stub:\n            send(stub)\n        assert stub.requests == 2\n>       assert sleeps == [pytest.approx(7.0)]\nE       assert [1.0] == [7.0 ± 7.0e-06]\nE         \nE         At index 0 diff: 1.0 != 7.0 ± 7.0e-06\nE         Use -v to get more diff\n\ntests/test_bench_hidden_retryafter.py:110: AssertionError\n------------------------------ Captured log call -------------------------------\nWARNING  anthrouter.transport:transport.py:153 Upstream HTTP 429 (attempt 1/3) — retrying in 1.0s\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_retryafter.py::test_429_with_retry_after_ms_waits_that_long_then_retries\nFAILED tests/test_bench_hidden_retryafter.py::test_429_with_retry_after_seconds_waits_that_long_then_retries\n2 failed, 4 passed in 2.06s\n"
+  },
+  "diagnostics": {
+    "readChars": 352,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 1727,
+    "firstCacheRead": 19133
+  }
+}

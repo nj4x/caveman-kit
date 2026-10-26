@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 11,
+  "finishedAt": "2026-10-25T18:21:48.191Z",
+  "durationMs": 241135,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 261854,
+    "cache_creation_input_tokens": 10514,
+    "output_tokens": 1773
+  },
+  "totalCostUsd": 0.0964258,
+  "result": "I fixed two bugs in `anthrouter/http_util.py` that together caused the 429 to reach the client. The full suite ends at 1125 passed, 3 failed and 1 skipped. The same 3 tests fail without my change, so they predate it and I left them alone.\n\n- **Unit conversion:** `parse_retry_after` returned `retry-after-ms` as if it were seconds. A value of `1500` would have meant a 1500-second wait, so I now divide it by 1000.\n- **Inverted 429 check:** `should_retry` retried a 429 only when there was *no* timing guidance, which contradicts its own docstring. It now retries when guidance is present (`is not None`).\n\nI didn't write a test that sends a 429 with `retry-after-ms: 1500` through the retry path. The full suite shows no regressions from the two edits.\n\nThe 3 failing tests are `test_editable_fields_live_editable_fields` in `tests/test_config.py`, and `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1773,
+    "firstCacheRead": 19135
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 12,
+  "finishedAt": "2026-10-25T18:24:12.861Z",
+  "durationMs": 140517,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 175101,
+    "cache_creation_input_tokens": 8704,
+    "output_tokens": 1050
+  },
+  "totalCostUsd": 0.0673082,
+  "result": "Fixed two bugs in `anthrouter/http_util.py`, but I haven't confirmed the fix yet. The full test run timed out and is still going in the background, so I haven't seen results.\n\n- **`parse_retry_after`:** it returned `retry-after-ms` as if it were seconds, so `1500` meant a 1500-second wait. It now divides by 1000, giving 1.5 seconds.\n- **`should_retry`:** the 429 check was inverted. It retried only when the 429 had no timing guidance, and passed any 429 that did have guidance straight to the client. It now retries only when guidance is present, as its docstring says.\n\nI haven't checked whether any existing test relied on the old inverted `should_retry` behavior. I'll report the test result when the background run finishes.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1050,
+    "firstCacheRead": 19135
+  }
+}

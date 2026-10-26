@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-4",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-26T01:21:57.780Z",
+  "durationMs": 241582,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 243089,
+    "cache_creation_input_tokens": 12529,
+    "output_tokens": 1633
+  },
+  "totalCostUsd": 0.0963063,
+  "result": "A 429 with `retry-after-ms: 1500` is now retried after the 1.5s delay instead of going straight to the client. I haven't sent a real 429 through the proxy; the check is the full test suite.\n\nThere were two bugs, both in the retry path:\n\n- **Inverted check:** `should_retry` in `anthrouter/http_util.py` returned true for a 429 only when upstream gave no timing guidance. It now retries when guidance is present, which matches its docstring.\n- **Delay ignored:** `transport.py` computed its own exponential backoff and never looked at the header, so the retry would have used 1s, 2s and so on regardless of `retry-after-ms`. It now calls `retry_delay`, which uses the header and falls back to backoff.\n\nThe suite shows 1125 passed and 3 failed. The same 3 fail with my changes stashed, so they predate this fix:\n\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI couldn't run `ruff` because it isn't installed here.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1633,
+    "firstCacheRead": 19135
+  }
+}

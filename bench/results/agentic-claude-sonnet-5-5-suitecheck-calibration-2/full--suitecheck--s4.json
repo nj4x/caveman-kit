@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 4,
+  "finishedAt": "2026-10-24T21:54:43.503Z",
+  "durationMs": 139458,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 191429,
+    "cache_creation_input_tokens": 12360,
+    "output_tokens": 1350
+  },
+  "totalCostUsd": 0.0827138,
+  "result": "Fixed in `anthrouter/pace.py`. The pace and OAuth-usage tests pass (61), but I haven't seen the full suite finish. A full run is still going in the background.\n\n**Cause:** `period_workday_dates` treated the period end as inclusive. For UTC, the period end is Oct 1 00:00, so Thursday Oct 1 was counted as a September workday (23 instead of 22).\n\n**Fix:** the end date is now taken from the last instant before `period_end`. A local midnight at the boundary is no longer counted. Timezones west of UTC are unaffected: the last evening of the month still counts as a partial day.\n\nI didn't add a test, since you asked for source changes only.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5723,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1350,
+    "firstCacheRead": 19135
+  }
+}

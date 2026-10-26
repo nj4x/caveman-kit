@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 6,
+  "finishedAt": "2026-10-24T22:17:35.760Z",
+  "durationMs": 138994,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 189010,
+    "cache_creation_input_tokens": 11348,
+    "output_tokens": 1314
+  },
+  "totalCostUsd": 0.07934000000000001,
+  "result": "Fixed in `anthrouter/pace.py`. `period_workday_dates` treated `period_end` as inclusive. It is the first instant of the next month, so for UTC it counted Oct 1, 2026 (a Thursday) as a September workday. The end date is now taken from `period_end - 1µs`, which gives 22 workdays for September 2026.\n\nThe 53 pace and workday tests pass. I didn't run the full suite to completion. It was still running in the background after two minutes.\n\nI did not add a new test for the UTC September case, since you asked for source changes only.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3474,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1314,
+    "firstCacheRead": 19141
+  }
+}

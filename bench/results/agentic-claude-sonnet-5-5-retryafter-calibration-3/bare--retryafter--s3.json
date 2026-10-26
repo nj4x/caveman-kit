@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-25T22:27:25.683Z",
+  "durationMs": 250301,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 296890,
+    "cache_creation_input_tokens": 11661,
+    "output_tokens": 1615
+  },
+  "totalCostUsd": 0.10472450000000001,
+  "result": "A 429 with `retry-after-ms: 1500` is now retried after waiting 1.5s. I fixed two bugs.\n\n- **Retry decision:** `should_retry` in `anthrouter/http_util.py` had its 429 check inverted. It retried only when the upstream gave no timing guidance and surfaced the 429 to the client when it did. It now retries when guidance is present, which matches its docstring.\n- **Wait time:** `anthrouter/transport.py` ignored the upstream delay on the HTTP-error retry path. It always slept for the generic exponential backoff (1s on the first attempt). It now calls `retry_delay(resp, attempt)`, which uses `retry-after-ms` or `Retry-After` and falls back to backoff only when neither is present. I left the network-error retry path alone, since there is no response to read there.\n\nThe full suite has 3 failures, none of them retry-related:\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` fail the same way with my changes stashed.\n- `test_config.py::test_editable_fields_live_editable_fields` also failed in the full run. I didn't re-run it without my changes, so I can't confirm it predates them.\n\nThe 165 tests matching retry, 429 or transport pass.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1615,
+    "firstCacheRead": 19135
+  }
+}

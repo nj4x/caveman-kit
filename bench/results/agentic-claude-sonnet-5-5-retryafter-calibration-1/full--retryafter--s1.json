@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-25T17:12:56.407Z",
+  "durationMs": 245973,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 284862,
+    "cache_creation_input_tokens": 13520,
+    "output_tokens": 1783
+  },
+  "totalCostUsd": 0.1086424,
+  "result": "I fixed two bugs in `anthrouter/http_util.py`. The suite now shows 1125 passed and 3 failed. The same 3 tests fail with my change stashed, so they aren't caused by it:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\n- **`should_retry`:** The 429 check was inverted. It retried only when there was no timing guidance, which contradicts its own docstring. It now retries when guidance is present.\n- **`parse_retry_after`:** It returned `retry-after-ms` as raw milliseconds but treated the value as seconds. A header of `1500` meant a 1500-second sleep. It now divides by 1000.\n\nI didn't add a test for either fix.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5154,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1783,
+    "firstCacheRead": 19133
+  }
+}

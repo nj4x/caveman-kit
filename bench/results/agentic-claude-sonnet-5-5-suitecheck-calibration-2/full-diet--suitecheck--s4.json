@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-suitecheck-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 4,
+  "finishedAt": "2026-10-24T22:12:44.383Z",
+  "durationMs": 141515,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 192377,
+    "cache_creation_input_tokens": 12537,
+    "output_tokens": 1330
+  },
+  "totalCostUsd": 0.0831459,
+  "result": "Fixed in `anthrouter/pace.py`. `period_workday_dates` treated `period_end` (00:00 on the 1st of the next month, exclusive) as an inclusive date. For UTC that added Oct 1, a Thursday, so September 2026 counted 23 workdays instead of 22.\n\nThe end date now comes from the last instant before `period_end`, so September 2026 counts 22.\n\nThe 53 pace-related tests pass. I started the full suite, but it was still running when I stopped waiting, so I haven't seen its result.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5723,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1330,
+    "firstCacheRead": 19141
+  }
+}

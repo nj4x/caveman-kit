@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-25T17:50:04.855Z",
+  "durationMs": 260424,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 342490,
+    "cache_creation_input_tokens": 13025,
+    "output_tokens": 2097
+  },
+  "totalCostUsd": 0.12207849999999999,
+  "result": "Fixed two bugs in `anthrouter/http_util.py`:\n\n- **`parse_retry_after`:** it treated `retry-after-ms` as seconds. `1500` would have meant a 1500s wait. It now divides by 1000, so 1.5s.\n- **`should_retry`:** the 429 check was inverted (`is None`). It retried only 429s with no timing guidance and surfaced the ones that had it. It now uses `is not None`.\n\nThe suite ends at 1125 passed, 3 failed, 1 skipped. I stashed my change and re-ran two of the failures, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`, and they fail without it too. `test_editable_fields_live_editable_fields` also fails with my change stashed. I didn't re-run the third `test_handlers.py` failure against the original code, so I can't confirm it predates my change.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".......                                                                  [100%]\n7 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 3893,
+    "reReads": 0,
+    "testRuns": 6,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2097,
+    "firstCacheRead": 19139
+  }
+}

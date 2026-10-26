@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-3",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-25T23:28:57.901Z",
+  "durationMs": 255294,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 361286,
+    "cache_creation_input_tokens": 15973,
+    "output_tokens": 1973
+  },
+  "totalCostUsd": 0.13196770000000002,
+  "result": "Two bugs. Both are fixed.\n\n- **No retry:** `should_retry` in `anthrouter/http_util.py:178` was inverted. It retried a 429 only when there was no retry guidance, so a 429 carrying `retry-after-ms` went straight to the client. It now retries when guidance is present.\n- **Wrong wait:** `anthrouter/transport.py:150` computed its own exponential backoff and ignored the header. It now calls `retry_delay(resp, attempt)`, so `retry-after-ms: 1500` waits 1.5s.\n\nThe suite ends with 3 failures and 1125 passes. All 3 fail the same way with my changes stashed, so they're not caused by this fix:\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n- `test_editable_fields_live_editable_fields`\n\nI didn't add a test for the 429 retry.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 10134,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 1973,
+    "firstCacheRead": 19139
+  }
+}

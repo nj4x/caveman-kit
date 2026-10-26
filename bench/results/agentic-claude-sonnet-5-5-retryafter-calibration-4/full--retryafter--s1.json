@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-4",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-26T01:26:06.538Z",
+  "durationMs": 242689,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 289261,
+    "cache_creation_input_tokens": 14245,
+    "output_tokens": 1788
+  },
+  "totalCostUsd": 0.1113847,
+  "result": "Fixed two bugs. The suite shows 3 failures, and none touch the retry code.\n\n- **`anthrouter/http_util.py`:** `should_retry` had its 429 check inverted. It retried a 429 only when no retry hint was present. Now it retries only when `retry-after-ms` or `Retry-After` is present: `parse_retry_after(resp) is not None`.\n- **`anthrouter/transport.py`:** the retry loop ignored the upstream delay and always slept the exponential backoff. It now calls `retry_delay(resp, attempt)`, so a `retry-after-ms: 1500` 429 sleeps 1.5s and then retries.\n\n**Tests:** 1125 passed, 3 failed, 1 skipped. I stashed my changes and re-ran the two `tests/test_handlers.py` failures, and they fail without my fix too. The third, `tests/test_config.py::test_editable_fields_live_editable_fields`, I didn't re-run on the stashed tree. It's a config test, so I don't expect my change caused it.\n\nI didn't run a real retry against a 429 end to end. No test sends a 429 with `retry-after-ms` through the transport.\n\n`retry_delay` doesn't cap an upstream-supplied delay, so a very large `Retry-After` would block the request for that long.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1788,
+    "firstCacheRead": 19133
+  }
+}
