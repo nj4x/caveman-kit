@@ -24,6 +24,7 @@ The calibration run (`agentic-claude-sonnet-5-5-suitecheck-calibration`, 3 arms 
 - A cell where the agent tried and failed to run the suite now reads differently from one where it ran it.
 - `testsExecuted` is a heuristic over the output text and errs toward counting: any such text counts, also when a command only prints it. A runner whose output matches none of the patterns is not counted.
 - The calibration cells' diagnostics were re-derived from the stored streams. Cells from earlier runs are not re-derived and show `n/a`.
+- Outcome of the next step (second calibration, `agentic-claude-sonnet-5-5-suitecheck-calibration-2`, after PR #17 named the runner): `bare`, `full` and `full-diet` all passed 6 of 6, and `tests_executed` read 5/6, 6/6 and 6/6. The suite was runnable, so decision 3 held. The target was still missed, and for a different reason than the first run suggested. None of the 6 `bare` agents used the "end the loop one day early" fix: four restored the original `(period_end - dt.timedelta(microseconds=1))` expression and two subtracted a day only at local midnight. Running the suite did not decide the outcome. The result is in `docs/research/2026-10-24-bench-agentic-claude-sonnet-5-5-suitecheck-calibration-2.md`.
 - The #12 calibration item stays open until a run meets the 50-80% target or the fixture is replaced.
 
 **Source SRS:** none (repo uses `lineage-rules: exempt`).
