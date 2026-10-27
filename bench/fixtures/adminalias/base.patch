@@ -1,0 +1,85 @@
+diff --git a/anthrouter/admin.py b/anthrouter/admin.py
+index 71d4a4b..29c5e54 100644
+--- a/anthrouter/admin.py
++++ b/anthrouter/admin.py
+@@ -13,6 +13,7 @@ are JSON-serialisable dicts; the caller serialises them.
+ 
+ from __future__ import annotations
+ 
++import argparse
+ import dataclasses
+ import logging
+ import os
+@@ -39,6 +40,18 @@ _config_write_lock = threading.Lock()
+ _UNSAFE_QUOTE_CHARS = ('"', '\\', '$', '`', '\n')
+ 
+ 
++class _ParseError(Exception):
++    """A malformed dict-valued field in a POST body."""
++
++
++class _RaisingParser(argparse.ArgumentParser):
++    """The config parsers report bad input through ``error()``, which exits the
++    process on the command line; here it must become a 400 instead."""
++
++    def error(self, message):
++        raise _ParseError(message)
++
++
+ def _err(code: int, error_code: str, message: str) -> tuple[int, dict]:
+     return code, {'type': 'error', 'error': {'type': error_code, 'message': message}}
+ 
+@@ -203,14 +216,13 @@ def handle_post_config(
+         return _err_list(400, 'invalid_request_error', field_errors)
+ 
+     # Special-case: parse dict fields from string format before validation/replace
+-    if 'auto_model_routing_classification' in coerced and isinstance(coerced['auto_model_routing_classification'], str):
+-        from argparse import ArgumentParser
+-        _dummy_parser = ArgumentParser()
+-        coerced['auto_model_routing_classification'] = _parse_classification_str(coerced['auto_model_routing_classification'], _dummy_parser)
+-    if 'model_aliases' in coerced and isinstance(coerced['model_aliases'], str):
+-        from argparse import ArgumentParser
+-        _dummy_parser = ArgumentParser()
+-        coerced['model_aliases'] = _parse_model_aliases_str(coerced['model_aliases'], _dummy_parser)
++    try:
++        if 'auto_model_routing_classification' in coerced and isinstance(coerced['auto_model_routing_classification'], str):
++            coerced['auto_model_routing_classification'] = _parse_classification_str(coerced['auto_model_routing_classification'], _RaisingParser())
++        if 'model_aliases' in coerced and isinstance(coerced['model_aliases'], str):
++            coerced['model_aliases'] = _parse_model_aliases_str(coerced['model_aliases'], _RaisingParser())
++    except _ParseError as exc:
++        return _err(400, 'invalid_request_error', str(exc))
+ 
+     with _config_write_lock:
+         full_candidate = dataclasses.replace(config, **coerced)
+diff --git a/anthrouter/config.py b/anthrouter/config.py
+index 05911e9..9521b84 100644
+--- a/anthrouter/config.py
++++ b/anthrouter/config.py
+@@ -341,6 +341,14 @@ def _parse_model_aliases_str(
+     return result
+ 
+ 
++# Dict-valued options and the kind of ``label:model`` string each one holds. A
++# new option needs only an entry here and a ``_parse_<kind>_str`` function.
++_DICT_OPTIONS = {
++    'auto_model_routing_classification': 'classification',
++    'model_aliases': 'model_aliases',
++}
++
++
+ @dataclasses.dataclass
+ class Config:
+     host: str = '127.0.0.1'
+@@ -785,10 +793,8 @@ def parse_args(argv=None) -> Config:
+     except Exception as exc:  # noqa: BLE001 - argparse p.error() requires generic catch
+         p.error(f'--oauth-usage-timezone: {exc}')
+ 
+-    args.auto_model_routing_classification = _parse_classification_str(
+-        args.auto_model_routing_classification, p
+-    )
+-    args.model_aliases = _parse_model_aliases_str(args.model_aliases, p)
++    for dest, kind in _DICT_OPTIONS.items():
++        setattr(args, dest, globals()[f'_parse_{kind}_str'](getattr(args, dest), p))
+     if not (args.auto_model_routing_long or '').strip():
+         p.error('--auto-model-routing-long must be a non-empty string or "off"')
+     args.auto_model_routing_min_confidence = max(

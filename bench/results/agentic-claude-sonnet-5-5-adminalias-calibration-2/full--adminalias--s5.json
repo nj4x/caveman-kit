@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 5,
+  "finishedAt": "2026-10-27T02:00:03.171Z",
+  "durationMs": 307019,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 322670,
+    "cache_creation_input_tokens": 14464,
+    "output_tokens": 2299
+  },
+  "totalCostUsd": 0.12372799999999999,
+  "result": "Fixed. A malformed `model_aliases` value (or classification value) on `POST /admin/config` now returns 400 instead of hanging.\n\n- **`anthrouter/config.py`:** `_parse_model_aliases_str` and `_parse_classification_str` no longer take a parser argument. They raise `ValueError` on bad input. `parse_args()` catches that and calls `p.error(...)`, so CLI behavior is unchanged.\n- **`anthrouter/admin.py`:** the endpoint catches the `ValueError` and answers 400 `invalid_request_error` with the message. This replaces the throwaway `ArgumentParser` it used before.\n\nI didn't add a test for the malformed-input case, since you said to leave tests as they are, and I didn't run the endpoint with a bad value.\n\nThe full suite gives 1124 passed, 1 skipped, 3 failed. The same 3 fail with my change stashed:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI ran the stashed check on `test_handlers.py` and `test_config.py` only, not the whole suite.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2299,
+    "firstCacheRead": 19131
+  }
+}

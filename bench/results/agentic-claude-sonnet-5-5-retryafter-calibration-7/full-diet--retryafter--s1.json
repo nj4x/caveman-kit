@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-26T06:53:40.481Z",
+  "durationMs": 295861,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 528946,
+    "cache_creation_input_tokens": 16725,
+    "output_tokens": 3246
+  },
+  "totalCostUsd": 0.1801297,
+  "result": "Fixed two bugs in `anthrouter/http_util.py`. The full suite still has 3 failures, and I've only identified 2 of them, both of which fail without my change too. A rerun to find the third is still going.\n\n- **`should_retry`:** the 429 check was inverted. It retried only when there was no retry guidance, so a 429 with `retry-after-ms` went straight to the client. Now it retries when guidance is present (`is not None`).\n- **`retry_delay`:** it capped the upstream delay at the exponential backoff, so 1500 ms became 1.0 s on the first attempt. Now it honors the upstream delay, capped at `RETRY_MAX_DELAY`.\n\n**End-to-end check:** a fake upstream returned 429 with `retry-after-ms: 1500` once, then 200. `AnthropicTransport._send_with_retries` retried after 1.5 s and returned 200 on the second request.\n\n**Tests:** the full run was 1125 passed, 3 failed. The two I confirmed fail on a clean checkout:\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe 165 retry, 429, `http_util` and transport tests pass.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 7536,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 17,
+    "outputTokens": 3246,
+    "firstCacheRead": 19139
+  }
+}

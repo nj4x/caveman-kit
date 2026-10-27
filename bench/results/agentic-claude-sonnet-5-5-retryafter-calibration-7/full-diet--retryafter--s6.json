@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-26T07:16:27.216Z",
+  "durationMs": 260155,
+  "usage": {
+    "input_tokens": 26,
+    "cache_read_input_tokens": 394171,
+    "cache_creation_input_tokens": 16639,
+    "output_tokens": 2951
+  },
+  "totalCostUsd": 0.1499937,
+  "result": "Fixed. A 429 with `retry-after-ms: 1500` now sleeps 1.5s, retries, and returns 200.\n\nBoth bugs were in `anthrouter/http_util.py`:\n- **`should_retry`:** the 429 check was inverted. It retried only when the upstream gave no delay guidance. It now retries only when guidance is present, as its docstring says.\n- **`retry_delay`:** it capped the upstream delay at `RETRY_BASE_DELAY * 2**attempt`, which is 1s on the first attempt, so 1.5s would have been cut short. It now caps at `RETRY_MAX_DELAY`.\n\nI checked it with a fake upstream that returns 429 once and then 200. Through `AnthropicTransport._send_with_retries`, it made 2 upstream calls with a single sleep of `1.5`.\n\nThe suite gives 1125 passed and 3 failed. The three failures also occur with my change stashed, so they predate it:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 14,
+    "outputTokens": 2951,
+    "firstCacheRead": 19139
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 5,
+  "finishedAt": "2026-10-26T17:36:37.124Z",
+  "durationMs": 160706,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 285340,
+    "cache_creation_input_tokens": 13377,
+    "output_tokens": 2080
+  },
+  "totalCostUsd": 0.11135049999999999,
+  "result": "Full suite: 1124 passed, 3 failed. Two of the failures, in `tests/test_handlers.py` (`test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`), also fail with my change stashed, so my change didn't cause them.\n\nThe third failure is the `...editable_fields_live_editable_fields` test. I didn't check it against the original code, so I don't know if my change caused it. The admin-only run passed, so that test must live outside the admin tests. Want me to look into it?",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.08s\n"
+  },
+  "diagnostics": {
+    "readChars": 5883,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2080,
+    "firstCacheRead": 19137
+  }
+}

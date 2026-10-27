@@ -9,6 +9,10 @@
 //                    "plantPatch": "plant.patch"     (optional, default shown),
 //                    "prompt": "prompt.md"           (optional, default shown) }
 //   plant.patch    `git apply` patch that plants the bug
+//   base.patch     optional `git apply` patch applied to both the unpatched and
+//                  the planted tree, before plant.patch. For a bug that is
+//                  already live at the pinned commit: base.patch is the fix, and
+//                  plant.patch (written against the fixed tree) reverts it
 //   prompt.md      the task prompt given to the agent
 //   hidden/        hidden test file(s); this tree is copied over the repo root
 //                  only after the agent has finished
@@ -43,6 +47,8 @@ function loadFixture(fixturesDir, name) {
   if (typeof meta.sha !== 'string' || !/^[0-9a-f]{7,40}$/.test(meta.sha)) fail('fixture.json needs "sha" (7-40 hex chars)');
   if (typeof meta.testCommand !== 'string' || !meta.testCommand.trim()) fail('fixture.json needs "testCommand"');
   const plantPatch = path.join(dir, meta.plantPatch || 'plant.patch');
+  const basePatchFile = path.join(dir, 'base.patch');
+  const basePatch = fs.existsSync(basePatchFile) ? basePatchFile : null;
   const promptFile = path.join(dir, meta.prompt || 'prompt.md');
   const hiddenDir = path.join(dir, 'hidden');
   if (!fs.existsSync(plantPatch)) fail(`missing plant patch ${plantPatch}`);
@@ -52,7 +58,7 @@ function loadFixture(fixturesDir, name) {
   if (!prompt) fail('empty prompt');
   const isUrl = /^([a-z][a-z0-9+.-]*:\/\/|[\w.-]+@[\w.-]+:)/i.test(meta.source);
   const source = isUrl ? meta.source : path.resolve(dir, meta.source);
-  return { name, dir, source, sha: meta.sha, testCommand: meta.testCommand, plantPatch, prompt, hiddenDir };
+  return { name, dir, source, sha: meta.sha, testCommand: meta.testCommand, plantPatch, basePatch, prompt, hiddenDir };
 }
 
 function listFixtureNames(fixturesDir) {
@@ -62,6 +68,18 @@ function listFixtureNames(fixturesDir) {
     .filter(d => d.isDirectory() && fs.existsSync(path.join(fixturesDir, d.name, 'fixture.json')))
     .map(d => d.name)
     .sort();
+}
+
+// Names the default agentic set runs: every fixture unless its fixture.json sets
+// "inDefaultSet": false (ADR 0017). An explicit --fixtures list still reaches any fixture.
+function defaultFixtureNames(fixturesDir) {
+  return listFixtureNames(fixturesDir).filter(name => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(fixturesDir, name, 'fixture.json'), 'utf8')).inDefaultSet !== false;
+    } catch (e) {
+      return true;
+    }
+  });
 }
 
 function git(cwd, args) {
@@ -82,6 +100,7 @@ function prepareWorkDir(fixture, workDir, { plant = true } = {}) {
   if (!head.startsWith(fixture.sha)) throw new BenchError(`fixture ${fixture.name}: checked out ${head}, not ${fixture.sha}`);
   fs.rmSync(path.join(workDir, '.git'), { recursive: true, force: true });
   git(workDir, ['init', '--quiet']);
+  if (fixture.basePatch) git(workDir, ['apply', '--whitespace=nowarn', fixture.basePatch]);
   if (plant) git(workDir, ['apply', '--whitespace=nowarn', fixture.plantPatch]);
   git(workDir, ['add', '-A']);
   // Ignore the user's global hooks and signing config: the commit must not fail.
@@ -145,6 +164,7 @@ module.exports = {
   RELIABILITY_RUNS,
   loadFixture,
   listFixtureNames,
+  defaultFixtureNames,
   prepareWorkDir,
   runHiddenTest,
   checkReliability,

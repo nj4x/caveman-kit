@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-26T04:50:16.682Z",
+  "durationMs": 253258,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 431458,
+    "cache_creation_input_tokens": 17709,
+    "output_tokens": 2931
+  },
+  "totalCostUsd": 0.15993010000000002,
+  "result": "Fixed two bugs. A 429 carrying `retry-after-ms: 1500` is now retried after about 1.5s instead of being returned to the client.\n\n- **`anthrouter/http_util.py`:** `should_retry` had its 429 check inverted. It retried a 429 only when there was no retry guidance, which contradicts its own docstring. It now retries only when `parse_retry_after()` returns a value.\n- **`anthrouter/transport.py`:** the retry loop ignored the header and always used exponential backoff (1s, 2s, …). It now sleeps for the upstream delay, capped at `RETRY_MAX_DELAY` (30s).\n\n**End to end:** I ran `_send_with_retries` against a local fake upstream that answered 429 with `retry-after-ms: 1500` and then 200. The client got a 200 after 2 upstream calls and 1.51s.\n\n**Full suite:** 1125 passed, 3 failed, 1 skipped. The same 3 tests fail without my change (checked by stashing it):\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI didn't look into why they fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 14,
+    "outputTokens": 2931,
+    "firstCacheRead": 19133
+  }
+}

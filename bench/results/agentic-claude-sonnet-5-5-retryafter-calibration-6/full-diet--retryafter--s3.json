@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-26T05:17:34.833Z",
+  "durationMs": 248499,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 363332,
+    "cache_creation_input_tokens": 15896,
+    "output_tokens": 2841
+  },
+  "totalCostUsd": 0.14086440000000003,
+  "result": "Fixed. A 429 carrying `retry-after-ms: 1500` is now retried after a 1.5s sleep.\n\nThere were two bugs:\n- **Inverted check:** `should_retry` in `anthrouter/http_util.py` returned `parse_retry_after(resp) is None` for a 429. So a 429 with a delay hint went straight to the client, and one without a hint was retried. It now uses `is not None`.\n- **Hint ignored:** The retry loop in `anthrouter/transport.py` always slept the exponential backoff and never used the upstream delay. It now sleeps the hinted delay, capped at `RETRY_MAX_DELAY` (30s).\n\nEnd to end, I ran `send_message` against a local server that returned 429 with `retry-after-ms: 1500` and then 200. The server saw 2 requests, and `time.sleep` was called once with 1.5, so the call succeeded after the retry. I patched `time.sleep` there, so the 1.5s wait itself wasn't timed.\n\n`python3 -m pytest tests` gives 1125 passed, 1 skipped and 3 failed. The failures also occur with my changes stashed, so they predate this fix:\n- `test_editable_fields_live_editable_fields` (in `tests/test_config.py`)\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier` (in `tests/test_handlers.py`)\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock` (in `tests/test_handlers.py`)\n\nI added no regression test, since you said to change source only.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2841,
+    "firstCacheRead": 19139
+  }
+}

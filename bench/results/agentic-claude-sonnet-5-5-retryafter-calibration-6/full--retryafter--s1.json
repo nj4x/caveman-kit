@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-26T04:41:44.110Z",
+  "durationMs": 210419,
+  "usage": {
+    "input_tokens": 26,
+    "cache_read_input_tokens": 400081,
+    "cache_creation_input_tokens": 17778,
+    "output_tokens": 3199
+  },
+  "totalCostUsd": 0.1565032,
+  "result": "Fixed. A 429 with `retry-after-ms: 1500` now sleeps 1.5s and retries instead of going straight to the client.\n\nThere were two bugs:\n- **`anthrouter/http_util.py`:** `should_retry` had its 429 check inverted. It retried a 429 only when there was no retry hint, which is the opposite of its docstring. It now returns `parse_retry_after(resp) is not None`.\n- **`anthrouter/transport.py`:** the retry loop always used exponential backoff and ignored the header. For a 429 it now sleeps for the hinted delay, capped at `RETRY_MAX_DELAY`.\n\n**End-to-end check:** I ran `AnthropicTransport.send_message` against a local server that returns 429 with `retry-after-ms: 1500` and then 200. It made 2 upstream calls and slept once, for 1.5s. I stubbed `time.sleep` for this, so the delay value was checked but not waited out.\n\n**Test suite:** 1125 passed and 3 failed. The failures are `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. They fail the same way with my changes stashed, so they predate this fix. I didn't look into why they fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 5946,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 14,
+    "outputTokens": 3199,
+    "firstCacheRead": 19133
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "adminalias",
+  "seed": 3,
+  "finishedAt": "2026-10-27T01:22:22.321Z",
+  "durationMs": 284305,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 278828,
+    "cache_creation_input_tokens": 12513,
+    "output_tokens": 2289
+  },
+  "totalCostUsd": 0.1099781,
+  "result": "A malformed alias like `garbage` no longer kills the request. `POST /admin/config` now answers 400 with `invalid_request_error` and a message such as \"--model-aliases: malformed pair 'garbage'; expected alias:model format\". I didn't send a malformed value to a running server, and I didn't add a test for it.\n\nThe full suite ends with 1124 passed, 1 skipped and 3 failed. All three also fail without my changes. I confirmed this by stashing my edits and re-running `tests/test_handlers.py` and `tests/test_config.py`. They are `test_cached_tier_is_not_replayed_into_a_different_requested_tier`, `test_locked_baseline_scopes_the_tier_slot_by_the_lock` and `test_editable_fields_live_editable_fields`.\n\n- **`anthrouter/config.py`:** `_parse_model_aliases_str` and `_parse_classification_str` now raise `ValueError` on bad input and no longer take a parser argument. I changed the classification parser too, because the admin endpoint had the same bug for it. `parse_args()` catches the `ValueError` and calls `p.error()`, so the CLI behaves as before.\n- **`anthrouter/admin.py`:** the admin endpoint drops the throwaway `ArgumentParser` and returns the `ValueError` message as a 400.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 2289,
+    "firstCacheRead": 19133
+  }
+}

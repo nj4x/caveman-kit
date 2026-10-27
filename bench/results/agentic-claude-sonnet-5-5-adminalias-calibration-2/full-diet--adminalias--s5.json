@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 5,
+  "finishedAt": "2026-10-27T02:25:52.592Z",
+  "durationMs": 269179,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 258184,
+    "cache_creation_input_tokens": 14537,
+    "output_tokens": 2149
+  },
+  "totalCostUsd": 0.1095053,
+  "result": "Fixed: `POST /admin/config` now answers 400 on a malformed `model_aliases` value like `garbage`, instead of hanging.\n\nThe same three tests fail with my change stashed (`test_editable_fields_live_editable_fields` and two tier tests in `test_handlers.py`). The full suite otherwise passes: 1124 passed, 1 skipped. I didn't run the endpoint against a live server or add a new test for the 400 path.\n\n- **`anthrouter/config.py`:** `_parse_model_aliases_str` now raises `ValueError` on bad input instead of calling `p.error()`. I made the same change to `_parse_classification_str`, which had the same bug. Both functions lost their `p` argument. `parse_args()` catches the `ValueError` and calls `p.error()` itself, so CLI behavior is unchanged.\n- **`anthrouter/admin.py`:** the dummy `ArgumentParser` is gone. A `ValueError` from either parser now returns a 400 with the error message.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 2149,
+    "firstCacheRead": 19137
+  }
+}

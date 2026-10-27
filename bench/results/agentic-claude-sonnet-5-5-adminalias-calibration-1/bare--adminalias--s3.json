@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "adminalias",
+  "seed": 3,
+  "finishedAt": "2026-10-26T16:25:15.681Z",
+  "durationMs": 295360,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 233244,
+    "cache_creation_input_tokens": 10148,
+    "output_tokens": 1813
+  },
+  "totalCostUsd": 0.0901848,
+  "result": "A malformed `model_aliases` value like `garbage` should now get a 400 with a message instead of killing the request thread. I didn't send a real `POST /admin/config` to confirm it. The existing admin tests pass, and I added no test for the malformed-alias case.\n\nThe parsers in `anthrouter/config.py` report bad input through argparse's `p.error()`, which raises `SystemExit`. The admin handler in `anthrouter/admin.py` passed them a throwaway `ArgumentParser`, so a bad value raised `SystemExit` inside the request thread. The thread died and nothing was sent back.\n\nThe handler now uses a parser subclass whose `error()` raises `ValueError`. It collects those errors and returns them as a 400 `invalid_request_error`, like the other invalid fields. `auto_model_routing_classification` had the same bug and goes through the same path, so it is fixed too.\n\nThe full suite shows 3 failures and 1124 passes. Two of the failures (`test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`, both in `tests/test_handlers.py`) also fail with my change stashed, so they aren't caused by it. The summary line counted a third failure, but only those two were listed and I didn't find out which it was. I ran the admin tests separately (83 passed) and they are clean.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1813,
+    "firstCacheRead": 19133
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-26T06:17:36.457Z",
+  "durationMs": 447449,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 507879,
+    "cache_creation_input_tokens": 16606,
+    "output_tokens": 4361
+  },
+  "totalCostUsd": 0.1867688,
+  "result": "A 429 carrying `retry-after-ms: 1500` is now retried after the delay instead of going straight to the client. Both changes are in `anthrouter/http_util.py`.\n\n- **Inverted check:** `should_retry()` returned `parse_retry_after(resp) is None` for 429s, so it retried only when upstream gave no timing guidance and surfaced the error whenever guidance was present. It now returns `is not None`, which matches the docstring.\n- **Delay cap:** `retry_delay()` capped upstream guidance at `RETRY_BASE_DELAY * 2**attempt`, which is 1s on the first attempt. A 1500ms hint would have been cut to 1s, so I changed the cap to `RETRY_MAX_DELAY` (30s).\n\n**End-to-end check:** I ran a local server through `AnthropicTransport._send_with_retries`. It answered 429 with `retry-after-ms: 1500` once, then 200. The transport logged \"retrying in 1.5s\" and returned 200 after 2 requests and about 1.51s.\n\n**Test suite:** 1125 passed and 3 failed. The same 3 fail with my change stashed, so they predate it:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI didn't look into why they fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 7,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 18,
+    "outputTokens": 4361,
+    "firstCacheRead": 19135
+  }
+}

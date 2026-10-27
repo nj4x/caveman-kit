@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 1,
+  "finishedAt": "2026-10-26T17:20:19.943Z",
+  "durationMs": 307895,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 315377,
+    "cache_creation_input_tokens": 13103,
+    "output_tokens": 2190
+  },
+  "totalCostUsd": 0.11777690000000002,
+  "result": "Fixed in `anthrouter/admin.py`. A malformed `model_aliases` now gets a 400 `invalid_request_error` instead of killing the request thread.\n\n**Cause:** the handler parsed `model_aliases` with `_parse_model_aliases_str` and a plain `ArgumentParser`. On bad input the parser calls `p.error()`, which raises `SystemExit`, so the thread died and nothing was sent. `auto_model_routing_classification` had the same bug, and the fix covers it too.\n\n**Fix:** the handler now uses an `ArgumentParser` subclass whose `error()` raises `ValueError`. The handler catches that and returns `_err_list(400, 'invalid_request_error', [msg])`.\n\n**Tests:** three tests fail in the full suite, and all three fail the same way with my change stashed. They are `test_editable_fields_live_editable_fields` in `tests/test_config.py`, plus `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`. The other 1124 tests pass. I did not run the new 400 path through a test or a live request.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 4635,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2190,
+    "firstCacheRead": 19137
+  }
+}

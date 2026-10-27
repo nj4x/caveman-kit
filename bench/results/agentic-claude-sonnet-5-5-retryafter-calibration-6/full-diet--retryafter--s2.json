@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 2,
+  "finishedAt": "2026-10-26T05:13:20.384Z",
+  "durationMs": 230523,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 227675,
+    "cache_creation_input_tokens": 14150,
+    "output_tokens": 1898
+  },
+  "totalCostUsd": 0.099922,
+  "result": "Bug fixed. A 429 carrying `retry-after-ms: 1500` is now retried after about 1.5s instead of going straight to the client.\n\nI didn't run a test of the real 429 retry path, so that part is unchecked. The suite shows 3 failures, and the same 3 fail with my changes stashed:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe full run (1125 passed, 1 skipped) was with my changes applied.\n\nThere were two bugs:\n- **Inverted check:** `should_retry` in `anthrouter/http_util.py` retried a 429 only when no retry guidance was present. It was `is None` and should be `is not None`.\n- **Guidance ignored:** `anthrouter/transport.py` always used exponential backoff, even when upstream sent guidance. It now sleeps for the value from `parse_retry_after`, capped at `RETRY_MAX_DELAY` (30s).\n\nA 429 with no `Retry-After` or `retry-after-ms` header still goes straight to the client, as the `should_retry` docstring intends.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 5699,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1898,
+    "firstCacheRead": 19139
+  }
+}

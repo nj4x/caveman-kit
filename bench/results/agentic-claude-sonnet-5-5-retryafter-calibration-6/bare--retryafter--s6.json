@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-26T04:38:07.226Z",
+  "durationMs": 252821,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 304599,
+    "cache_creation_input_tokens": 12680,
+    "output_tokens": 1854
+  },
+  "totalCostUsd": 0.11120380000000002,
+  "result": "A 429 that carries `retry-after-ms` (or `Retry-After`) is now retried after the delay the upstream asked for. I didn't add a new test that sends a 429 with `retry-after-ms: 1500` through the transport. The existing retry and transport tests (165) pass.\n\nTwo changes fixed it:\n- **Inverted check:** `should_retry()` in `anthrouter/http_util.py` returned true for a 429 only when there was no timing header. That is backwards, so a 429 with `retry-after-ms: 1500` went straight to the client. It now retries when the header is present.\n- **Delay ignored:** `anthrouter/transport.py` always slept the generic exponential backoff, even on a 429. It now sleeps the upstream's delay, capped at `RETRY_MAX_DELAY` (30 s).\n\nThe full suite gives 1125 passed and 3 failed:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI stashed my changes and re-ran those three on the untouched code, and they fail there too.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1854,
+    "firstCacheRead": 19135
+  }
+}

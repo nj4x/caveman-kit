@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "adminalias",
+  "seed": 5,
+  "finishedAt": "2026-10-27T01:29:09.198Z",
+  "durationMs": 144815,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 178739,
+    "cache_creation_input_tokens": 10390,
+    "output_tokens": 1837
+  },
+  "totalCostUsd": 0.0801208,
+  "result": "I've changed the code so a malformed alias value like `garbage` should now get a 400 instead of hanging the request. I haven't confirmed that yet because the test run hadn't finished when I wrote this. I started it with `uv run --no-project --with pytest python -m pytest tests -q`, and it was still running after the 120s foreground timeout. It's now in the background. I didn't add a test for the `garbage` case.\n\n- **`anthrouter/config.py`:** `_parse_model_aliases_str` and `_parse_classification_str` no longer take a parser and no longer call `p.error()`. They raise `ValueError` with the same messages. I changed `_parse_classification_str` too because it had the same flaw and the admin endpoint also calls it. `parse_args()` now catches the `ValueError` and calls `p.error()`, so command-line behavior is unchanged.\n- **`anthrouter/admin.py`:** `POST /admin/config` catches the `ValueError` and returns a 400 `invalid_request_error` carrying the message. This replaces the throwaway `ArgumentParser` it used to pass in.\n\nNo existing test calls either parser directly, so removing the `p` argument shouldn't break any.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.07s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1837,
+    "firstCacheRead": 19133
+  }
+}

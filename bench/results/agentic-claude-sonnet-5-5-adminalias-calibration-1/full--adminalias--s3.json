@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 3,
+  "finishedAt": "2026-10-26T16:57:19.821Z",
+  "durationMs": 251498,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 217969,
+    "cache_creation_input_tokens": 12023,
+    "output_tokens": 1729
+  },
+  "totalCostUsd": 0.0909733,
+  "result": "Bug fixed in `anthrouter/admin.py`. `POST /admin/config` with `model_aliases` set to `garbage` now returns 400 with the parser's message instead of killing the request thread. I didn't send that request to a running server or add a test for it.\n\n**Cause:** the handler passed a dummy `ArgumentParser` to `_parse_model_aliases_str`. On malformed input that parser calls `p.error()`, which calls `sys.exit` and raises `SystemExit` in the request thread.\n\n**Fix:** the handler now uses a parser subclass whose `error()` raises `ValueError`. The handler catches it and returns `_err_list(400, 'invalid_request_error', [...])`. `auto_model_routing_classification` had the same flaw and gets the same fix.\n\n**Tests:** the full run gave 3 failed, 1124 passed, 1 skipped. I only identified two of the three failures:\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nBoth fail the same way with my change stashed, so they were failing before it. They are in `tests/test_handlers.py`, which the fix doesn't touch. The third failure scrolled out of the output I captured, and I didn't re-run to identify it or check whether it also fails without the change.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.08s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1729,
+    "firstCacheRead": 19131
+  }
+}

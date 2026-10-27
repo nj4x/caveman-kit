@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 2,
+  "finishedAt": "2026-10-27T01:42:47.015Z",
+  "durationMs": 280947,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 357921,
+    "cache_creation_input_tokens": 15460,
+    "output_tokens": 2653
+  },
+  "totalCostUsd": 0.13681219999999997,
+  "result": "Bug fixed. A malformed `model_aliases` (like `garbage`) now gets a 400 instead of hanging.\n\nBoth `_parse_model_aliases_str` and `_parse_classification_str` in `anthrouter/config.py` now raise `ValueError` instead of calling `p.error()`. They no longer take a parser argument. `parse_args()` catches the `ValueError` and calls `p.error()`, so CLI behavior is unchanged. `handle_post_config` in `anthrouter/admin.py` catches it and returns 400 `invalid_request_error`. I also fixed `auto_model_routing_classification` the same way, since it had the same bug. I did not add a test or exercise the 400 path directly.\n\nThe full suite ended with 1124 passed, 3 failed, 1 skipped. I re-ran all three failing tests with my changes stashed. The two `tests/test_handlers.py` ones failed the same way, and so did `test_editable_fields_live_editable_fields` in `tests/test_config.py`. None of the three involves the files I changed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.07s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2653,
+    "firstCacheRead": 19131
+  }
+}
