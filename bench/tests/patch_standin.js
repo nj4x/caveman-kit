@@ -6,8 +6,10 @@
 // hunk's pre-image (context + removed lines) and <out-dir>/post/<file> holding
 // the matching post-image (context + added lines). Hunks are separated by a
 // filler line so `git apply` must locate each hunk by its context, as it does
-// against the real file at a different offset. Prints the touched paths, one
-// per line. Exits 1 on a patch with no file or no hunk.
+// against the real file at a different offset. A file the patch deletes
+// (`+++ /dev/null`) gets a pre-image only, and the patch must remove every
+// line of it. Prints the touched paths, one per line. Exits 1 on a patch with
+// no file or no hunk.
 'use strict';
 
 const fs = require('fs');
@@ -17,15 +19,17 @@ const [patchFile, outDir] = process.argv.slice(2);
 const files = new Map();
 let current = null;
 let inHunk = false;
+let oldName = null;
 for (const line of fs.readFileSync(patchFile, 'utf8').split('\n')) {
-  if (line.startsWith('diff --git ')) { current = null; inHunk = false; continue; }
+  if (line.startsWith('diff --git ')) { current = null; inHunk = false; oldName = null; continue; }
   if (line.startsWith('+++ ') && !inHunk) {
-    const name = line.slice(4).replace(/^b\//, '');
-    current = { pre: [], post: [], hunks: 0 };
+    const deleted = line === '+++ /dev/null';
+    const name = deleted ? oldName : line.slice(4).replace(/^b\//, '');
+    current = { pre: [], post: [], hunks: 0, deleted };
     files.set(name, current);
     continue;
   }
-  if (line.startsWith('--- ') && !inHunk) continue;
+  if (line.startsWith('--- ') && !inHunk) { oldName = line.slice(4).replace(/^a\//, ''); continue; }
   if (line.startsWith('@@ ')) {
     if (!current) { console.error(`hunk before file header: ${line}`); process.exit(1); }
     if (current.hunks > 0) { current.pre.push('# stand-in filler'); current.post.push('# stand-in filler'); }
@@ -43,7 +47,7 @@ for (const line of fs.readFileSync(patchFile, 'utf8').split('\n')) {
 if (files.size === 0) { console.error('patch touches no file'); process.exit(1); }
 for (const [name, f] of files) {
   if (f.hunks === 0) { console.error(`no hunk for ${name}`); process.exit(1); }
-  for (const side of ['pre', 'post']) {
+  for (const side of f.deleted ? ['pre'] : ['pre', 'post']) {
     const target = path.join(outDir, side, name);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, `${f[side].join('\n')}\n`);
