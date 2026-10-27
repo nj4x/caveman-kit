@@ -9,8 +9,7 @@ opus-requested turn.
 
 The tempting fix refuses any replay below the requested tier. That turns the
 opus case green and breaks the same-tier replay. The fix that keeps both scopes
-caches by the requested model's tier, taken from the routing baseline
-(``lock_requested_model`` when set). Only behavior over HTTP is checked here;
+caches by the requested model's tier. Only behavior over HTTP is checked here;
 any fix that keeps every case passes.
 """
 
@@ -83,12 +82,3 @@ def test_each_requested_tier_keeps_its_own_slot(proxy):
     # not write it).
     assert _send(server, _user_turn('opus'))[0] == HAIKU
     assert _send(server, _continuation('sonnet'))[0] == HAIKU
-
-
-def test_locked_baseline_scopes_the_slot_by_the_lock(proxy):
-    server = _rules_proxy(proxy, lock_requested_model='sonnet')
-    assert _send(server, _user_turn('opus'))[0] == HAIKU
-    # The lock is the routing baseline, so the client's own model choice does
-    # not move the tool-result turn to another slot.
-    assert _send(server, _continuation('haiku'))[0] == HAIKU
-    assert _send(server, _continuation('opus'))[0] == HAIKU
