@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "suitecheck",
+  "seed": 2,
+  "finishedAt": "2026-10-27T19:24:25.364Z",
+  "durationMs": 267760,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 227181,
+    "cache_creation_input_tokens": 14378,
+    "output_tokens": 1867
+  },
+  "totalCostUsd": 0.1000832,
+  "result": "Fixed in `anthrouter/pace.py`. `period_workday_dates` treated `period_end` (the first of the next month) as inclusive. In UTC, Oct 1 2026 (a Thursday) was counted as a September workday, which made 23 instead of 22. The end date is now taken from the last instant before `period_end`.\n\nAll 53 pace/workday tests pass. In the full suite, `tests/test_handlers.py` has 3 failures. Two of them (`test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`) also fail with my change stashed. I didn't see the third one's name, and `test_handlers.py` showed only 2 failures on the stashed run, so the third may be flaky or caused by my change. I haven't investigated any of them.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 5723,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1867,
+    "firstCacheRead": 19131
+  }
+}

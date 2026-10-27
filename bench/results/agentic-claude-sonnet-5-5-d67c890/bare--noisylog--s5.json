@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 5,
+  "finishedAt": "2026-10-27T19:53:03.176Z",
+  "durationMs": 15156,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 173121,
+    "cache_creation_input_tokens": 8365,
+    "output_tokens": 967
+  },
+  "totalCostUsd": 0.0652347,
+  "result": "The regression is fixed. `anthrouter/http_util.py` read the requests-remaining value from a misspelled header, `anthropic-ratelimit-request-remaining`. The real header is `anthropic-ratelimit-requests-remaining`. As a result, requests-remaining was never recorded, which broke `proxy-status` and the DB row. I corrected the spelling.\n\nI only re-ran the rate-limit and window tests, not the full suite. Those 8 tests now pass, including the 2 that were failing: `test_status_reports_the_last_rate_limit_window` and `test_successful_request_records_usage_and_the_rate_limit_window`. I didn't check whether other failures in the full run predate this regression.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 967,
+    "firstCacheRead": 19133
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 2,
+  "finishedAt": "2026-10-27T19:33:30.219Z",
+  "durationMs": 286561,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 313059,
+    "cache_creation_input_tokens": 13642,
+    "output_tokens": 1823
+  },
+  "totalCostUsd": 0.1149908,
+  "result": "Fix confirmed on the full suite. The two rate-limit tests now pass: 1125 passed, 3 failed, 1 skipped.\n\nThe 3 remaining failures are unrelated to the rate-limit window, so I left them alone:\n- `tests/test_config.py::test_editable_fields_live_editable_fields`\n- `tests/test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `tests/test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI didn't check whether they predate the regression.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 6,
+    "testRunsExecuted": 4,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 1823,
+    "firstCacheRead": 19137
+  }
+}

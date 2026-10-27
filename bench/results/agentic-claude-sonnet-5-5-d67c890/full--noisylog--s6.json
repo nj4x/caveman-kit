@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 6,
+  "finishedAt": "2026-10-27T20:19:57.139Z",
+  "durationMs": 212585,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 288472,
+    "cache_creation_input_tokens": 15209,
+    "output_tokens": 1767
+  },
+  "totalCostUsd": 0.1134269,
+  "result": "Regression fixed in `anthrouter/http_util.py`. `_RATELIMIT_HEADERS` read `anthropic-ratelimit-request-remaining`, but the real header is `anthropic-ratelimit-requests-remaining` (plural). The requests-remaining value was never recorded.\n\nThe three rate-limit tests that failed in the full run now pass, along with `test_admin_requests_reflects_a_dispatched_request`. I re-ran only `tests/test_admin.py`, `tests/test_config.py` and `tests/test_handlers.py` after the fix, not the full suite.\n\nThree failures remain, and none involve rate limits, so I left them alone:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nThe assertion output I saw for the last one mentions `classifier_rules_trivial`, which points to routing-reason code rather than rate limits. I didn't check whether they predate the regression.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1767,
+    "firstCacheRead": 19131
+  }
+}

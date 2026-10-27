@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "bigfile",
+  "seed": 2,
+  "finishedAt": "2026-10-27T18:40:13.813Z",
+  "durationMs": 14054,
+  "usage": {
+    "input_tokens": 12,
+    "cache_read_input_tokens": 144336,
+    "cache_creation_input_tokens": 7111,
+    "output_tokens": 841
+  },
+  "totalCostUsd": 0.0550787,
+  "result": "Fixed. The classifier's plain-text score `100` no longer gets dropped, so the router now routes on it instead of falling back to the requested model. I haven't run the tests.\n\nThe bug was in `parse_classifier_score` in `anthrouter/model_router.py`. Its range check was `0 <= value < 100`, which rejected exactly 100. I changed it to `0 <= value <= 100`, matching the function's docstring (\"int in [0, 100]\") and the existing check in the JSON parser at line 1294.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 841,
+    "firstCacheRead": 19133
+  }
+}

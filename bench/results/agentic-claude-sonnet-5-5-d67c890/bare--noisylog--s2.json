@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "noisylog",
+  "seed": 2,
+  "finishedAt": "2026-10-27T18:44:03.849Z",
+  "durationMs": 29309,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 202060,
+    "cache_creation_input_tokens": 8992,
+    "output_tokens": 1052
+  },
+  "totalCostUsd": 0.07344400000000001,
+  "result": "I fixed the regression in `anthrouter/http_util.py`. The requests-remaining entry in `_RATELIMIT_HEADERS` read `anthropic-ratelimit-request-remaining` (singular). Upstream sends `anthropic-ratelimit-requests-remaining`, so that value was never recorded in the rate-limit window. I changed it to the plural form.\n\nI didn't run the full suite. I ran only the rate-limit and `proxy-status` tests (selected by name), and all 6 pass.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1052,
+    "firstCacheRead": 19133
+  }
+}

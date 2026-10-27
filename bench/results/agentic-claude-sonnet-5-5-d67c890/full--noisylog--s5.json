@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "noisylog",
+  "seed": 5,
+  "finishedAt": "2026-10-27T20:16:17.683Z",
+  "durationMs": 268263,
+  "usage": {
+    "input_tokens": 12,
+    "cache_read_input_tokens": 157606,
+    "cache_creation_input_tokens": 11249,
+    "output_tokens": 1197
+  },
+  "totalCostUsd": 0.0716377,
+  "result": "Fixed. In `anthrouter/http_util.py`, the header name was `anthropic-ratelimit-request-remaining`. It is now `anthropic-ratelimit-requests-remaining`, so the requests-remaining value is recorded again.\n\nI re-ran `tests/test_handlers.py` and `tests/test_admin.py`. The two rate-limit tests and the admin test now pass. I didn't re-run the full suite.\n\nThree failures from the full run are still open, and I left them alone as likely older:\n- **`test_cached_tier_is_not_replayed_into_a_different_requested_tier`**: still fails. It is a tier-routing test, unrelated to rate limits.\n- **`test_locked_baseline_scopes_the_tier_slot_by_the_lock`**: still fails, also routing.\n- **`tests/test_config.py::test_editable_fields_live_editable_fields`**: failed in the full run. I didn't re-run `tests/test_config.py`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "..                                                                       [100%]\n2 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 4,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1197,
+    "firstCacheRead": 19131
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 5,
+  "finishedAt": "2026-10-27T20:47:40.771Z",
+  "durationMs": 15830,
+  "usage": {
+    "input_tokens": 10,
+    "cache_read_input_tokens": 131113,
+    "cache_creation_input_tokens": 12384,
+    "output_tokens": 2075
+  },
+  "totalCostUsd": 0.0779526,
+  "result": "Added `flagged` subcommand to `skills/planning/critic/scripts/critic_ledger.py`. I ran it on five inputs and all behaved as specified:\n\n- **Fenced valid array:** printed as JSON, exit 0.\n- **Not an array:** `FLAGGED_DECISIONS_PARSE_ERROR: expected a JSON array`, exit 1.\n- **Item missing a key:** `FLAGGED_DECISIONS_PARSE_ERROR: item 0 needs decision and why_flagged keys`, exit 1.\n- **Invalid JSON or missing file:** `PARSE_ERROR: ...`, exit 1.\n\nIt reuses `_load_json` for the fence stripping and read errors, and I added it to the usage docstring.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.11s\n"
+  },
+  "diagnostics": {
+    "readChars": 5303,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 2075,
+    "firstCacheRead": 19137
+  }
+}

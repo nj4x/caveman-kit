@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "parallel",
+  "seed": 6,
+  "finishedAt": "2026-10-27T19:55:14.576Z",
+  "durationMs": 27843,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 316550,
+    "cache_creation_input_tokens": 26344,
+    "output_tokens": 3621
+  },
+  "totalCostUsd": 0.16544799999999998,
+  "result": "Both fixes are applied. I haven't run the tests.\n\n1. **Score 100:** `parse_classifier_score` in `anthrouter/model_router.py` rejected 100 because its range check was `0 <= value < 100`. It is now `<= 100`.\n2. **Requests remaining:** `anthrouter/http_util.py` looked for the header `anthropic-ratelimit-request-remaining`, but Anthropic sends `anthropic-ratelimit-requests-remaining` (plural). The header was never found, so the database stored NULL for that column. The three token headers were spelled correctly, which is why they kept working. I corrected the spelling in `_RATELIMIT_HEADERS`.\n\nI changed no tests. If an existing test asserts that 100 is rejected, or uses the misspelled header name, it will now fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 2530,
+    "reReads": 1,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 9,
+    "outputTokens": 3621,
+    "firstCacheRead": 19133
+  }
+}

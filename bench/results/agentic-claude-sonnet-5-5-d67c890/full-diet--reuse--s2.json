@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 2,
+  "finishedAt": "2026-10-27T19:39:06.896Z",
+  "durationMs": 15614,
+  "usage": {
+    "input_tokens": 6,
+    "cache_read_input_tokens": 75778,
+    "cache_creation_input_tokens": 13219,
+    "output_tokens": 1279
+  },
+  "totalCostUsd": 0.0610051,
+  "result": "Added `flagged` subcommand to `skills/planning/critic/scripts/critic_ledger.py`. It reuses `_load_json`, so fenced JSON works and read or JSON errors give `PARSE_ERROR:`. A new `validate_flagged` gives `FLAGGED_DECISIONS_PARSE_ERROR:` for non-arrays and for items that aren't objects or lack `decision` or `why_flagged`. I also added the usage line to the module docstring.\n\nI ran it by hand on these inputs:\n- A fenced valid array printed the array and exited 0.\n- A non-array exited 1 with `FLAGGED_DECISIONS_PARSE_ERROR:`.\n- An item missing `why_flagged` exited 1 with the same prefix.\n- Invalid JSON and a missing file each exited 1 with `PARSE_ERROR:`.\n\nI didn't run anything beyond those manual cases. The repo has no test suite.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.18s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 3,
+    "outputTokens": 1279,
+    "firstCacheRead": 19137
+  }
+}

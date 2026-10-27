@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "rootcause",
+  "seed": 1,
+  "finishedAt": "2026-10-27T19:11:56.159Z",
+  "durationMs": 18406,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 193246,
+    "cache_creation_input_tokens": 13148,
+    "output_tokens": 1043
+  },
+  "totalCostUsd": 0.0819772,
+  "result": "Fixed in `anthrouter/request_text.py`. Your example now returns `True`. I couldn't run the test suite: `make test` fails because there's no `python` on PATH, and `python3` has no pytest.\n\nRoot cause: `strip_reminders` removed the wrapper blocks but left the newline behind. Its docstring promises it trims outer whitespace, and it didn't. `is_activity_label_prompt` then did `startswith(...)` on text that began with `\\n`. I added `.strip()` to the return value. That fixes every caller of `strip_reminders`, not just this one.\n\nThe `.strip()` changes what `strip_reminders` returns for every caller, which I haven't checked against the existing tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1043,
+    "firstCacheRead": 19131
+  }
+}

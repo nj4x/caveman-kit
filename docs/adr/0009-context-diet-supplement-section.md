@@ -5,7 +5,7 @@ lineage-rules: exempt
 
 # ADR 0009: Context Diet as a kit-authored supplement, gated by benchmark
 
-**Status**: Approved
+**Status**: Superseded by ADR 0019 (reverted: the gate returned no-ship twice)
 
 Ships only after the gate in ADR 0008 passes.
 

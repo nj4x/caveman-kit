@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 5,
+  "finishedAt": "2026-10-27T19:57:24.550Z",
+  "durationMs": 21100,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 248185,
+    "cache_creation_input_tokens": 12518,
+    "output_tokens": 1439
+  },
+  "totalCostUsd": 0.09535799999999998,
+  "result": "The activity-label prompt is recognized again when a `<system-reminder>` block precedes it: `is_activity_label_prompt` now returns `True` for your example.\n\n**Root cause:** `strip_reminders` in `anthrouter/request_text.py` is documented as removing the wrapper blocks and trimming outer whitespace, but it never trimmed. Removing the reminder left the newline that followed it, so the text began with `\\n` and the `startswith(ACTIVITY_LABEL_PREFIX)` check failed.\n\n**Fix:** I added `.strip()` to the return value of `strip_reminders`, so it now does what its docstring says. I made it there rather than in `is_activity_label_prompt` because `strip_reminders` is also used in `handlers.py` and `model_router.py`. Those callers now get trimmed text as well.\n\n**Testing:** I couldn't run the test suite. `make test` fails because `python` isn't on the PATH, and `python3` has no pytest installed. I only ran your example directly, which printed `True`. I haven't checked whether the stricter trimming changes any existing test.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1439,
+    "firstCacheRead": 19133
+  }
+}

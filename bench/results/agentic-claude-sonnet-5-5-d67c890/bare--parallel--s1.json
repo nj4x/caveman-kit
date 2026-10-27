@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "parallel",
+  "seed": 1,
+  "finishedAt": "2026-10-27T18:45:11.666Z",
+  "durationMs": 30863,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 275516,
+    "cache_creation_input_tokens": 39363,
+    "output_tokens": 3041
+  },
+  "totalCostUsd": 0.18398870000000003,
+  "result": "I fixed both bugs, but I haven't run the tests. `python` isn't on the path here, and `python3` has no pytest installed.\n\n1. **Score 100 dropped:** `parse_classifier_score` in `anthrouter/model_router.py` checked `0 <= value < 100`, so `100` was rejected as unparseable. It now checks `0 <= value <= 100`. The JSON parser next to it already used the inclusive bound.\n2. **Missing requests-remaining:** the header name in `anthrouter/http_util.py` was misspelled as `anthropic-ratelimit-request-remaining`. It is now `anthropic-ratelimit-requests-remaining`, so the value gets recorded again.\n\nI didn't change any existing tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 9,
+    "outputTokens": 3041,
+    "firstCacheRead": 19133
+  }
+}

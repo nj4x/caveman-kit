@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "parallel",
+  "seed": 2,
+  "finishedAt": "2026-10-27T18:45:37.086Z",
+  "durationMs": 19367,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 217410,
+    "cache_creation_input_tokens": 20086,
+    "output_tokens": 2980
+  },
+  "totalCostUsd": 0.123553,
+  "result": "I fixed both bugs in source. I haven't run the tests.\n\n1. **Score of exactly 100:** `parse_classifier_score` in `anthrouter/model_router.py` checked `0 <= value < 100`, which rejected 100. I changed it to `<= 100`. That matches the docstring's range of [0, 100] and the JSON parser next to it.\n2. **Requests remaining:** the header name in `_RATELIMIT_HEADERS` in `anthrouter/http_util.py` was misspelled as `anthropic-ratelimit-request-remaining`. Anthropic sends `anthropic-ratelimit-requests-remaining` (plural), so the lookup never matched. I corrected it. The subagent found this by reading the code, not by running it against a live response.\n\nRows already stored have `NULL` in `ratelimit_requests_remaining` and can't be backfilled.\n\nI didn't touch any existing tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 237,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 7,
+    "outputTokens": 2980,
+    "firstCacheRead": 19133
+  }
+}
