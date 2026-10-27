@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "tierslot",
+  "seed": 2,
+  "finishedAt": "2026-10-27T07:10:13.203Z",
+  "durationMs": 261629,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 384587,
+    "cache_creation_input_tokens": 19152,
+    "output_tokens": 2104
+  },
+  "totalCostUsd": 0.1458854,
+  "result": "Fixed in `anthrouter/handlers.py`. The tier cache was keyed only by session and conversation, so it ignored which model the client asked for.\n\nIn your log, the sonnet turn classified `trivial` and cached `haiku`. The later opus turn was a tool-result continuation, which replays the cached tier without any cap. That sent it to haiku. The cache key now includes the requested model, so each requested model keeps its own cached tier. An opus turn can no longer pick up a tier cached from a sonnet turn.\n\nThe suite gives 1119 passed, 1 skipped and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`. It also fails with my change stashed, so it isn't caused by this fix.\n\nI didn't add a regression test for the sonnet-then-opus case, since you asked to leave existing tests as they are.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": ".F..                                                                     [100%]\n=================================== FAILURES ===================================\n______________ test_alias_and_full_id_of_one_tier_share_the_slot _______________\n\nproxy = <function proxy.<locals>._build at 0x108c16ca0>\n\n    def test_alias_and_full_id_of_one_tier_share_the_slot(proxy):\n        server = _rules_proxy(proxy)\n        assert _send(server, _user_turn('sonnet'))[0] == HAIKU\n>       assert _send(server, _continuation('claude-sonnet-5-5'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\n1 failed, 3 passed in 3.67s\n"
+  },
+  "diagnostics": {
+    "readChars": 2489,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2104,
+    "firstCacheRead": 19133
+  }
+}

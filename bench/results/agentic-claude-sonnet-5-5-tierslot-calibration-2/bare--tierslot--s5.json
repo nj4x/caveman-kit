@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 5,
+  "finishedAt": "2026-10-27T06:56:16.077Z",
+  "durationMs": 292968,
+  "usage": {
+    "input_tokens": 32,
+    "cache_read_input_tokens": 602464,
+    "cache_creation_input_tokens": 30996,
+    "output_tokens": 3669
+  },
+  "totalCostUsd": 0.23473680000000002,
+  "result": "I think I've fixed it, but I haven't reproduced the exact sequence from your log. I also didn't add a regression test for it. The change is in `anthrouter/handlers.py`.\n\n**Cause:** The routed-tier cache was keyed only by session and conversation. After the sonnet turn was classified `trivial` and routed to haiku, haiku was stored for the whole conversation. Later turns that don't get a fresh classification replayed that cached tier, whatever model they requested. Those turns are:\n- tool-result continuations\n- bare affirmations\n- turns with no user text\n\nThe opus turn picked up haiku that way. The existing cap only stops a replay from going *above* the requested model, so it didn't catch this.\n\n**Fix:** The cache key now includes the requested model. A tier classified for a sonnet request is only replayed for sonnet requests. An opus request in the same conversation gets classified on its own.\n\n**Tests:** The suite gives 1119 passed, 1 skipped and 1 failed. The failure, `tests/test_config.py::test_editable_fields_live_editable_fields`, fails the same way with my change stashed, so it isn't caused by this fix.\n\n**Trade-off:** If a client alternates requested models mid-conversation, each model gets its own cached tier.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": ".F..                                                                     [100%]\n=================================== FAILURES ===================================\n______________ test_alias_and_full_id_of_one_tier_share_the_slot _______________\n\nproxy = <function proxy.<locals>._build at 0x108ff87c0>\n\n    def test_alias_and_full_id_of_one_tier_share_the_slot(proxy):\n        server = _rules_proxy(proxy)\n        assert _send(server, _user_turn('sonnet'))[0] == HAIKU\n>       assert _send(server, _continuation('claude-sonnet-5-5'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\n1 failed, 3 passed in 4.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 32454,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 17,
+    "outputTokens": 3669,
+    "firstCacheRead": 19135
+  }
+}

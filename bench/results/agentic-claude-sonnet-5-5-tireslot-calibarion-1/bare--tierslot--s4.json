@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tireslot-calibarion-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 4,
+  "finishedAt": "2026-10-27T06:09:39.698Z",
+  "durationMs": 255666,
+  "usage": {
+    "input_tokens": 30,
+    "cache_read_input_tokens": 512431,
+    "cache_creation_input_tokens": 21966,
+    "output_tokens": 3033
+  },
+  "totalCostUsd": 0.18779120000000005,
+  "result": "I fixed it in `anthrouter/handlers.py`, but I haven't reproduced your exact sonnet-then-opus sequence or added a test for it. The full suite gives 1119 passed, 1 skipped and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`, which fails the same way with my change stashed, so it isn't caused by this fix.\n\n**Cause:** the router remembers the tier it picked for a conversation and replays it on later turns that carry no fresh user text (tool-result turns and bare \"yes\"/\"proceed\" turns). That memory was keyed only by session plus the conversation's first message, not by which model the client asked for. Your `claude-sonnet-5-5` turn was classified `trivial` and routed to haiku, which was stored under that shared key. The later `claude-opus-5-5` turn in the same conversation then replayed the stored haiku. The tool-result and affirmation replays also skip the \"never upgrade above what was requested\" cap. Even where the cap does run, it deliberately lets a cached lower tier downgrade a higher request, so opus still dropped to haiku.\n\n**Fix:** in `_prepare`, the tier-cache key now includes the requested model's tier (haiku, sonnet, opus or fable). A tier cached from a sonnet turn is only replayed for sonnet requests, so an opus turn can't inherit haiku from it. The other per-conversation state (context-size tracking) keeps the original key.\n\nOne side effect: a conversation that switches requested model mid-way no longer carries its routing memory across the switch. An opus turn that arrives with no fresh text after a sonnet turn will now get the normal fallback routing instead of inheriting the sonnet turn's tier.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": "================ FAILURES ===================================\n_______________ test_locked_baseline_scopes_the_slot_by_the_lock _______________\n\nproxy = <function proxy.<locals>._build at 0x109806660>\n\n    def test_locked_baseline_scopes_the_slot_by_the_lock(proxy):\n        server = _rules_proxy(proxy, lock_requested_model='sonnet')\n        assert _send(server, _user_turn('opus'))[0] == HAIKU\n        # The lock is the routing baseline, so the client's own model choice does\n        # not move the tool-result turn to another slot.\n>       assert _send(server, _continuation('haiku'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:93: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_locked_baseline_scopes_the_slot_by_the_lock\n1 failed, 4 passed in 4.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 15,
+    "outputTokens": 3033,
+    "firstCacheRead": 19135
+  }
+}

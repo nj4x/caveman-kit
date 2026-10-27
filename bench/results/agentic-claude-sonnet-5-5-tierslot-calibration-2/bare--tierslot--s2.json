@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 2,
+  "finishedAt": "2026-10-27T06:41:07.522Z",
+  "durationMs": 169363,
+  "usage": {
+    "input_tokens": 30,
+    "cache_read_input_tokens": 468257,
+    "cache_creation_input_tokens": 22732,
+    "output_tokens": 3405
+  },
+  "totalCostUsd": 0.1845914,
+  "result": "The suite finished with 1119 passed, 1 skipped and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`. It complains about an extra `oauth_usage_poll_interval` config field. I didn't touch config, so it looks unrelated to this fix, but I didn't run the test on a clean checkout to confirm it already failed before my change.\n\nThe fix itself is unchanged: `anthrouter/handlers.py` now keys the routed-tier cache by the requested model as well as the conversation. A tier learned from a sonnet request can no longer be replayed onto an opus request.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": ".F..                                                                     [100%]\n=================================== FAILURES ===================================\n______________ test_alias_and_full_id_of_one_tier_share_the_slot _______________\n\nproxy = <function proxy.<locals>._build at 0x108db98a0>\n\n    def test_alias_and_full_id_of_one_tier_share_the_slot(proxy):\n        server = _rules_proxy(proxy)\n        assert _send(server, _user_turn('sonnet'))[0] == HAIKU\n>       assert _send(server, _continuation('claude-sonnet-5-5'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\n1 failed, 3 passed in 3.67s\n"
+  },
+  "diagnostics": {
+    "readChars": 20547,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 17,
+    "outputTokens": 3405,
+    "firstCacheRead": 19135
+  }
+}

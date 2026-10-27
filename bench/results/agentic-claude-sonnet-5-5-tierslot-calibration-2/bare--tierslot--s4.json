@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 4,
+  "finishedAt": "2026-10-27T06:51:14.117Z",
+  "durationMs": 303243,
+  "usage": {
+    "input_tokens": 38,
+    "cache_read_input_tokens": 704121,
+    "cache_creation_input_tokens": 29218,
+    "output_tokens": 4177
+  },
+  "totalCostUsd": 0.2557152,
+  "result": "I fixed it in `anthrouter/handlers.py`, but I haven't reproduced your exact sequence or added a test for it.\n\n**Cause:** the routed-tier cache was keyed only by session and conversation. The `trivial` → `claude-haiku-5-5` result from the sonnet turn was therefore stored under the same key the opus turns read. A later opus turn that qualified for a cache replay (an affirmation, a tool-result continuation, or a turn with no user text) got haiku. Those replay paths deliberately allow a cached lower tier to downgrade a higher requested model, and existing tests lock that in. The real problem was that a tier cached for sonnet was being reused for opus.\n\n**Fix:** `_prepare` now builds the tier-cache key as the conversation key plus the requested model's coarse tier (`haiku`, `sonnet`, `opus` or `fable`). If a model lock is set, it uses the locked model's tier instead. A tier cached for a sonnet request is no longer replayed for an opus request. The context-size tracking still uses the original conversation key.\n\n**Tests:** I ran the suite with `uv run`, and 1119 passed, 1 failed and 1 was skipped. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`, which complains about `oauth_usage_poll_interval`. It's a config-field check, and I didn't touch config. I didn't re-run it without my change to confirm it already failed.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 4.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 11480,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 20,
+    "outputTokens": 4177,
+    "firstCacheRead": 19135
+  }
+}

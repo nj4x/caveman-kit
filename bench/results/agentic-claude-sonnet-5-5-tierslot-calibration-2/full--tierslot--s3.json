@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "tierslot",
+  "seed": 3,
+  "finishedAt": "2026-10-27T07:14:52.258Z",
+  "durationMs": 270279,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 666522,
+    "cache_creation_input_tokens": 32769,
+    "output_tokens": 4048
+  },
+  "totalCostUsd": 0.2557749,
+  "result": "Fixed in `anthrouter/handlers.py` (`_prepare`), but I haven't reproduced the exact request sequence, and I'm assuming the opus turn was a cache replay.\n\n**Cause:** the routed-tier cache was keyed only by session plus first-user-message hash. A `claude-sonnet-5-5` turn classified `trivial` cached `haiku`. A later `claude-opus-5-5` turn in the same conversation then replayed that tier. I think it was the tool-result walk-back or the affirmation-inherit path, because neither applies the cap. The cap in `_cap_cached_tier` only blocks upgrades, so `haiku` was never clamped against opus.\n\n**Fix:** the requested model is now part of the tier-cache key. A tier cached for one requested model is only replayed for turns that request the same model.\n\n**Tests:** 1119 passed, 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`. It fails the same way with my change stashed, so it's not caused by this fix.\n\nI added no regression test for this case.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": ".F..                                                                     [100%]\n=================================== FAILURES ===================================\n______________ test_alias_and_full_id_of_one_tier_share_the_slot _______________\n\nproxy = <function proxy.<locals>._build at 0x106d2eca0>\n\n    def test_alias_and_full_id_of_one_tier_share_the_slot(proxy):\n        server = _rules_proxy(proxy)\n        assert _send(server, _user_turn('sonnet'))[0] == HAIKU\n>       assert _send(server, _continuation('claude-sonnet-5-5'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\n1 failed, 3 passed in 4.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 25362,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 18,
+    "outputTokens": 4048,
+    "firstCacheRead": 19133
+  }
+}

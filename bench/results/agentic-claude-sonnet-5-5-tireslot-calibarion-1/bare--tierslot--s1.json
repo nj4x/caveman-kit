@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tireslot-calibarion-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 1,
+  "finishedAt": "2026-10-27T05:56:07.180Z",
+  "durationMs": 256170,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 435732,
+    "cache_creation_input_tokens": 18389,
+    "output_tokens": 2658
+  },
+  "totalCostUsd": 0.1597549,
+  "result": "I fixed it in `anthrouter/handlers.py`. The opus turn was being served by haiku because the per-conversation routed-tier cache ignored the requested model.\n\n**Cause:** the cache was keyed only by session plus conversation anchor. The `claude-sonnet-5-5` turn was classified `trivial`, so haiku was cached for the conversation. A later `claude-opus-5-5` turn that took a cache-replay path (a text-less continuation, a tool-result continuation, or a short affirmation) then reused haiku. The tool-result and affirmation paths skip the cap that blocks upgrades. The cap that does exist only blocks upgrades, so it never stopped a downgrade of an opus request.\n\n**Fix:** `tier_key` in `_prepare` now includes the requested model. A tier chosen for a sonnet request is no longer replayed onto an opus request in the same conversation.\n\n**Tests:** 1119 passed, 1 skipped and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`, which fails the same way without my change, so it isn't caused by it. I didn't add a regression test for this case.\n\nOne side effect: switching models mid-conversation now starts a fresh cache entry, so the first text-less continuation after a switch is classified again instead of replaying the old tier.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": "line_scopes_the_slot_by_the_lock _______________\n\nproxy = <function proxy.<locals>._build at 0x107496c00>\n\n    def test_locked_baseline_scopes_the_slot_by_the_lock(proxy):\n        server = _rules_proxy(proxy, lock_requested_model='sonnet')\n        assert _send(server, _user_turn('opus'))[0] == HAIKU\n        # The lock is the routing baseline, so the client's own model choice does\n        # not move the tool-result turn to another slot.\n>       assert _send(server, _continuation('haiku'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:93: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\nFAILED tests/test_bench_hidden_tierslot.py::test_locked_baseline_scopes_the_slot_by_the_lock\n2 failed, 3 passed in 4.10s\n"
+  },
+  "diagnostics": {
+    "readChars": 2489,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 15,
+    "outputTokens": 2658,
+    "firstCacheRead": 19135
+  }
+}

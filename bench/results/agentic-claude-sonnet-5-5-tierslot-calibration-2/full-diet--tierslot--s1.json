@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "tierslot",
+  "seed": 1,
+  "finishedAt": "2026-10-27T07:34:34.551Z",
+  "durationMs": 308277,
+  "usage": {
+    "input_tokens": 64,
+    "cache_read_input_tokens": 1524136,
+    "cache_creation_input_tokens": 52391,
+    "output_tokens": 9582
+  },
+  "totalCostUsd": 0.5317527000000001,
+  "result": "I made a change that I'm not sure is the real fix. I never found a defect that matches the report, so treat the change below as a best guess.\n\nThe tier cache was keyed only by session plus conversation anchor. A `claude-sonnet-5-5` turn classified `trivial` cached `haiku`. A later `claude-opus-5-5` text-less continuation in the same conversation replayed that cached `haiku`, either as a tool_result-only turn or as an affirmation. Those replay paths are uncapped on purpose.\n\n**Change:** in `_prepare` (`anthrouter/handlers.py`), `tier_key` now includes the requested model:\n\n```python\ntier_key = f'{ctx_key}\\x00{payload.get(\"model\")}' if ctx_key else None\n```\n\nA tier cached under one requested model is no longer replayed for a turn that requests a different one. `ctx_key` is untouched, so context observations and the in-flight affirmation guard are unchanged.\n\n**Tests:** I ran the suite once with the change. 1119 passed, 1 skipped and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`, which also fails without my change.\n\n**Not verified:**\n- I wrote no test for the sonnet-then-opus scenario.\n- I didn't reproduce it with a real request.\n- I'm not sure the replay path is how your opus turn reached haiku. A fresh classification of that turn could also have legitimately returned `trivial`.\n\nIf the log shows the opus turn's `reason_code`, that would settle it. A `session_cached_*` or `affirmation_inherited` code means my theory holds. A `classifier_*` code means it doesn't.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": ".F..                                                                     [100%]\n=================================== FAILURES ===================================\n______________ test_alias_and_full_id_of_one_tier_share_the_slot _______________\n\nproxy = <function proxy.<locals>._build at 0x10977a520>\n\n    def test_alias_and_full_id_of_one_tier_share_the_slot(proxy):\n        server = _rules_proxy(proxy)\n        assert _send(server, _user_turn('sonnet'))[0] == HAIKU\n>       assert _send(server, _continuation('claude-sonnet-5-5'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\n1 failed, 3 passed in 4.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 2180,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 35,
+    "outputTokens": 9582,
+    "firstCacheRead": 19139
+  }
+}
