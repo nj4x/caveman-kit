@@ -247,6 +247,21 @@ feeds no verdict.
   at 21. The guardrail trips when the net drop exceeds the margin. A strict
   "any fewer" rule fired on about a third of same-rate runs from seed noise
   alone. The report prints the net drop, the margin and whether it held.
+- Limit of the guardrail (issue #12): it sees only a net drop larger than the
+  margin, and the fixtures leave it little to drop. Outside `tierslot`, all 109
+  committed `full` cells and all 107 committed `full-diet` cells passed their
+  hidden test. Failures appear only in `tierslot` calibration 2, outside the
+  default set: `full` passed 1 of 6 and `full-diet` 0 of 6. The net drop of 1
+  stayed within the margin, so the guardrail has never tripped. Four fixtures
+  tried to bring `bare` into a 50-80% pass range
+  (ADR 0012 decision 2). `bare` passed 6 of 6 or 12 of 12 on `suitecheck`,
+  `retryafter` and `adminalias`, except one `retryafter` run with no
+  end-to-end sentence (0 of 4). `tierslot` gave 1 of 5 and 2 of 6 (ADR 0015,
+  0017, 0018). Read `ship` as "no cost regression and no large pass-rate
+  drop", not as "answer quality held". The false-alarm and power figures in
+  ADR 0016 assume that `full` passes at a true rate of 0.65 (for power,
+  `full-diet` at 0.40). The default fixtures pass nearly always, far from
+  that rate.
 - `ship`: the 95% t-interval of the paired cost difference excludes zero below
   and the guardrail holds.
 - `no-ship` at once: the interval excludes zero above, or the guardrail trips.
