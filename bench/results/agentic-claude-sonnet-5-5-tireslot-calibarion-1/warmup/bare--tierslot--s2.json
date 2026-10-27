@@ -1,0 +1,16 @@
+{
+  "kind": "agentic-warmup",
+  "warmup": true,
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "task": "tierslot",
+  "seed": 2,
+  "finishedAt": "2026-10-27T05:56:10.028Z",
+  "usage": {
+    "input_tokens": 2,
+    "cache_read_input_tokens": 17156,
+    "cache_creation_input_tokens": 7157,
+    "output_tokens": 4
+  },
+  "firstCacheRead": 17156
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tireslot-calibarion-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 3,
+  "finishedAt": "2026-10-27T06:05:15.063Z",
+  "durationMs": 276130,
+  "usage": {
+    "input_tokens": 44,
+    "cache_read_input_tokens": 826782,
+    "cache_creation_input_tokens": 30049,
+    "output_tokens": 5323
+  },
+  "totalCostUsd": 0.2937969,
+  "result": "I made a change that I think fixes this, but I couldn't confirm it against your actual conversation, and I didn't add a test.\n\n**What I think is happening:** the router caches the routed tier per conversation. The cache key didn't include the requested model. Your `claude-sonnet-5-5` turn was classified `trivial` and wrote `claude-haiku-5-5` into the cache. A later opus turn with no usable user text (for example, a tool-result continuation) in the same conversation then replayed that cached haiku. Requesting sonnet and requesting opus shared one cache entry.\n\n**What I changed:** in `anthrouter/handlers.py` (`_prepare`), the cache key now includes the requested model's tier, so each tier gets its own entry. A sonnet turn's classification can no longer decide where an opus turn goes.\n\n**Test run:** 1119 passed, 1 skipped, 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`, which complains about an `oauth_usage_poll_interval` field. It involves config fields, not the cache key, so I believe it fails without my change. I didn't rerun it on a clean checkout to confirm.\n\n**What I couldn't rule out:** the opus turn may instead have been classified `trivial` on its own merits, since routing opus requests down to haiku is the feature's intended behavior. If so, this fix won't change what you saw. The request log's `reason_code` for that opus turn would tell you which case it was. A `session_cached_*` code means the cache replay, which is what I fixed. A `classifier_*` code means the classifier chose haiku.\n\n**Separate paths I left alone:** the tool-result walk-back path deliberately replays a cached tier without the no-upgrade cap, and existing tests require that. A cached lower tier is also meant to be able to downgrade a higher requested model.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": "================ FAILURES ===================================\n_______________ test_locked_baseline_scopes_the_slot_by_the_lock _______________\n\nproxy = <function proxy.<locals>._build at 0x108ac2480>\n\n    def test_locked_baseline_scopes_the_slot_by_the_lock(proxy):\n        server = _rules_proxy(proxy, lock_requested_model='sonnet')\n        assert _send(server, _user_turn('opus'))[0] == HAIKU\n        # The lock is the routing baseline, so the client's own model choice does\n        # not move the tool-result turn to another slot.\n>       assert _send(server, _continuation('haiku'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:93: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_locked_baseline_scopes_the_slot_by_the_lock\n1 failed, 4 passed in 4.16s\n"
+  },
+  "diagnostics": {
+    "readChars": 4342,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 24,
+    "outputTokens": 5323,
+    "firstCacheRead": 19135
+  }
+}

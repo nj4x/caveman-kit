@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tireslot-calibarion-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 5,
+  "finishedAt": "2026-10-27T06:14:14.740Z",
+  "durationMs": 265663,
+  "usage": {
+    "input_tokens": 32,
+    "cache_read_input_tokens": 541382,
+    "cache_creation_input_tokens": 24107,
+    "output_tokens": 3300
+  },
+  "totalCostUsd": 0.2016079,
+  "result": "I made a fix in `anthrouter/handlers.py`, but I haven't reproduced your two-turn scenario, so I'm not certain it addresses the whole bug. The full suite gives 1119 passed, 1 skipped and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`, which also fails on the unmodified code, so my change didn't cause it.\n\n**Cause:** the per-conversation tier cache was keyed only by session plus a hash of the first user message. A `claude-sonnet-5-5` turn classified `trivial` wrote `haiku` into that slot. Later text-less continuation turns in the same conversation then replayed that cached tier. These are tool-result-only turns, short affirmations (\"yes\", \"proceed\"), and walk-back turns. A `claude-opus-5-5` turn picked up `haiku` this way. The replay paths skip the upgrade-only cap, and that cap wouldn't have helped anyway, because haiku ranks below opus.\n\n**Fix:** `_prepare` now scopes the cache key by the requested model's tier (the baseline lock's tier when the lock is on). A tier cached from a sonnet-requested turn is no longer replayed onto an opus-requested one. I didn't touch the replay logic in `model_router.py`, since existing tests rely on it.\n\n**Side effect:** a conversation that alternates requested models now keeps a separate cached tier per requested model. A continuation turn after a switch has no cached tier to replay, so it falls back to `missing_final_user_text` and keeps the requested model.\n\nI didn't add a regression test.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 4.67s\n"
+  },
+  "diagnostics": {
+    "readChars": 3584,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 17,
+    "outputTokens": 3300,
+    "firstCacheRead": 19135
+  }
+}

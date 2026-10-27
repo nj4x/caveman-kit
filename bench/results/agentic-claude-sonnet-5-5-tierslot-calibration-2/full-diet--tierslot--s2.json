@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tierslot-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "tierslot",
+  "seed": 2,
+  "finishedAt": "2026-10-27T07:37:18.675Z",
+  "durationMs": 156015,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 289722,
+    "cache_creation_input_tokens": 20378,
+    "output_tokens": 2609
+  },
+  "totalCostUsd": 0.13501539999999998,
+  "result": "Fix is in, but the test suite is still running in the background, so nothing is verified yet.\n\nCause: the session tier cache in `anthrouter/handlers.py` was keyed on session plus conversation only, not on the requested model. The sonnet turn's `haiku` result was saved under that key. A later opus turn in the same conversation then replayed `haiku` from the cache. The replay paths for tool-result and affirmation turns apply no cap, so nothing stopped it. The cap on the other replay paths only blocks upgrades.\n\nFix: `_prepare` now builds `tier_key` from the context key plus `payload['model']`. A tier cached from a sonnet-requested turn can no longer be replayed onto an opus-requested one.\n\nSide effect: a conversation that switches requested models gets a separate tier cache per model, so continuation turns after a switch are classified fresh instead of inheriting.\n\nI'll report the test result when the run finishes.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": ".F..                                                                     [100%]\n=================================== FAILURES ===================================\n______________ test_alias_and_full_id_of_one_tier_share_the_slot _______________\n\nproxy = <function proxy.<locals>._build at 0x108bb1b20>\n\n    def test_alias_and_full_id_of_one_tier_share_the_slot(proxy):\n        server = _rules_proxy(proxy)\n        assert _send(server, _user_turn('sonnet'))[0] == HAIKU\n>       assert _send(server, _continuation('claude-sonnet-5-5'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:65: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\n1 failed, 3 passed in 3.67s\n"
+  },
+  "diagnostics": {
+    "readChars": 15482,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2609,
+    "firstCacheRead": 19139
+  }
+}

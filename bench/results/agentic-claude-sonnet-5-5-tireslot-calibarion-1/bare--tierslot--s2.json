@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-tireslot-calibarion-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "tierslot",
+  "seed": 2,
+  "finishedAt": "2026-10-27T06:00:30.398Z",
+  "durationMs": 255402,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 441538,
+    "cache_creation_input_tokens": 19381,
+    "output_tokens": 2914
+  },
+  "totalCostUsd": 0.1659561,
+  "result": "I changed `anthrouter/handlers.py` so the routed-tier cache is now keyed by the requested model as well as the conversation. I did not reproduce your scenario or add a test for it. The cause below is my reading of the code, not something I confirmed against your request log.\n\n**Cause:** the cache was keyed only by session plus conversation. The `sonnet` turn classified as `trivial` stored `haiku`. A later `opus` request in the same conversation then replayed that cached `haiku` on a continuation turn, such as a tool-result or text-less one. The replay cap (`_cap_cached_tier`) only stops a cached tier from upgrading the request. It deliberately lets a lower tier replace a higher requested model, so `haiku` replacing `opus` was allowed.\n\n**Fix:** the `tier_key` line in `handlers.py` now includes `payload.get('model')`. A tier cached for one requested model is no longer replayed for another, and an `opus` turn in that conversation gets classified on its own.\n\n**Tests:** 1119 passed, 1 skipped, and 1 failed. The failure is `tests/test_config.py::test_editable_fields_live_editable_fields`. It fails the same way with my change stashed, so it is not caused by this fix.\n\nI left the \"lower cached tier may downgrade a higher request\" cap alone, since its docstring says that is by design. If you also want continuation turns capped at the requested tier, that would be a separate change to `_cap_cached_tier`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": false,
+    "exitCode": 1,
+    "timedOut": false,
+    "tail": "line_scopes_the_slot_by_the_lock _______________\n\nproxy = <function proxy.<locals>._build at 0x10956ec00>\n\n    def test_locked_baseline_scopes_the_slot_by_the_lock(proxy):\n        server = _rules_proxy(proxy, lock_requested_model='sonnet')\n        assert _send(server, _user_turn('opus'))[0] == HAIKU\n        # The lock is the routing baseline, so the client's own model choice does\n        # not move the tool-result turn to another slot.\n>       assert _send(server, _continuation('haiku'))[0] == HAIKU\nE       AssertionError: assert 'claude-sonnet-5-5' == 'claude-haiku-5-5'\nE         \nE         - claude-haiku-5-5\nE         + claude-sonnet-5-5\n\ntests/test_bench_hidden_tierslot.py:93: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_bench_hidden_tierslot.py::test_alias_and_full_id_of_one_tier_share_the_slot\nFAILED tests/test_bench_hidden_tierslot.py::test_locked_baseline_scopes_the_slot_by_the_lock\n2 failed, 3 passed in 3.65s\n"
+  },
+  "diagnostics": {
+    "readChars": 2489,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 15,
+    "outputTokens": 2914,
+    "firstCacheRead": 19135
+  }
+}
