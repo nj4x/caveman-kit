@@ -5,7 +5,7 @@ lineage-rules: exempt
 
 # ADR 0018: A tierslot fixture whose tempting fix breaks an intended behavior, not a second caller
 
-**Status**: Accepted as a fixture outside the default set; the calibration target (ADR 0012 decision 2) is not yet measured. See Outcome.
+**Status**: Accepted as a fixture outside the default set; the calibration target (ADR 0012 decision 2) is not met after calibration 1. See Outcome.
 
 **Context:**
 
@@ -30,21 +30,19 @@ The first review found that the intent text is still reachable by grep for `walk
    - a sonnet tool-result turn after the trivial sonnet turn goes to haiku (the intended downgrade replay);
    - so does a `claude-sonnet-5-5` tool-result turn after a `sonnet` turn (the slot is the tier, not the model string);
    - an opus tool-result turn after it is not sent to haiku, and its reason code does not start with `session_cached`;
-   - after that opus turn and a classified opus user turn, a sonnet tool-result turn still goes to haiku (the opus slot does not overwrite the sonnet slot; a tool-result turn that replays the cache does not write it);
-   - with `lock_requested_model=sonnet`, haiku- and opus-requested tool-result turns replay the tier cached on an opus-requested turn (the slot follows the routing baseline).
-   Any fix that keeps all five passes.
+   - after that opus turn and a classified opus user turn, a sonnet tool-result turn still goes to haiku (the opus slot does not overwrite the sonnet slot; a tool-result turn that replays the cache does not write it).
+   Any fix that keeps all four passes. A fifth case, that the slot follows the `lock_requested_model` baseline, was dropped after calibration 1 (see Outcome).
 5. To make `prepareWorkDir`'s stand-in check (`bench/tests/patch_standin.js`) cover a plant that deletes a file, the stand-in writes a pre-image only for a `+++ /dev/null` file, and the bats check asserts that the file is absent from the planted tree.
 6. `tierslot` is outside the default `--fixtures` set (`"inDefaultSet": false`) until a calibration run shows that `bare` fails 20-50% of seeds. If it does, set `inDefaultSet` to true and record the result here.
 
 **Consequences:**
 
 - Checked on the pinned clone with `fixtures.checkReliability`: `{ ok: true }`. Each variant was run against the planted tree with the hidden test added:
-  - planted tree: hidden test 3 of 5 pass; visible suite one failure, `test_config.py::test_editable_fields_live_editable_fields`, which also fails on the unpatched pin;
-  - correct fix (the pin's `handlers.py` and `session_state.py`): hidden 5 of 5; visible suite the same one failure;
-  - refuse a replay below the requested tier, in `handlers` before `route_model`: hidden 1 of 5; visible suite the same one failure;
-  - the same refusal inside `route_model`: hidden 1 of 5, and two visible tests fail (`TestNoUpgradeCap::test_walkback_downgrade_replays_uncapped`, `test_walkback_unknown_requested_fails_open`), so an agent that runs the suite sees it;
-  - key by the raw model string: hidden 4 of 5 (the alias/full-ID case fails);
-  - key by the tier of the client's model, ignoring the lock: hidden 4 of 5 (the lock case fails).
+  - planted tree: hidden test 2 of 4 pass; visible suite one failure, `test_config.py::test_editable_fields_live_editable_fields`, which also fails on the unpatched pin;
+  - correct fix (the pin's `handlers.py` and `session_state.py`): hidden 4 of 4; visible suite the same one failure;
+  - refuse a replay below the requested tier, in `handlers` before `route_model`: hidden 1 of 4; visible suite the same one failure;
+  - the same refusal inside `route_model`: hidden 1 of 4, and two visible tests fail (`TestNoUpgradeCap::test_walkback_downgrade_replays_uncapped`, `test_walkback_unknown_requested_fails_open`), so an agent that runs the suite sees it;
+  - key by the raw model string: hidden 3 of 4 (the alias/full-ID case fails).
 - The fixture measures whether the agent finds the intended behavior that the tempting fix breaks. The suite catches the tempting fix only when it is made inside `route_model`.
 - The patch was built by hand against the pin. If the pin moves, `plant.patch` must be regenerated.
 
@@ -52,4 +50,6 @@ The first review found that the intent text is still reachable by grep for `walk
 
 ## Outcome
 
-Not yet calibrated. No paid run has used `tierslot`. The next step is a calibration run, `node bench/run.js --kind agentic --fixtures tierslot`, read for the `bare` arm's pass rate. Record its note in `docs/research/` and its result here.
+Calibration 1 (`node bench/run.js --kind agentic --fixtures tierslot --seeds 6`, run id `agentic-claude-sonnet-5-5-tireslot-calibarion-1`, five-case hidden test) gave `bare` 1 of 5 for seeds 1 to 5; the other arms were not read. Every failing seed fixed the opus symptom and passed the same-tier and higher-tier cases. The lock case (`lock_requested_model` scopes the slot) failed in seeds 1 to 4, and the alias/full-ID case failed in seeds 1 and 2. Seed 5 passed all five cases.
+
+The lock case was not derivable from the symptom: the prompt never names the lock, and the plant deletes the only text that says the slot follows it. The fixture then measured a missing requirement, not a missed behavior, which is the floor risk named in Context. Decision 4 drops the lock case; the alias/full-ID case stays, because the pin's `_requested_tier` is the only place that states the slot is the tier. The next step is a new calibration run on the four-case hidden test, read for the `bare` pass rate. Record its result here.
