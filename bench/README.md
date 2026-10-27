@@ -105,7 +105,7 @@ comments stripped) must appear in the `full-diet` context and not in `full`.
 
 ### Fixtures
 
-Eight real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012, ADR 0013, ADR 0015, ADR 0017).
+Nine real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012, ADR 0013, ADR 0015, ADR 0017, ADR 0018).
 Each pins one upstream commit, and the run clones it from GitHub:
 
 | Fixture | Source repo | Pinned SHA | Planted bug / task |
@@ -118,6 +118,7 @@ Each pins one upstream commit, and the run clones it from GitHub:
 | `parallel` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | the `bigfile` and `noisylog` plants together; the prompt asks for one Task subagent per bug, so SubagentStart fires (issue #13, ADR 0013) |
 | `retryafter` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `http_util.should_retry` inverts the 429 check (the repo suite catches this), and `http_util.retry_delay` caps the upstream delay at the exponential backoff, so `retry-after-ms: 1500` waits 1.0 s (only the hidden test, which records the sleep, catches this); the prompt names the `retry-after-ms: 1500` symptom and asks the agent to check the fix end to end |
 | `adminalias` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `config._parse_model_aliases_str` and `_parse_classification_str` report bad input with `p.error()`, which exits the process; `admin.handle_post_config` passes a throwaway parser, so a malformed `model_aliases` in a POST body kills the request thread instead of answering 400. `base.patch` is the admin-side fix, `plant.patch` reverts it and drops the one visible test that pins the parser exit. Making the parsers raise `ValueError` fixes the admin path, keeps the repo suite green and breaks the command line; the hidden test checks both callers |
+| `tierslot` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | reverts anthrouter ADR-0012: the routed-tier cache is keyed by the conversation alone, not by conversation and requested tier, so a haiku tier cached on a sonnet turn is replayed into an opus tool-result turn. The plant also deletes ADR-0012 and its tests. Refusing any replay below the requested tier in `handlers` fixes the opus turn, keeps the repo suite green and breaks the intended same-tier replay; the hidden test checks both, plus the alias/full-ID slot, one slot per requested tier and the `lock_requested_model` baseline |
 
 `suitecheck` exists because every cell of the first two agentic runs passed
 its hidden test, so the pass-rate guardrail could not tell arms apart (issue
@@ -125,7 +126,7 @@ its hidden test, so the pass-rate guardrail could not tell arms apart (issue
 it used the first four fixtures; to compare with them, pass
 `--fixtures bigfile,noisylog,reuse,rootcause` (add `suitecheck` for the
 5-fixture set of ADR 0012, then `parallel` for the 6-fixture set of ADR 0013;
-the default set is the six fixtures `bigfile`, `noisylog`, `reuse`, `rootcause`, `suitecheck` and `parallel`. `retryafter` (ADR 0015) and `adminalias` (ADR 0017) run only when named with `--fixtures`: both set `"inDefaultSet": false`.)
+the default set is the six fixtures `bigfile`, `noisylog`, `reuse`, `rootcause`, `suitecheck` and `parallel`. `retryafter` (ADR 0015), `adminalias` (ADR 0017) and `tierslot` (ADR 0018) run only when named with `--fixtures`: all three set `"inDefaultSet": false`.)
 
 `noisylog` uses anthrouter because its test suite is the longer one that runs
 offline: at the pinned commits anthrouter's suite ran 1,125 passing tests in

@@ -1,0 +1,234 @@
+diff --git a/anthrouter/handlers.py b/anthrouter/handlers.py
+index d066114..07b3d49 100644
+--- a/anthrouter/handlers.py
++++ b/anthrouter/handlers.py
+@@ -39,7 +39,6 @@ from .model_router import (
+     calibrated_ratio,
+     route_model,
+ )
+-from .model_tier import classify_model_tier
+ from .request_text import (
+     _WRAPPER_TAGS,
+     ACTIVITY_LABEL_FALLBACKS,
+@@ -289,17 +288,6 @@ def context_key(sess_key: str | None, payload: dict) -> str | None:
+     return f'{sess_key}\x00{_conversation_anchor(payload)}'
+ 
+ 
+-def _requested_tier(baseline_model: str) -> str:
+-    """Second half of the tier-cache key: the tier the routing baseline resolves to.
+-
+-    A non-tier identifier maps to ``'_' + model`` so it matches only itself —
+-    the same allow-any-tier-to-a-custom-model fallback ``_cap_cached_tier``
+-    applies (ADR-0012).
+-    """
+-    tier = classify_model_tier(baseline_model)
+-    return tier if tier != 'other' else f'_{baseline_model}'
+-
+-
+ # ---------------------------------------------------------------------------
+ # Response shaping
+ # ---------------------------------------------------------------------------
+@@ -705,12 +693,7 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
+                         self._log_tag(), payload.get('model'), baseline_model)
+ 
+         ctx_key = context_key(sess_key, payload) if routing_on else None
+-        # The tier slot is scoped by the same baseline route_model decides
+-        # against, so a locked turn and an unlocked turn never share one.
+-        tier_key = (
+-            (ctx_key, _requested_tier(baseline_model or payload.get('model') or ''))
+-            if ctx_key else None
+-        )
++        tier_key = ctx_key
+         cached_tier = self.sessions.routed_tier(tier_key) if tier_key else None
+         floor_active = (
+             ctx_key is not None
+@@ -779,7 +762,7 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
+         ]
+ 
+     def _apply_tier_cache(
+-        self, routing, payload: dict, tier_key: tuple[str, str] | None, config,
++        self, routing, payload: dict, tier_key: str | None, config,
+     ):
+         """Persist a fresh classification, or replay the cached tier for a text-less turn.
+ 
+diff --git a/anthrouter/session_state.py b/anthrouter/session_state.py
+index a8cdd3f..d191f30 100644
+--- a/anthrouter/session_state.py
++++ b/anthrouter/session_state.py
+@@ -4,13 +4,11 @@ anthproxy kept this on ``BackendRegistry``; with one backend there is no
+ registry, so the state that routing actually reads lives here on its own.  Every
+ map is bounded and evicted oldest-first, and nothing survives a restart.
+ 
+-Three key shapes are stored side by side and must not be confused: the routing
+-override is keyed by the bare session key (``metadata.user_id``); context
+-observations are keyed by the *context key* — session key plus a
+-first-user-message hash — so a Claude Code Task sub-agent does not inherit and
+-clobber its parent's slot; and the tier cache is keyed by ``(context key,
+-requested tier)`` so a tier cached on a haiku-requested turn is never replayed
+-into a sonnet-requested turn of the same conversation (ADR-0012).
++Two key shapes are stored side by side and must not be confused: the routing
++override is keyed by the bare session key (``metadata.user_id``), while the tier
++cache and context observations are keyed by the *context key* — session key
++plus a first-user-message hash — so a Claude Code Task sub-agent does not
++inherit and clobber its parent's slot.
+ """
+ 
+ from __future__ import annotations
+@@ -31,7 +29,7 @@ class SessionState:
+         self._lock = threading.Lock()
+         self._global_routing = bool(auto_model_routing)
+         self._routing_overrides: OrderedDict[str, bool] = OrderedDict()
+-        self._routed_tier: OrderedDict[tuple[str, str], str] = OrderedDict()
++        self._routed_tier: OrderedDict[str, str] = OrderedDict()
+         self._context_obs: OrderedDict[str, tuple[int, float]] = OrderedDict()
+         self._last_ratelimit: dict = {}
+ 
+@@ -75,14 +73,13 @@ class SessionState:
+ 
+     # -- routed-tier cache ----------------------------------------------------
+ 
+-    def set_routed_tier(self, key: tuple[str, str], tier: str) -> None:
+-        """``key`` is ``(ctx_key, requested_tier)``; see ``handlers._requested_tier``."""
++    def set_routed_tier(self, ctx_key: str, tier: str) -> None:
+         with self._lock:
+-            self._put(self._routed_tier, key, tier)
++            self._put(self._routed_tier, ctx_key, tier)
+ 
+-    def routed_tier(self, key: tuple[str, str]) -> str | None:
++    def routed_tier(self, ctx_key: str) -> str | None:
+         with self._lock:
+-            return self._routed_tier.get(key)
++            return self._routed_tier.get(ctx_key)
+ 
+     # -- context observations -------------------------------------------------
+ 
+diff --git a/docs/adr/0012-tier-cache-key-includes-requested-tier.md b/docs/adr/0012-tier-cache-key-includes-requested-tier.md
+deleted file mode 100644
+index 73c5d87..0000000
+--- a/docs/adr/0012-tier-cache-key-includes-requested-tier.md
++++ /dev/null
+@@ -1,37 +0,0 @@
+----
+-artifact-type: adr
+-lineage-rules: root
+----
+-
+-**Status**: Approved
+-
+-# Tier-cache key includes the requested model's tier
+-
+-The tier-cache key was `(session_key, first-user-message-hash)` — the same `ctx_key` used for context-floor tracking. A tier written when the client requested a Haiku-tier model was stored under the same key and replayed when the client later requested a Sonnet-tier model. `_cap_cached_tier` prevented the cached entry from *upgrading* the requested model, but it intentionally allowed downgrades: a cached `'haiku'` tier was kept when the requested tier was `'sonnet'`, routing the request to Haiku.
+-
+-This mismatch became the remaining driver of `model_changed` cache misses after ADR-0010 increased classifier coverage and rewrite gates reduced the fold's impact. DB measurement showed `session_cached_tier` as reason_code for dozens of requests per day, with cross-tier downgrades producing turquoise prompt-cache misses because the cached prefix was keyed on the model that wrote it.
+-
+-## Decision
+-
+-Include the requested model's resolved tier (`haiku` / `sonnet` / `opus` / `fable`) as a third component of the tier-cache key: `(ctx_key, requested_tier)` a two-element tuple. The context key is the first element (a string: `session_key + '\x00' + first-user-message-hash`); the requested tier (a string) is the second.
+-
+-Update the in-memory tier cache (`SessionState._routed_tier` OrderedDict) to use tuple keys instead of bare `ctx_key` strings. A Haiku-tier entry written by one turn is only replayed by subsequent turns whose requested model also resolves to Haiku. Sonnet-tier turns write and read their own cache slot.
+-
+-**Key derivation:** The tier is derived from the requested model (the client's original `payload['model']`, or the baseline if `lock_requested_model` is set) using `classify_model_tier(baseline_model)` from `anthrouter/model_tier.py`. Non-tier model identifiers (models where `classify_model_tier` returns `'other'`) use a sentinel value `'_' + model` so a custom model matches only itself — consistent with the existing behavior in `_cap_cached_tier` for non-tier identifiers — preserving the allow-any-tier-to-a-custom-model fallback.
+-
+-**No change to `_cap_cached_tier`:** The upgrade cap is still enforced within a tier slot. The key change ensures the cap is applied within the right scope.
+-
+-## Consequences
+-
+-- Tier-cache entries are more numerous (one slot per session × first-user-message × tier rather than per session × first-user-message).
+-- Cross-tier downgrade via `session_cached_tier` is eliminated.
+-- Same-tier replays (e.g. a Haiku affirmation replaying Haiku for the next Haiku-requested turn) still work as before.
+-- Sessions that genuinely switch requested-model tier mid-conversation (e.g. the operator changes `--lock-requested-model`) start each tier with a cold cache slot — correct behavior.
+-
+-## Note
+-
+-anthrouter has no bulk admin tier pin feature and does not need one. The three-component key is sufficient.
+-
+-## Origin
+-
+-Ported from anthproxy ADR-0034 (`docs/adr/0034-tier-cache-key-includes-requested-tier.md`), commit 2c31e9a and commit 5676a43.
+diff --git a/tests/test_handlers.py b/tests/test_handlers.py
+index 1d30b9c..9ba2a73 100644
+--- a/tests/test_handlers.py
++++ b/tests/test_handlers.py
+@@ -13,7 +13,6 @@ from anthrouter.handlers import (
+     _extract_sse_stats,
+     _extract_sse_text,
+     _has_happy_new_year_system_prompt,
+-    _requested_tier,
+     _rewrite_message_start_model,
+     context_key,
+     parse_local_command,
+@@ -413,71 +412,9 @@ def test_context_observations_replace_rather_than_accumulate():
+ def test_state_maps_evict_oldest_first():
+     state = SessionState()
+     for i in range(MAX_ENTRIES + 5):
+-        state.set_routed_tier((f'k{i}', 'sonnet'), 'haiku')
+-    assert state.routed_tier(('k0', 'sonnet')) is None
+-    assert state.routed_tier((f'k{MAX_ENTRIES + 4}', 'sonnet')) == 'haiku'
+-
+-
+-def test_routed_tier_slots_are_per_requested_tier():
+-    state = SessionState()
+-    state.set_routed_tier(('k', 'haiku'), 'haiku')
+-    assert state.routed_tier(('k', 'haiku')) == 'haiku'
+-    assert state.routed_tier(('k', 'sonnet')) is None
+-
+-
+-# ---------------------------------------------------------------------------
+-# Tier-cache key scoped by requested tier (ADR-0012)
+-# ---------------------------------------------------------------------------
+-
+-@pytest.mark.parametrize('model, expected', [
+-    ('haiku', 'haiku'),
+-    ('claude-sonnet-5-5', 'sonnet'),
+-    ('Claude-Opus-5-5', 'opus'),
+-    ('claude-fable-5-1', 'fable'),
+-    ('gpt-4-turbo', '_gpt-4-turbo'),
+-])
+-def test_requested_tier_maps_tier_models_and_isolates_others(model, expected):
+-    assert _requested_tier(model) == expected
+-
+-
+-def _continuation(model):
+-    """A turn whose final message is not from the user: no text to classify."""
+-    return {
+-        'model': model, 'metadata': {'user_id': SESSION},
+-        'messages': [{'role': 'user', 'content': 'hi'},
+-                     {'role': 'assistant', 'content': 'hello'}],
+-    }
+-
+-
+-def test_cached_tier_is_not_replayed_into_a_different_requested_tier(proxy):
+-    server = proxy(auto_model_routing=True, auto_model_routing_mode='rules')
+-    post(server, '/v1/messages', {
+-        'model': 'sonnet', 'metadata': {'user_id': SESSION},
+-        'messages': [{'role': 'user', 'content': 'hi'}]})
+-    assert _FakeUpstream.received[-1]['payload']['model'] == resolve_model('haiku')
+-
+-    post(server, '/v1/messages', _continuation('sonnet'))
+-    assert _FakeUpstream.received[-1]['payload']['model'] == resolve_model('haiku')
+-    assert db_rows(server)[0]['reason_code'] == 'session_cached_tier'
+-
+-    post(server, '/v1/messages', _continuation('opus'))
+-    assert _FakeUpstream.received[-1]['payload']['model'] == resolve_model('opus')
+-    assert db_rows(server)[0]['reason_code'] == 'missing_final_user_text'
+-
+-
+-def test_locked_baseline_scopes_the_tier_slot_by_the_lock(proxy):
+-    server = proxy(auto_model_routing=True, auto_model_routing_mode='rules',
+-                   lock_requested_model='sonnet')
+-    post(server, '/v1/messages', {
+-        'model': 'opus', 'metadata': {'user_id': SESSION},
+-        'messages': [{'role': 'user', 'content': 'hi'}]})
+-    assert _FakeUpstream.received[-1]['payload']['model'] == resolve_model('haiku')
+-
+-    # The lock is the routing baseline, so a client-side model change does not
+-    # move the request to a different cache slot.
+-    post(server, '/v1/messages', _continuation('opus'))
+-    assert _FakeUpstream.received[-1]['payload']['model'] == resolve_model('haiku')
+-    assert db_rows(server)[0]['reason_code'] == 'session_cached_tier'
++        state.set_routed_tier(f'k{i}', 'haiku')
++    assert state.routed_tier('k0') is None
++    assert state.routed_tier(f'k{MAX_ENTRIES + 4}') == 'haiku'
+ 
+ 
+ # ---------------------------------------------------------------------------

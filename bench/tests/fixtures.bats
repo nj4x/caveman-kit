@@ -26,9 +26,9 @@ fixture_assert() {
   '
 }
 
-@test "real-fixtures-format: bench/fixtures holds adminalias, bigfile, noisylog, parallel, retryafter, reuse, rootcause, suitecheck and each loads" {
+@test "real-fixtures-format: bench/fixtures holds adminalias, bigfile, noisylog, parallel, retryafter, reuse, rootcause, suitecheck, tierslot and each loads" {
   fixture_assert '
-    assert.deepStrictEqual(fixtures.listFixtureNames(dir), ["adminalias", "bigfile", "noisylog", "parallel", "retryafter", "reuse", "rootcause", "suitecheck"]);
+    assert.deepStrictEqual(fixtures.listFixtureNames(dir), ["adminalias", "bigfile", "noisylog", "parallel", "retryafter", "reuse", "rootcause", "suitecheck", "tierslot"]);
     for (const name of fixtures.listFixtureNames(dir)) {
       const f = fixtures.loadFixture(dir, name);
       assert.ok(f.prompt.length > 80, `${name}: prompt too short`);
@@ -48,6 +48,7 @@ fixture_assert() {
       reuse: "https://github.com/nj4x/skills-dev.git",
       suitecheck: "https://github.com/nj4x/anthrouter.git",
       retryafter: "https://github.com/nj4x/anthrouter.git",
+      tierslot: "https://github.com/nj4x/anthrouter.git",
     };
     const shaBySource = {};
     for (const [name, source] of Object.entries(expected)) {
@@ -77,7 +78,7 @@ fixture_assert() {
 }
 
 @test "real-fixtures-plant: each plant patch applies through prepareWorkDir to a local stand-in and yields the planted tree" {
-  for name in adminalias bigfile noisylog parallel retryafter reuse rootcause suitecheck; do
+  for name in adminalias bigfile noisylog parallel retryafter reuse rootcause suitecheck tierslot; do
     standin="$TEST_ROOT/standin-$name"
     node "$BENCH_DIR/tests/patch_standin.js" "$FIXTURES_DIR/$name/plant.patch" "$standin" > "$TEST_ROOT/$name.touched"
     [ -s "$TEST_ROOT/$name.touched" ]
@@ -92,11 +93,17 @@ fixture_assert() {
       f.basePatch = null; // the stand-in pre-image is already the base-applied tree
       f.sha = execFileSync("git", ["-C", f.source, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
       const touched = fs.readFileSync(process.env.TEST_ROOT + "/" + process.env.NAME + ".touched", "utf8").trim().split("\n");
+      const deleted = [...fs.readFileSync(f.plantPatch, "utf8").matchAll(/^--- a\/(.+)\n\+\+\+ \/dev\/null$/gm)].map(m => m[1]);
       for (const [plant, side] of [[true, "post"], [false, "pre"]]) {
         const work = path.join(process.env.TEST_ROOT, `${process.env.NAME}-${side}`);
         fs.mkdirSync(work);
         fixtures.prepareWorkDir(f, work, { plant });
         for (const file of touched) {
+          // A file the patch deletes (`+++ /dev/null`) has no post-image: it must be gone.
+          if (side === "post" && deleted.includes(file)) {
+            assert.ok(!fs.existsSync(path.join(work, file)), `${process.env.NAME}: ${file} (${side}) should be deleted`);
+            continue;
+          }
           assert.strictEqual(
             fs.readFileSync(path.join(work, file), "utf8"),
             fs.readFileSync(path.join(process.env.STANDIN, side, file), "utf8"),
@@ -189,11 +196,29 @@ PATCH
   '
 }
 
-@test "fixture-default-set: retryafter and adminalias are off the default set; every other real fixture is on it (ADR 0017)" {
+@test "real-fixtures-tierslot: plant.patch keys the tier cache by the conversation alone and removes ADR-0012 and its tests; the prompt names the symptom, not the cache key (ADR 0018)" {
+  fixture_assert '
+    const f = fixtures.loadFixture(dir, "tierslot");
+    assert.strictEqual(f.basePatch, null);
+    const patch = fs.readFileSync(f.plantPatch, "utf8");
+    const files = patch.match(/^diff --git a\/(\S+)/gm).map(l => l.slice(13)).sort();
+    assert.deepStrictEqual(files, [
+      "anthrouter/handlers.py", "anthrouter/session_state.py",
+      "docs/adr/0012-tier-cache-key-includes-requested-tier.md", "tests/test_handlers.py",
+    ]);
+    assert.match(patch, /^deleted file mode .*\n.*\n--- a\/docs\/adr\/0012-/m);
+    assert.match(patch, /^-def _requested_tier\(/m);
+    assert.match(patch, /^\+        tier_key = ctx_key$/m);
+    // No reason code: it is the grep key to the comment that explains the replay.
+    assert.doesNotMatch(f.prompt, /session_cached|walkback|tool.result|tier_key|_requested_tier|\bADR\b|downgrade|end to end/i);
+  '
+}
+
+@test "fixture-default-set: retryafter, adminalias and tierslot are off the default set; every other real fixture is on it (ADR 0017, ADR 0018)" {
   fixture_assert '
     const all = fixtures.listFixtureNames(dir);
     const def = fixtures.defaultFixtureNames(dir);
-    assert.deepStrictEqual(all.filter(n => !def.includes(n)), ["adminalias", "retryafter"]);
+    assert.deepStrictEqual(all.filter(n => !def.includes(n)), ["adminalias", "retryafter", "tierslot"]);
     assert.ok(def.includes("suitecheck") && def.includes("parallel"));
   '
 }
