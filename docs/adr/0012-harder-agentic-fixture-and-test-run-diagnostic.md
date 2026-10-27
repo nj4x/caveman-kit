@@ -28,3 +28,7 @@ There is a concrete case. On `bigfile`, the Context Diet arm skipped running tes
 - Until a calibration run confirms decision 2, the guardrail is still not shown to detect a drop.
 
 **Source SRS:** none (repo uses `lineage-rules: exempt`).
+
+## Outcome (issue #12)
+
+Decision 2's target (a bare pass rate of roughly 50-80%) was not met by any fixture design. Ten recorded calibration runs (the `calibration` notes in `docs/research/`; the unrecorded `retryafter-calibration-5` is excluded) across `suitecheck`, `retryafter` (four designs) and `adminalias` (two prompts) gave `bare` 6/6 or 12/12 in every run except one `retryafter` run with no end-to-end sentence, which gave 0/4. The `tests_executed` diagnostic (decision 1) did show skipped verification per arm, which this ADR asked for. The guardrail is therefore still not shown to detect a drop. Fixtures `retryafter` and `adminalias` are kept in `bench/fixtures/` but left out of the default set (ADR 0015, ADR 0017).

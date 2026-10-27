@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-26T05:05:12.962Z",
+  "durationMs": 395336,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 352633,
+    "cache_creation_input_tokens": 14908,
+    "output_tokens": 2283
+  },
+  "totalCostUsd": 0.1306746,
+  "result": "Fixed. A 429 with `retry-after-ms: 1500` is now retried after that delay, not returned to the client.\n\nThere were two bugs:\n- **`anthrouter/http_util.py`, `should_retry`:** the 429 check was inverted. It retried only when there was no timing guidance, so a 429 with `retry-after-ms` went straight to the client. It now retries only when guidance is present.\n- **`anthrouter/transport.py`, `_send_with_retries`:** the retry loop ignored the header and always used exponential backoff. For a 429 it now sleeps for the parsed `retry-after-ms` or `Retry-After` value, capped at `RETRY_MAX_DELAY` (30s).\n\nThe suite shows 3 failures, and all three also fail without my change:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\n`test_transport.py::test_429_without_timing_guidance_surfaces_immediately` failed on the original code and passes now. The 165 retry, 429, transport and `http_util` tests pass.\n\nI didn't add a test or run a real request with the header, so the new sleep in `transport.py` has no test of its own.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2283,
+    "firstCacheRead": 19133
+  }
+}

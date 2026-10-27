@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 3,
+  "finishedAt": "2026-10-27T01:47:01.553Z",
+  "durationMs": 250439,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 255687,
+    "cache_creation_input_tokens": 14085,
+    "output_tokens": 2204
+  },
+  "totalCostUsd": 0.10842589999999999,
+  "result": "Fixed. A malformed alias like `garbage` now makes `POST /admin/config` answer 400 instead of hanging.\n\n**Changes**\n- **Parsers:** `_parse_model_aliases_str` and `_parse_classification_str` in `anthrouter/config.py` now raise `ValueError` on bad input. They no longer take a parser argument. I changed the classification parser too because it had the same `p.error()` problem.\n- **CLI:** `parse_args()` catches the `ValueError` and calls `p.error()`, so command-line behavior is unchanged.\n- **Admin endpoint:** `anthrouter/admin.py` collects the parser's message into the field errors and returns 400 through the existing `_err_list` path.\n\n**Tests:** The full suite ran with 1124 passed and 3 failed. The same 3 fail with my change stashed, so they predate it:\n- `tests/test_config.py::test_editable_fields_live_editable_fields`\n- `tests/test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `tests/test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI didn't add a test for the 400 response, since you asked to leave tests as they are.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 2204,
+    "firstCacheRead": 19131
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 1,
+  "finishedAt": "2026-10-27T01:38:01.978Z",
+  "durationMs": 259295,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 258824,
+    "cache_creation_input_tokens": 14783,
+    "output_tokens": 2383
+  },
+  "totalCostUsd": 0.1125883,
+  "result": "Fixed. A malformed value like `garbage` in `POST /admin/config` now returns 400 `invalid_request_error`, with the parser's message, instead of hanging.\n\n- **`anthrouter/config.py`:** `_parse_classification_str` and `_parse_model_aliases_str` now raise `ValueError` instead of calling `p.error()`. They no longer take the `p` parameter. I applied the same change to the classification parser because it had the same flaw.\n- **`parse_args()`:** it catches the `ValueError` and calls `p.error(...)`, so CLI behavior is unchanged.\n- **`anthrouter/admin.py`:** `handle_post_config` catches the `ValueError` and returns the 400. The dummy `ArgumentParser` is gone.\n\nTest run: 1124 passed, 1 skipped, 3 failed. Those 3 fail the same way with my changes stashed, so they aren't caused by this fix:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI didn't add a test for the new 400 path, since you said existing tests stay as they are.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 2383,
+    "firstCacheRead": 19131
+  }
+}

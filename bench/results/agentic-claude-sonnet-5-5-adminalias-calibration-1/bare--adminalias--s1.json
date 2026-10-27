@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "adminalias",
+  "seed": 1,
+  "finishedAt": "2026-10-26T16:15:10.177Z",
+  "durationMs": 290522,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 235888,
+    "cache_creation_input_tokens": 10689,
+    "output_tokens": 1677
+  },
+  "totalCostUsd": 0.09070610000000001,
+  "result": "A malformed `model_aliases` (like `garbage`, with no `alias:model` colon) now gets a 400 with an error message instead of killing the request thread. I didn't send a live `POST /admin/config` request, and I didn't add a test for the new case.\n\nThe cause was in `anthrouter/admin.py`. The admin handler passed a plain `ArgumentParser` to the config parsers. On bad input the parser calls `p.error()`, which raises `SystemExit` rather than an exception the handler could catch. The handler now passes a parser whose `error()` raises `ValueError` and returns the message as a 400. I applied the same fix to `auto_model_routing_classification`, which had the identical problem.\n\nTest results:\n- **Admin tests:** the 83 admin-related tests pass.\n- **Full suite:** it ended with 3 failed, 1124 passed and 1 skipped. Two of the failures, in `tests/test_handlers.py`, also fail with my change stashed:\n  - `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n  - `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n- **Third failure:** I only saw two names in the output, so I don't know which test the third was. The `-k admin` run didn't hit it.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.15s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1677,
+    "firstCacheRead": 19133
+  }
+}

@@ -1,0 +1,69 @@
+diff --git a/anthrouter/admin.py b/anthrouter/admin.py
+index 29c5e54..71d4a4b 100644
+--- a/anthrouter/admin.py
++++ b/anthrouter/admin.py
+@@ -13,7 +13,6 @@ are JSON-serialisable dicts; the caller serialises them.
+ 
+ from __future__ import annotations
+ 
+-import argparse
+ import dataclasses
+ import logging
+ import os
+@@ -40,18 +39,6 @@ _config_write_lock = threading.Lock()
+ _UNSAFE_QUOTE_CHARS = ('"', '\\', '$', '`', '\n')
+ 
+ 
+-class _ParseError(Exception):
+-    """A malformed dict-valued field in a POST body."""
+-
+-
+-class _RaisingParser(argparse.ArgumentParser):
+-    """The config parsers report bad input through ``error()``, which exits the
+-    process on the command line; here it must become a 400 instead."""
+-
+-    def error(self, message):
+-        raise _ParseError(message)
+-
+-
+ def _err(code: int, error_code: str, message: str) -> tuple[int, dict]:
+     return code, {'type': 'error', 'error': {'type': error_code, 'message': message}}
+ 
+@@ -216,13 +203,14 @@ def handle_post_config(
+         return _err_list(400, 'invalid_request_error', field_errors)
+ 
+     # Special-case: parse dict fields from string format before validation/replace
+-    try:
+-        if 'auto_model_routing_classification' in coerced and isinstance(coerced['auto_model_routing_classification'], str):
+-            coerced['auto_model_routing_classification'] = _parse_classification_str(coerced['auto_model_routing_classification'], _RaisingParser())
+-        if 'model_aliases' in coerced and isinstance(coerced['model_aliases'], str):
+-            coerced['model_aliases'] = _parse_model_aliases_str(coerced['model_aliases'], _RaisingParser())
+-    except _ParseError as exc:
+-        return _err(400, 'invalid_request_error', str(exc))
++    if 'auto_model_routing_classification' in coerced and isinstance(coerced['auto_model_routing_classification'], str):
++        from argparse import ArgumentParser
++        _dummy_parser = ArgumentParser()
++        coerced['auto_model_routing_classification'] = _parse_classification_str(coerced['auto_model_routing_classification'], _dummy_parser)
++    if 'model_aliases' in coerced and isinstance(coerced['model_aliases'], str):
++        from argparse import ArgumentParser
++        _dummy_parser = ArgumentParser()
++        coerced['model_aliases'] = _parse_model_aliases_str(coerced['model_aliases'], _dummy_parser)
+ 
+     with _config_write_lock:
+         full_candidate = dataclasses.replace(config, **coerced)
+diff --git a/tests/test_config.py b/tests/test_config.py
+index 97d8ee8..a1873ac 100644
+--- a/tests/test_config.py
++++ b/tests/test_config.py
+@@ -111,11 +111,6 @@ def test_classification_overlay_keeps_unspecified_defaults():
+     }
+ 
+ 
+-def test_classification_unknown_label_rejected():
+-    with pytest.raises(SystemExit):
+-        parse_args(['--auto-model-routing-classification', 'huge:opus'])
+-
+-
+ 
+ 
+ def test_weights_must_sum_to_one():

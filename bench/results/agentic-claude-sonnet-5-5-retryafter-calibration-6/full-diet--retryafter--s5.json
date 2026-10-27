@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-26T05:30:02.737Z",
+  "durationMs": 494796,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 319712,
+    "cache_creation_input_tokens": 15253,
+    "output_tokens": 2425
+  },
+  "totalCostUsd": 0.1263689,
+  "result": "Fixed. 429 with `retry-after-ms: 1500` now retries after the 1.5s delay.\n\nTwo bugs:\n- **Inverted check:** `should_retry` in `anthrouter/http_util.py` retried a 429 only when there was no timing guidance. It now retries only when there is guidance, as its docstring says.\n- **Delay ignored:** `anthrouter/transport.py` used exponential backoff even for 429. It now sleeps the upstream-provided delay, capped at `RETRY_MAX_DELAY`.\n\nChecks:\n- **End to end:** I ran a fake upstream sending `retry-after-ms: 1500`. `should_retry` returned `True` and `parse_retry_after` returned `1.5`. This only exercised the helper functions, not a full transport retry.\n- **Tests:** 3 tests fail after the fix: `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. On the original code, 4 fail: those same 3 plus `test_429_without_timing_guidance_surfaces_immediately`, which now passes. I didn't investigate the 3 failures.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2425,
+    "firstCacheRead": 19139
+  }
+}

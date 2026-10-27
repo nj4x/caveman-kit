@@ -95,8 +95,8 @@ cell: no file is written and a rerun retries it.
 
 Fixture format (`bench/fixtures/<name>/`, or the dir `--fixtures-dir` names):
 `fixture.json` (`source`, `sha`, `testCommand`, optional `plantPatch`/`prompt`
-file names), `plant.patch`, `prompt.md`, `hidden/` (copied over the repo root
-after the run). Before any paid call each fixture's hidden test must pass twice
+file names), `plant.patch`, optional `base.patch` (applied to both trees before the plant, ADR 0017),
+`prompt.md`, `hidden/` (copied over the repo root after the run). Before any paid call each fixture's hidden test must pass twice
 on the unpatched tree and fail twice on the planted tree (run with
 `UV_OFFLINE=1`, `PIP_NO_INDEX=1`); otherwise the fixture is dropped and printed
 as `DROPPED fixture ...`.
@@ -105,7 +105,7 @@ comments stripped) must appear in the `full-diet` context and not in `full`.
 
 ### Fixtures
 
-Seven real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012, ADR 0013, ADR 0015).
+Eight real fixtures ship in `bench/fixtures/` (ADR 0008 decision 5, ADR 0012, ADR 0013, ADR 0015, ADR 0017).
 Each pins one upstream commit, and the run clones it from GitHub:
 
 | Fixture | Source repo | Pinned SHA | Planted bug / task |
@@ -116,7 +116,8 @@ Each pins one upstream commit, and the run clones it from GitHub:
 | `reuse` | `nj4x/skills-dev` | `41193d1541fe3af0f821869c326870d97f75e008` | the `flagged` subcommand of `skills/planning/critic/scripts/critic_ledger.py` is removed; the existing `_load_json` helper already does the fence-tolerant loading it needs |
 | `suitecheck` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `pace.period_workday_dates` treats the exclusive UTC period end as inclusive (code and docstring), so a zone at UTC+0 gains next month's first day; the prompt names only the UTC symptom. Ending the loop one day early fixes UTC but breaks 13 of the 30 tests in `tests/test_pace.py`; only running the suite shows it |
 | `parallel` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | the `bigfile` and `noisylog` plants together; the prompt asks for one Task subagent per bug, so SubagentStart fires (issue #13, ADR 0013) |
-| `retryafter` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `http_util.should_retry` inverts the 429 check (the repo suite catches this), and `transport._send_with_retries` ignores the upstream delay and sleeps the exponential backoff (only the hidden test, which records the sleep, catches this); the prompt names the `retry-after-ms: 1500` symptom and asks the agent to check the fix end to end |
+| `retryafter` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `http_util.should_retry` inverts the 429 check (the repo suite catches this), and `http_util.retry_delay` caps the upstream delay at the exponential backoff, so `retry-after-ms: 1500` waits 1.0 s (only the hidden test, which records the sleep, catches this); the prompt names the `retry-after-ms: 1500` symptom and asks the agent to check the fix end to end |
+| `adminalias` | `nj4x/anthrouter` | `8a94cf6f6134bc61c02f350baf257e1127443843` | `config._parse_model_aliases_str` and `_parse_classification_str` report bad input with `p.error()`, which exits the process; `admin.handle_post_config` passes a throwaway parser, so a malformed `model_aliases` in a POST body kills the request thread instead of answering 400. `base.patch` is the admin-side fix, `plant.patch` reverts it and drops the one visible test that pins the parser exit. Making the parsers raise `ValueError` fixes the admin path, keeps the repo suite green and breaks the command line; the hidden test checks both callers |
 
 `suitecheck` exists because every cell of the first two agentic runs passed
 its hidden test, so the pass-rate guardrail could not tell arms apart (issue
@@ -124,7 +125,7 @@ its hidden test, so the pass-rate guardrail could not tell arms apart (issue
 it used the first four fixtures; to compare with them, pass
 `--fixtures bigfile,noisylog,reuse,rootcause` (add `suitecheck` for the
 5-fixture set of ADR 0012, then `parallel` for the 6-fixture set of ADR 0013;
-the default set adds `retryafter`, ADR 0015).
+the default set is the six fixtures `bigfile`, `noisylog`, `reuse`, `rootcause`, `suitecheck` and `parallel`. `retryafter` (ADR 0015) and `adminalias` (ADR 0017) run only when named with `--fixtures`: both set `"inDefaultSet": false`.)
 
 `noisylog` uses anthrouter because its test suite is the longer one that runs
 offline: at the pinned commits anthrouter's suite ran 1,125 passing tests in
@@ -173,11 +174,11 @@ paired cells yourself, and to escalate rerun with `--seeds 6` and the same
 ## Cost
 
 Every run spends real quota; the runner prints an estimate before the first
-call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 63
-agentic runs (3 arms x 7 fixtures x 3 seeds), 126 when the agentic gate
+call. One full run is 108 single-turn calls (6 arms x 6 tasks x 3 seeds) and 54
+agentic runs (3 arms x 6 default fixtures x 3 seeds), 108 when the agentic gate
 escalates to 6 seeds. At the `lib/estimate.js` assumptions and Sonnet list
 price, that is at most about $10 for the single-turn kind (~$0.09 per call) and
-about $68 to $136 for the agentic kind (~$1.08 per run). Prompt caching usually
+about $58 to $117 for the agentic kind (~$1.08 per run). Prompt caching usually
 makes the real bill lower. `--model claude-opus-5-5` costs about 1.7x as much.
 
 ## Requirements

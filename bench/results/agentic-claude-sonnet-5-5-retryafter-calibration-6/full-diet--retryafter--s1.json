@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 1,
+  "finishedAt": "2026-10-26T05:09:23.718Z",
+  "durationMs": 244311,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 351397,
+    "cache_creation_input_tokens": 14285,
+    "output_tokens": 2124
+  },
+  "totalCostUsd": 0.1272799,
+  "result": "Fixed. A 429 carrying `retry-after-ms: 1500` is now retried after waiting that long, instead of going straight to the client.\n\nThere were two bugs:\n- **Inverted check:** `should_retry` in `anthrouter/http_util.py` retried a 429 only when there was no retry hint. The check is now `is not None`.\n- **Header ignored:** `anthrouter/transport.py` always used its exponential backoff and never read the header. For a 429 it now sleeps for the hinted delay, capped at `RETRY_MAX_DELAY`. It falls back to the old backoff if the header is missing or unparseable.\n\nI ran the full suite (1125 passed, 3 failed). The 3 failures are `test_editable_fields_live_editable_fields` and the two `test_handlers.py` tests `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. I stashed my change and re-ran them, and they fail without it too.\n\nI didn't add a test or run a real 429 through the proxy, so the new retry path has no direct coverage.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2124,
+    "firstCacheRead": 19139
+  }
+}

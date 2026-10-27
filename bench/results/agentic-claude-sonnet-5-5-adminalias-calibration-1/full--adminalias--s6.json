@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 6,
+  "finishedAt": "2026-10-26T17:15:03.425Z",
+  "durationMs": 430548,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 280141,
+    "cache_creation_input_tokens": 13404,
+    "output_tokens": 2315
+  },
+  "totalCostUsd": 0.1127282,
+  "result": "Bug fixed in `anthrouter/admin.py`. A malformed `model_aliases` value (e.g. `garbage`) now returns 400 with the parser's message instead of killing the request thread.\n\nCause: the admin handler passed a plain `ArgumentParser` to `_parse_model_aliases_str`. On bad input that parser's `p.error()` calls `sys.exit`, which ends the request thread with no response. The same bug affected `auto_model_routing_classification`. I replaced the parser with a `_RaisingParser` subclass that raises `_ParseError`, and the handler turns that into `_err(400, 'invalid_request_error', ...)`.\n\nI did not run `POST /admin/config` with `garbage` or add a test for it. The full suite has 3 failures, and the same 3 fail without my change (I stashed it and re-ran):\n- `tests/test_config.py::test_editable_fields_live_editable_fields`\n- `tests/test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `tests/test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 295,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2315,
+    "firstCacheRead": 19131
+  }
+}

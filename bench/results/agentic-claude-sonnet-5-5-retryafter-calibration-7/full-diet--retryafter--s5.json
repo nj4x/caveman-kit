@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 5,
+  "finishedAt": "2026-10-26T07:12:00.371Z",
+  "durationMs": 227086,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 429629,
+    "cache_creation_input_tokens": 16951,
+    "output_tokens": 3058
+  },
+  "totalCostUsd": 0.15893930000000003,
+  "result": "Fixed. Two bugs in `anthrouter/http_util.py`:\n\n- **`should_retry`:** the 429 check was inverted. It retried only when there was no retry guidance, so a 429 with `retry-after-ms` went straight to the client. It now uses `is not None`.\n- **`retry_delay`:** it capped the upstream delay at `RETRY_BASE_DELAY * 2**attempt`, so on the first attempt 1500ms became 1s. It now uses the upstream delay, capped at `RETRY_MAX_DELAY`.\n\n**End to end:** I ran a fake upstream that returns a 429 with `retry-after-ms: 1500` and then a 200. `AnthropicTransport.send_message` slept 1.5s, retried once, and returned the 200 body.\n\n**Test suite:** 1125 passed, 3 failed, 1 skipped. The 3 failures are `test_editable_fields_live_editable_fields` and two handler tier tests (`test_cached_tier_is_not_replayed_into_a_different_requested_tier`, `test_locked_baseline_scopes_the_tier_slot_by_the_lock`). They fail the same way with my change stashed, so they are unrelated to it.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 6093,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 15,
+    "outputTokens": 3058,
+    "firstCacheRead": 19139
+  }
+}

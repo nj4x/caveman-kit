@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-26T07:03:28.603Z",
+  "durationMs": 308285,
+  "usage": {
+    "input_tokens": 22,
+    "cache_read_input_tokens": 320432,
+    "cache_creation_input_tokens": 14520,
+    "output_tokens": 2167
+  },
+  "totalCostUsd": 0.12210040000000001,
+  "result": "Fixed two bugs in `anthrouter/http_util.py`:\n\n- **`should_retry`:** the 429 check was inverted. It retried only when there was no retry guidance, so `retry-after-ms: 1500` went straight to the client. It now retries when guidance is present.\n- **`retry_delay`:** it capped upstream guidance at the exponential backoff, `1.0 * 2**attempt`. On the first attempt a 1.5s delay would have been cut to 1s. It now caps at `RETRY_MAX_DELAY` (30s).\n\nI checked it with a stub response carrying `retry-after-ms: 1500`. `should_retry(429, ...)` returns `True` and `retry_delay(..., 0)` returns `1.5`. A 429 with no guidance still isn't retried. I did not run a real request through `transport.py`; I only read its retry loop, which calls these two functions.\n\nThe full suite has 3 failures: `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. They fail the same way without my change, so they aren't caused by it.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2167,
+    "firstCacheRead": 19139
+  }
+}

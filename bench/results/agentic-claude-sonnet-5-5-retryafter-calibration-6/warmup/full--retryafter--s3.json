@@ -1,0 +1,16 @@
+{
+  "kind": "agentic-warmup",
+  "warmup": true,
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-26T04:46:00.057Z",
+  "usage": {
+    "input_tokens": 2,
+    "cache_read_input_tokens": 17156,
+    "cache_creation_input_tokens": 8920,
+    "output_tokens": 4
+  },
+  "firstCacheRead": 17156
+}

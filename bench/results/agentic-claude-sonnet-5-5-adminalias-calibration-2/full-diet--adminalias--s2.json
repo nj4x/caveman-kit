@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 2,
+  "finishedAt": "2026-10-27T02:13:11.413Z",
+  "durationMs": 335439,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 297278,
+    "cache_creation_input_tokens": 14867,
+    "output_tokens": 2759
+  },
+  "totalCostUsd": 0.1242531,
+  "result": "Fixed: a malformed `model_aliases` (or `auto_model_routing_classification`) value now gets a 400 from `POST /admin/config` instead of hanging.\n\n- **`anthrouter/config.py`:** `_parse_model_aliases_str` and `_parse_classification_str` now raise `ValueError` on bad input. They no longer take a parser argument. `parse_args()` catches the `ValueError` and calls `p.error()`, so CLI behavior is unchanged.\n- **`anthrouter/admin.py`:** the endpoint catches the `ValueError` and returns 400 `invalid_request_error` with the message. I didn't send a real `garbage` request or add a test for it.\n\nThe full suite has 3 failures. I stashed my change and re-ran `tests/test_handlers.py` and `tests/test_config.py`. The same three fail without it:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.07s\n"
+  },
+  "diagnostics": {
+    "readChars": 5930,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2759,
+    "firstCacheRead": 19137
+  }
+}

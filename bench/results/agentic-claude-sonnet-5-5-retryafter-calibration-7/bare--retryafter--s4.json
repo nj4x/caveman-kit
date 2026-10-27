@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 4,
+  "finishedAt": "2026-10-26T06:09:58.653Z",
+  "durationMs": 242409,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 270965,
+    "cache_creation_input_tokens": 12215,
+    "output_tokens": 1759
+  },
+  "totalCostUsd": 0.10236050000000001,
+  "result": "A 429 carrying `retry-after-ms: 1500` is now retried after the delay instead of going straight to the client. I changed two lines in `anthrouter/http_util.py`.\n\n- **`should_retry`:** the 429 check was inverted. It retried a 429 only when there was no retry guidance, which is the opposite of what its docstring says. It now retries only when the upstream sent `retry-after-ms` or `Retry-After`.\n- **`retry_delay`:** this one was a second bug that would have hidden the first. It capped upstream guidance at the exponential backoff, which is 1s on the first attempt, so 1500ms would have become 1s. It now caps at `RETRY_MAX_DELAY` (30s).\n\nI didn't write a test or send a real 429 through the proxy, so the retry itself hasn't been run. The retry loop in `transport.py` already calls both functions, so it needed no change.\n\nThe full suite gives 1125 passed and 3 failed:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI stashed my change and re-ran those three, and they fail the same way without it. I didn't look into why.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1759,
+    "firstCacheRead": 19135
+  }
+}

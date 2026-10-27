@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-7",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-26T06:05:49.630Z",
+  "durationMs": 255321,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 338404,
+    "cache_creation_input_tokens": 13758,
+    "output_tokens": 2588
+  },
+  "totalCostUsd": 0.1280038,
+  "result": "Fixed in `anthrouter/http_util.py`, with two changes. A 429 carrying `retry-after-ms: 1500` is now retried after about 1.5s, as 5xx responses are.\n\n- **Inverted check:** `should_retry` retried a 429 only when there was no retry guidance. The docstring says the opposite, so I flipped it to retry only when the upstream gave timing.\n- **Clipped delay:** `retry_delay` limited the upstream delay to `1s * 2^attempt`, so a 1.5s request on the first attempt would have become 1s. It's now capped at `RETRY_MAX_DELAY` (30s).\n\n**Checks**\n- **Retry decision:** Against a local fake upstream, a 429 with `retry-after-ms: 1500` gives `should_retry=True` and `retry_delay=1.5`. That tests the real header parsing and decision functions. I did not run the full proxy loop through `transport.py` against that server.\n- **Test suite:** 1125 pass and 3 fail: `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`. I stashed my change and re-ran those three; they fail the same way without it, so they aren't caused by this fix.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 2588,
+    "firstCacheRead": 19135
+  }
+}

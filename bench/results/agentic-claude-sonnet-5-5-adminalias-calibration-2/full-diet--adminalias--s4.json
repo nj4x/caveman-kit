@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 4,
+  "finishedAt": "2026-10-27T02:21:18.318Z",
+  "durationMs": 317954,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 354337,
+    "cache_creation_input_tokens": 14957,
+    "output_tokens": 2263
+  },
+  "totalCostUsd": 0.1309379,
+  "result": "Bad `model_aliases` (like `garbage`) now gets a 400 from `POST /admin/config` instead of hanging.\n\nI didn't run `garbage` through the endpoint or add a test for it. The full suite shows 3 failures: `test_editable_fields_live_editable_fields` in `tests/test_config.py`, plus `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`. All three also fail with my changes stashed. The other 1124 tests pass.\n\n- **`config.py`:** `_parse_model_aliases_str` and `_parse_classification_str` now raise `ValueError` on bad input and no longer take a parser argument. `parse_args()` catches the error and calls `p.error()`, so CLI startup still prints the usage line and exits.\n- **`admin.py`:** `handle_post_config` catches the `ValueError` and returns 400 `invalid_request_error` with the parser's message. The dummy `ArgumentParser` is gone. I fixed `auto_model_routing_classification` the same way, since it had the same hang.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2263,
+    "firstCacheRead": 19137
+  }
+}

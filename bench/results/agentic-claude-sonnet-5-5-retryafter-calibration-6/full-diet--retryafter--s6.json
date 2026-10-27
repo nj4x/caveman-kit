@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "retryafter",
+  "seed": 6,
+  "finishedAt": "2026-10-26T05:34:17.994Z",
+  "durationMs": 248968,
+  "usage": {
+    "input_tokens": 24,
+    "cache_read_input_tokens": 344349,
+    "cache_creation_input_tokens": 14126,
+    "output_tokens": 2088
+  },
+  "totalCostUsd": 0.1251128,
+  "result": "Fixed. Two bugs:\n\n- **`should_retry` (`http_util.py`)**: the 429 check was inverted. It retried only when there was *no* retry guidance, so a 429 with `retry-after-ms: 1500` went straight to the client. It now returns `parse_retry_after(resp) is not None`.\n- **`transport.py`**: the retry loop always slept the exponential backoff (1s, 2s, …) and ignored the header. For a 429 it now sleeps the upstream-provided delay, capped at `RETRY_MAX_DELAY` (30s).\n\nI didn't run a test against a live 429 response, so the retry itself is only checked by reading the code. The full suite gives 1125 passed and 3 failed. The same 3 tests fail with my changes stashed, so they aren't caused by this fix:\n- `test_config.py::test_editable_fields_live_editable_fields`\n- `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.04s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 12,
+    "outputTokens": 2088,
+    "firstCacheRead": 19139
+  }
+}

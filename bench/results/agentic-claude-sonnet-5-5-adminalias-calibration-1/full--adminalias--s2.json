@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 2,
+  "finishedAt": "2026-10-26T16:53:02.654Z",
+  "durationMs": 279056,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 252903,
+    "cache_creation_input_tokens": 13702,
+    "output_tokens": 1831
+  },
+  "totalCostUsd": 0.10318160000000001,
+  "result": "Fixed in `anthrouter/admin.py`. A malformed `model_aliases` (like `garbage`) now gets a 400 with the parser's message, like other invalid fields. I didn't send a live `POST /admin/config` request, and I didn't add a test for the new 400.\n\n**Cause:** `_parse_model_aliases_str` reports bad input through `ArgumentParser.error()`. The admin handler passed it a plain `ArgumentParser`, so `error()` called `sys.exit` and killed the request thread without a response.\n\n**Fix:** The handler now passes a small `ArgumentParser` subclass whose `error()` raises an exception instead. The handler catches it and returns the 400. The same bug hit `auto_model_routing_classification`, so I applied the same fix there.\n\n**Tests:** The suite gives 1124 passed, 3 failed. The same 3 fail with my change stashed, so they predate it: `test_editable_fields_live_editable_fields`, `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1831,
+    "firstCacheRead": 19131
+  }
+}

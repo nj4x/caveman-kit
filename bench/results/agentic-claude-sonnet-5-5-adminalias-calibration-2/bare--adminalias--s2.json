@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "adminalias",
+  "seed": 2,
+  "finishedAt": "2026-10-27T01:17:33.123Z",
+  "durationMs": 244531,
+  "usage": {
+    "input_tokens": 20,
+    "cache_read_input_tokens": 279819,
+    "cache_creation_input_tokens": 13121,
+    "output_tokens": 2244
+  },
+  "totalCostUsd": 0.11124630000000002,
+  "result": "Malformed `model_aliases` (like `garbage`) now gets a 400 from `POST /admin/config` instead of hanging. I didn't run that request end to end, and I added no test for it.\n\nThe full suite shows 1124 passed, 3 failed and 1 skipped. I stashed my changes and re-ran those three tests, and they fail the same way without them: `test_editable_fields_live_editable_fields` in `tests/test_config.py`, and `test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_locked_baseline_scopes_the_tier_slot_by_the_lock` in `tests/test_handlers.py`.\n\n- **`anthrouter/config.py`:** `_parse_model_aliases_str` and `_parse_classification_str` no longer take an argparse parser. They raise `ValueError` on bad input. `parse_args()` catches that and calls `p.error(...)`, so the command-line behaviour is the same as before.\n- **`anthrouter/admin.py`:** `handle_post_config` catches the `ValueError` from either parser and returns a 400 `invalid_request_error` with the message. Before, it passed a throwaway `ArgumentParser`, whose `error()` calls `sys.exit(2)`.\n\nI fixed `_parse_classification_str` the same way because it had the identical bug. A bad `auto_model_routing_classification` value would have hung the endpoint too.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 2244,
+    "firstCacheRead": 19133
+  }
+}

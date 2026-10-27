@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 3,
+  "finishedAt": "2026-10-27T02:15:54.947Z",
+  "durationMs": 154636,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 223426,
+    "cache_creation_input_tokens": 12962,
+    "output_tokens": 1999
+  },
+  "totalCostUsd": 0.09711219999999998,
+  "result": "Bad `model_aliases` input like `garbage` should now get a 400 from `POST /admin/config` instead of hanging the request. The full test suite hasn't finished (it timed out in the foreground and is still running in the background), so I haven't confirmed it passes. `ruff` isn't installed here, so I haven't run the lint either. I have not exercised the endpoint itself. I only checked that `_parse_model_aliases_str('garbage')` raises a `ValueError` with the message `--model-aliases: malformed pair 'garbage'; expected alias:model format`.\n\n- **Parsers:** `_parse_classification_str` and `_parse_model_aliases_str` in `anthrouter/config.py` no longer take a parser argument and raise `ValueError` instead of calling `p.error()`. `parse_args()` catches the error and calls `p.error()`, so the command-line behavior is the same.\n- **Admin endpoint:** `anthrouter/admin.py` drops the throwaway `ArgumentParser`. It collects any `ValueError` messages and returns `_err_list(400, 'invalid_request_error', ...)`, the same shape as for other invalid fields. I fixed the classification field too, since it had the same bug.\n\nNo existing test calls either parser directly, so none needed changing.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1999,
+    "firstCacheRead": 19137
+  }
+}

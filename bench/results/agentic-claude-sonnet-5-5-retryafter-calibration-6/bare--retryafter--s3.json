@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-retryafter-calibration-6",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "retryafter",
+  "seed": 3,
+  "finishedAt": "2026-10-26T04:25:35.604Z",
+  "durationMs": 240683,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 241679,
+    "cache_creation_input_tokens": 12301,
+    "output_tokens": 1690
+  },
+  "totalCostUsd": 0.0960243,
+  "result": "A 429 that carries `retry-after-ms` (or `Retry-After`) is now retried after the delay the upstream asked for, the same as a 5xx. I didn't run a request through the proxy, and no test covers the 429-with-header retry path. The suite finishes at 1125 passed, 3 failed.\n\nThere were two bugs:\n- **Inverted check:** `should_retry` in `anthrouter/http_util.py` retried a 429 only when there was no timing header, so a 429 with `retry-after-ms: 1500` went straight to the client. I flipped it so a 429 is retried only when the upstream gave timing guidance.\n- **Delay ignored the header:** the retry loop in `anthrouter/transport.py` used its exponential backoff for every retry. For a 429 it now sleeps for the header's value, capped at `RETRY_MAX_DELAY` (30s).\n\nThe 3 failures are `test_config.py::test_editable_fields_live_editable_fields`, `test_handlers.py::test_cached_tier_is_not_replayed_into_a_different_requested_tier` and `test_handlers.py::test_locked_baseline_scopes_the_tier_slot_by_the_lock`. All three also fail with my changes stashed, so they aren't caused by this fix. I didn't look into why they fail.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "......                                                                   [100%]\n6 passed in 2.03s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1690,
+    "firstCacheRead": 19135
+  }
+}

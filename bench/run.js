@@ -35,7 +35,7 @@ const USAGE = `usage: node bench/run.js --kind single-turn|agentic [options]
 
   --kind <k>          single-turn | agentic                             required
   --seeds <n>         repeats per arm x task (or x fixture)             default 3
-  --fixtures <names>  agentic: comma list of fixture names              default all
+  --fixtures <names>  agentic: comma list of fixture names              default: all but inDefaultSet false
   --fixtures-dir <d>  agentic: dir holding <name>/fixture.json          default bench/fixtures
   --model <id>        model passed to claude --model                    default ${cells.DEFAULT_MODEL}
   --kit-dir <path>    kit checkout whose hooks/ are measured            default repo root
@@ -196,7 +196,7 @@ async function main() {
   let diet = null;
   if (isAgentic) {
     diet = agentic.dietText(opts.kitDir);
-    const names = opts.fixtures || fixtures.listFixtureNames(opts.fixturesDir);
+    const names = opts.fixtures || fixtures.defaultFixtureNames(opts.fixturesDir);
     if (names.length === 0) throw new isolation.BenchError(`no fixtures found in ${opts.fixturesDir}`);
     items = names.map(name => fixtures.loadFixture(opts.fixturesDir, name));
   } else {

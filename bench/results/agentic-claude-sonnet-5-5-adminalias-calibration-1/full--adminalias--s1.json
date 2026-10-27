@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 1,
+  "finishedAt": "2026-10-26T16:48:18.014Z",
+  "durationMs": 521930,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 247806,
+    "cache_creation_input_tokens": 12191,
+    "output_tokens": 1859
+  },
+  "totalCostUsd": 0.09866470000000002,
+  "result": "Fixed in `anthrouter/admin.py`. A malformed `model_aliases` (e.g. `garbage`) now gets a 400 with a message instead of killing the request thread.\n\n**Cause:** `_parse_model_aliases_str` reports bad input through `ArgumentParser.error()`. The admin handler passed it a stock parser, so `error()` called `sys.exit(2)`. That `SystemExit` ended the request thread, so the client got no response.\n\n**Fix:** The handler now passes a small parser subclass whose `error()` raises `ValueError`. It catches that and returns `_err(400, 'invalid_request_error', ...)`. The same path covers `auto_model_routing_classification`, which had the same bug.\n\n**Tests:** Three tests fail in `tests/`, and the same three fail on the unmodified code, so my change didn't cause them. They are `test_editable_fields_live_editable_fields` and two in `tests/test_handlers.py` (`test_cached_tier_is_not_replayed_into_a_different_requested_tier`, `test_locked_baseline_scopes_the_tier_slot_by_the_lock`). The other 1124 pass. I haven't sent a real `POST /admin/config`, and I didn't add a test for the new 400.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.08s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 4,
+    "testRunsExecuted": 2,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 9,
+    "outputTokens": 1859,
+    "firstCacheRead": 19131
+  }
+}

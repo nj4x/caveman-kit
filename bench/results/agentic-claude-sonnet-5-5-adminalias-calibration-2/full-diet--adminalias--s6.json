@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 6,
+  "finishedAt": "2026-10-27T02:30:40.787Z",
+  "durationMs": 267905,
+  "usage": {
+    "input_tokens": 26,
+    "cache_read_input_tokens": 382929,
+    "cache_creation_input_tokens": 15030,
+    "output_tokens": 3350
+  },
+  "totalCostUsd": 0.14771279999999998,
+  "result": "Fixed: a malformed alias such as `garbage` now makes `POST /admin/config` answer 400 instead of hanging.\n\nThe three suite failures also fail with my changes stashed, so I didn't cause them:\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n- `test_editable_fields_live_editable_fields`\n\nThe other 1,124 tests pass. I didn't add a test or send a real malformed request to the endpoint.\n\n- **Parsers:** `_parse_model_aliases_str` and `_parse_classification_str` in `config.py` now raise `ValueError` on bad input and no longer take a parser argument. I changed `_parse_classification_str` too because it had the same `p.error()` problem.\n- **CLI startup:** `parse_args()` catches the `ValueError` and calls `p.error()`, so bad flags still exit with a usage message.\n- **Admin endpoint:** `admin.py` catches the `ValueError` and returns the usual 400 `invalid_request_error`, with the parser's message. The throwaway `ArgumentParser` is gone.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.07s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 5,
+    "testRunsExecuted": 3,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 3350,
+    "firstCacheRead": 19137
+  }
+}

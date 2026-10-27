@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-2",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "adminalias",
+  "seed": 4,
+  "finishedAt": "2026-10-27T01:26:39.972Z",
+  "durationMs": 251512,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 218159,
+    "cache_creation_input_tokens": 12587,
+    "output_tokens": 2144
+  },
+  "totalCostUsd": 0.0965713,
+  "result": "Malformed model aliases (and malformed classification values) now make `POST /admin/config` answer 400 instead of exiting the server. I didn't run a real malformed request against the endpoint, and I added no test for the new 400 path.\n\n- **Parsers:** in `anthrouter/config.py`, `_parse_model_aliases_str` and `_parse_classification_str` now raise `ValueError` with the same messages instead of calling `p.error()`. They no longer take a parser argument. I changed the classification parser too because it had the same bug.\n- **CLI:** `parse_args()` catches the `ValueError` and passes it to `p.error()`, so command-line behavior is unchanged.\n- **Admin endpoint:** in `anthrouter/admin.py`, `handle_post_config` catches the `ValueError`. It returns the message as a 400 `invalid_request_error`, like the other field errors, and the dummy `ArgumentParser` is gone.\n\nThe full suite gave 1124 passed, 1 skipped and 3 failed:\n- `test_editable_fields_live_editable_fields`\n- `test_cached_tier_is_not_replayed_into_a_different_requested_tier`\n- `test_locked_baseline_scopes_the_tier_slot_by_the_lock`\n\nI stashed my change and re-ran those three, and they fail the same way without it.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 2144,
+    "firstCacheRead": 19133
+  }
+}

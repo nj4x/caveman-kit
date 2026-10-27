@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-adminalias-calibration-1",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "adminalias",
+  "seed": 3,
+  "finishedAt": "2026-10-26T17:29:09.164Z",
+  "durationMs": 231687,
+  "usage": {
+    "input_tokens": 16,
+    "cache_read_input_tokens": 218191,
+    "cache_creation_input_tokens": 11935,
+    "output_tokens": 1562
+  },
+  "totalCostUsd": 0.0891277,
+  "result": "Fixed in `anthrouter/admin.py`. A malformed `model_aliases` now gets a 400 with the parser's message instead of killing the request thread.\n\nThe cause was that the admin handler passed a plain `ArgumentParser` to `_parse_model_aliases_str`, and `p.error()` calls `sys.exit()`. I swapped in a parser subclass whose `error()` raises `ValueError`, and the handler returns that as a 400. I applied the same change to `auto_model_routing_classification`, which had the same problem.\n\nFull suite: 1124 passed, 3 failed, 1 skipped. Two of the failures are in `tests/test_handlers.py` and also fail with my change stashed, so they predate it. I didn't identify the third failure, so I haven't confirmed it is unrelated. I also didn't add a test or send a `garbage` alias to the endpoint.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...............                                                          [100%]\n15 passed in 0.02s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 1,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1562,
+    "firstCacheRead": 19137
+  }
+}
