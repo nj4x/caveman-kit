@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 4,
+  "finishedAt": "2026-10-27T20:47:19.653Z",
+  "durationMs": 17883,
+  "usage": {
+    "input_tokens": 8,
+    "cache_read_input_tokens": 100000,
+    "cache_creation_input_tokens": 11167,
+    "output_tokens": 1722
+  },
+  "totalCostUsd": 0.0651535,
+  "result": "`critic_ledger.py flagged <flagged-file>` now works. I ran it by hand on five inputs, and all five behaved as specified. The repo has no test suite, so I added no tests.\n\n- **Fenced and valid:** a fenced ```` ```json ```` array with both keys printed the array as JSON and exited 0.\n- **Item missing a key:** an item without `why_flagged` exited 1 with `FLAGGED_DECISIONS_PARSE_ERROR: item 0 needs decision and why_flagged`.\n- **Not an array:** `{}` exited 1 with `FLAGGED_DECISIONS_PARSE_ERROR: expected a JSON array`.\n- **Invalid JSON or missing file:** both exited 1 with a `PARSE_ERROR:` line.\n\nI also changed `_load_json` to catch `ValueError` instead of `json.JSONDecodeError`. A file with undecodable bytes would otherwise have raised a traceback rather than `PARSE_ERROR:`. `validate` and `upsert` go through the same function, so they get that fix too.\n\nI added the new usage line to the script's docstring.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.17s\n"
+  },
+  "diagnostics": {
+    "readChars": 5169,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 5,
+    "outputTokens": 1722,
+    "firstCacheRead": 19137
+  }
+}

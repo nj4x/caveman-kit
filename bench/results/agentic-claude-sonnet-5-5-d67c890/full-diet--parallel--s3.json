@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "parallel",
+  "seed": 3,
+  "finishedAt": "2026-10-27T19:38:23.896Z",
+  "durationMs": 44578,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 340982,
+    "cache_creation_input_tokens": 27329,
+    "output_tokens": 3076
+  },
+  "totalCostUsd": 0.16734690000000002,
+  "result": "Both bugs fixed. I haven't run the tests.\n\n1. **Score 100:** `anthrouter/model_router.py:1233` rejected 100 because the range check was `0 <= value < 100`. It is now `<= 100`, which matches the docstring and `parse_classifier_score_json`.\n2. **Requests remaining:** `anthrouter/http_util.py:120` looked up the header `anthropic-ratelimit-request-remaining` (singular). Anthropic sends `anthropic-ratelimit-requests-remaining`, so the value was never read and stored as NULL. The token headers already used the correct names.\n\nAn existing test in `tests/test_model_router.py` may expect 100 to be rejected. I didn't check, and you asked me not to change tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 574,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 9,
+    "outputTokens": 3076,
+    "firstCacheRead": 19137
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "bigfile",
+  "seed": 4,
+  "finishedAt": "2026-10-27T20:34:03.238Z",
+  "durationMs": 20380,
+  "usage": {
+    "input_tokens": 12,
+    "cache_read_input_tokens": 153905,
+    "cache_creation_input_tokens": 9773,
+    "output_tokens": 813
+  },
+  "totalCostUsd": 0.0633675,
+  "result": "Fixed. In `parse_classifier_score` (`anthrouter/model_router.py:1233`), the range check was `0 <= value < 100`, which rejected `100`. It's now `0 <= value <= 100`. The JSON variant already used `<= 100`. I didn't run the tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 2139,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 813,
+    "firstCacheRead": 19137
+  }
+}

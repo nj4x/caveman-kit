@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 6,
+  "finishedAt": "2026-10-27T19:57:52.968Z",
+  "durationMs": 22631,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 242378,
+    "cache_creation_input_tokens": 11369,
+    "output_tokens": 1389
+  },
+  "totalCostUsd": 0.09082409999999999,
+  "result": "The activity-label prompt with a leading `<system-reminder>` block is now recognized again. Your example text returns `True` from `is_activity_label_prompt`.\n\nI couldn't run the test suite because pytest isn't installed here. The only check I ran was that one example.\n\n**Root cause:** `strip_reminders()` in `anthrouter/request_text.py` is documented to \"trim outer whitespace\" but didn't. After the reminder block was removed, the newline that followed it stayed. `is_activity_label_prompt` then called `.startswith(ACTIVITY_LABEL_PREFIX)` on text that began with `\\n`, so the match failed.\n\n**Fix:** `strip_reminders()` now ends with `.strip()`, which is what its docstring already promised. I fixed it there rather than in `is_activity_label_prompt` so every caller gets the trimmed text. That includes the local-command matching in `handlers.py` and the classifier input in the model router.\n\nI haven't checked whether any of those callers relied on the leftover whitespace, so run `make test` once pytest is available.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 10,
+    "outputTokens": 1389,
+    "firstCacheRead": 19133
+  }
+}

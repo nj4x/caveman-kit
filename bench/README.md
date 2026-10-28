@@ -152,8 +152,13 @@ reliability check above. A fixture it drops must be fixed before a paid run.
 
 ### Measuring the Context Diet branch
 
-The agentic gate measures the hooks of the checkout `--kit-dir` names, so point
-it at a worktree of the `context-diet` branch and run from this checkout:
+ADR 0019 removed Context Diet from `master`; `hooks/caveman-context-diet.md` and
+its `caveman-activate.js` block are gone from it (recover them from commit
+`d67c890`). To measure a new candidate, put both on a branch (ADR 0009 layout),
+restoring the `CAVEMAN_CONTEXT_DIET=0` opt-out the `full` arm relies on, and point `--kit-dir` at it;
+without the file the runner aborts before any paid call. The agentic gate
+measures the hooks of the checkout `--kit-dir` names, so use a worktree of that
+branch (a branch you create; the command below calls it `context-diet`) and run from this checkout:
 
 ```bash
 git worktree add ../caveman-kit-context-diet context-diet

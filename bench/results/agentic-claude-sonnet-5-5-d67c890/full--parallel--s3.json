@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "parallel",
+  "seed": 3,
+  "finishedAt": "2026-10-27T19:10:17.034Z",
+  "durationMs": 28825,
+  "usage": {
+    "input_tokens": 34,
+    "cache_read_input_tokens": 333348,
+    "cache_creation_input_tokens": 31011,
+    "output_tokens": 3956
+  },
+  "totalCostUsd": 0.18382509999999996,
+  "result": "Both fixes applied. I couldn't run the tests because pytest isn't installed (`make test` also fails, since `python` isn't on PATH).\n\n1. **Score 100:** `anthrouter/model_router.py:1233` in `parse_classifier_score` used `0 <= value < 100`, which rejects 100. It is now `0 <= value <= 100`, matching the docstring and `parse_classifier_score_json`.\n2. **Requests remaining:** `anthrouter/http_util.py:120` read the header `anthropic-ratelimit-request-remaining` (singular), which Anthropic never sends. It now reads `anthropic-ratelimit-requests-remaining`. Rows recorded before this fix have NULL for that field and can't be recovered.\n\nThe subagent's `git log -S` check found the typo present since the `initial` commit, so it may never have worked. I didn't check live headers.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 506,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 10,
+    "outputTokens": 3956,
+    "firstCacheRead": 19131
+  }
+}

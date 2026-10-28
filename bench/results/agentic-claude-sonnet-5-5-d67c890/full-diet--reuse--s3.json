@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 3,
+  "finishedAt": "2026-10-27T19:39:31.926Z",
+  "durationMs": 20558,
+  "usage": {
+    "input_tokens": 12,
+    "cache_read_input_tokens": 162368,
+    "cache_creation_input_tokens": 13419,
+    "output_tokens": 2801
+  },
+  "totalCostUsd": 0.0940551,
+  "result": "I added the `flagged` subcommand to `skills/planning/critic/scripts/critic_ledger.py`. A manual run of the five cases below gave the expected exit codes and messages. I didn't add a test file, since the repo has no test setup.\n\n- **Valid input:** a fenced array and a plain one both print the array as JSON and exit 0.\n- **Unreadable file or invalid JSON:** exit 1 with `PARSE_ERROR: ...`.\n- **Not an array, or an item missing `decision` or `why_flagged`:** exit 1 with `FLAGGED_DECISIONS_PARSE_ERROR: ...`.\n\nThe subcommand reuses the existing fence-stripping and loading helpers and the usage docstring is updated.\n\nOne change affects the other subcommands too: `_load_json` now catches `ValueError` instead of only `json.JSONDecodeError`. A non-UTF-8 file therefore gives `PARSE_ERROR` instead of a traceback, and `validate` and `upsert` get the same behaviour.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.11s\n"
+  },
+  "diagnostics": {
+    "readChars": 5169,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 2801,
+    "firstCacheRead": 19137
+  }
+}

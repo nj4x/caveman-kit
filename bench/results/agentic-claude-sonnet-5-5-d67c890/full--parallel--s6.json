@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "parallel",
+  "seed": 6,
+  "finishedAt": "2026-10-27T20:21:48.045Z",
+  "durationMs": 32651,
+  "usage": {
+    "input_tokens": 36,
+    "cache_read_input_tokens": 385280,
+    "cache_creation_input_tokens": 26848,
+    "output_tokens": 3271
+  },
+  "totalCostUsd": 0.176958,
+  "result": "Both bugs fixed. I didn't run the tests: `make test` fails because there is no `python` on PATH, and `python3` has no pytest.\n\n1. **Score `100`:** `parse_classifier_score` in `anthrouter/model_router.py:1233` checked `0 <= value < 100`. It now checks `<= 100`.\n2. **Missing requests-remaining:** `anthrouter/http_util.py:120` read the header `anthropic-ratelimit-request-remaining`, which is singular and doesn't match what upstream sends. It now reads `anthropic-ratelimit-requests-remaining`.\n\nI changed no tests. No test covers score `100` yet.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 1842,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 11,
+    "outputTokens": 3271,
+    "firstCacheRead": 19131
+  }
+}

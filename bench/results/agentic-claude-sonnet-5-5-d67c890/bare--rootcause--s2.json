@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "rootcause",
+  "seed": 2,
+  "finishedAt": "2026-10-27T18:49:23.094Z",
+  "durationMs": 24870,
+  "usage": {
+    "input_tokens": 18,
+    "cache_read_input_tokens": 241614,
+    "cache_creation_input_tokens": 12276,
+    "output_tokens": 1511
+  },
+  "totalCostUsd": 0.09415879999999999,
+  "result": "I fixed it in `strip_reminders()` in `anthrouter/request_text.py`. Your example now returns `True` from `is_activity_label_prompt`, which I checked with a one-line call. I couldn't run the test suite: `pytest` isn't installed in this environment.\n\n**Root cause:** `strip_reminders` is documented to \"trim outer whitespace\" but never did. Removing the `<system-reminder>` block left the newline that followed it, so the text started with `\\n`. `is_activity_label_prompt` does a plain `startswith` on the stripped text, so it failed.\n\n**Fix:** the function now ends with `.strip()`. Fixing it there rather than in the activity-label check covers every caller of `strip_reminders`, as the docstring already promised.\n\nI didn't change any tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 9892,
+    "reReads": 0,
+    "testRuns": 3,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 11,
+    "outputTokens": 1511,
+    "firstCacheRead": 19133
+  }
+}

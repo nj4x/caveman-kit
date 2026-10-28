@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "parallel",
+  "seed": 3,
+  "finishedAt": "2026-10-27T18:46:31.938Z",
+  "durationMs": 49341,
+  "usage": {
+    "input_tokens": 36,
+    "cache_read_input_tokens": 326709,
+    "cache_creation_input_tokens": 52072,
+    "output_tokens": 3675
+  },
+  "totalCostUsd": 0.23234380000000004,
+  "result": "Both fixes are applied, but I couldn't run the tests. `python` isn't on the path here and `python3` has no pytest installed.\n\n1. **Score 100 dropped:** in `anthrouter/model_router.py`, `parse_classifier_score` rejected values with `0 <= value < 100`. I changed it to `<= 100`, which matches its docstring and the sibling JSON parser.\n2. **Requests-remaining not recorded:** in `anthrouter/http_util.py`, the header name was misspelled as `anthropic-ratelimit-request-remaining`. I changed it to the plural `requests`, which is what Anthropic sends.\n\nI didn't edit any existing tests. If a test asserts that `100` is rejected, it will now fail and need updating, but I haven't searched `tests/` for one.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 6184,
+    "reReads": 1,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 10,
+    "outputTokens": 3675,
+    "firstCacheRead": 19133
+  }
+}

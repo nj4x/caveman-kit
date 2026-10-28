@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "parallel",
+  "seed": 5,
+  "finishedAt": "2026-10-27T19:54:41.482Z",
+  "durationMs": 43521,
+  "usage": {
+    "input_tokens": 40,
+    "cache_read_input_tokens": 334281,
+    "cache_creation_input_tokens": 40982,
+    "output_tokens": 3715
+  },
+  "totalCostUsd": 0.20654119999999995,
+  "result": "I fixed both bugs, but I couldn't run the tests. `python` isn't on the PATH and `python3` has no pytest installed.\n\n1. **Score 100 dropped:** `parse_classifier_score` in `anthrouter/model_router.py` (line 1233) checked `0 <= value < 100`, so `100` was rejected as invalid. It now checks `0 <= value <= 100`, which matches its docstring and the sibling `parse_classifier_score_json`. An existing test may assert that `100` is rejected. If so, that test encodes the bug. I left tests alone, as you asked.\n2. **Requests-remaining not recorded:** `_RATELIMIT_HEADERS` in `anthrouter/http_util.py` (line 120) had a typo, `anthropic-ratelimit-request-remaining`. The real header is plural, `requests`. The lookup always returned nothing, while the token headers were spelled correctly. I corrected it to `anthropic-ratelimit-requests-remaining`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 6115,
+    "reReads": 1,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 11,
+    "outputTokens": 3715,
+    "firstCacheRead": 19133
+  }
+}

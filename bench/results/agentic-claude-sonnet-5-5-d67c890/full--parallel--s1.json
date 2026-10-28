@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "parallel",
+  "seed": 1,
+  "finishedAt": "2026-10-27T19:09:09.546Z",
+  "durationMs": 21975,
+  "usage": {
+    "input_tokens": 28,
+    "cache_read_input_tokens": 273123,
+    "cache_creation_input_tokens": 36236,
+    "output_tokens": 2664
+  },
+  "totalCostUsd": 0.1719106,
+  "result": "Both fixes applied. I couldn't run the tests: `make test` fails because `python` isn't on PATH, and `python3` has no `pytest` installed.\n\n1. **Score 100:** `parse_classifier_score` in `anthrouter/model_router.py:1233` checked `0 <= value < 100`, so 100 returned `None`. It now checks `0 <= value <= 100`. The JSON parser at line 1294 already used the inclusive bound.\n2. **Requests remaining:** `anthrouter/http_util.py:120` read the header `anthropic-ratelimit-request-remaining`, which is a typo. It now reads `anthropic-ratelimit-requests-remaining`, with the plural \"requests\", matching what Anthropic sends.\n\nI changed no tests.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 2,
+    "subagentStarts": 2,
+    "turns": 10,
+    "outputTokens": 2664,
+    "firstCacheRead": 19131
+  }
+}

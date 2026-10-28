@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "bare",
+  "mode": "off",
+  "task": "bigfile",
+  "seed": 4,
+  "finishedAt": "2026-10-27T19:50:12.615Z",
+  "durationMs": 7514,
+  "usage": {
+    "input_tokens": 12,
+    "cache_read_input_tokens": 143659,
+    "cache_creation_input_tokens": 6708,
+    "output_tokens": 753
+  },
+  "totalCostUsd": 0.05305580000000001,
+  "result": "Fixed: in `anthrouter/model_router.py`, the plain-text score parser's range check was `0 <= value < 100`, which rejected `100`. It's now `0 <= value <= 100`, so a reply of `100` is parsed and routed on.\n\nI haven't run the tests. `python` isn't on the path in this shell, so the pytest run never started.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "...                                                                      [100%]\n3 passed in 0.01s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 1,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 6,
+    "outputTokens": 753,
+    "firstCacheRead": 19133
+  }
+}

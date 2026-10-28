@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full",
+  "mode": "full",
+  "task": "rootcause",
+  "seed": 6,
+  "finishedAt": "2026-10-27T20:24:24.186Z",
+  "durationMs": 17139,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 195128,
+    "cache_creation_input_tokens": 13443,
+    "output_tokens": 1163
+  },
+  "totalCostUsd": 0.0842911,
+  "result": "Fixed in `strip_reminders` in `anthrouter/request_text.py`. The example prompt now returns `True` from `is_activity_label_prompt`. I couldn't run the test suite: `make test` needs a `python` that isn't on PATH, and `python3` has no pytest.\n\nThe root cause was that `strip_reminders` documented \"trim outer whitespace\" but never trimmed. Removing the `<system-reminder>` block left a leading `\\n`, so `startswith(ACTIVITY_LABEL_PREFIX)` failed. I added `.strip()` to its return.\n\nEvery caller of `strip_reminders` now gets trimmed text, including the local-command matcher and the classifier input. I didn't check those callers or their tests for anything that relied on the leading or trailing whitespace.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": "....                                                                     [100%]\n4 passed in 0.00s\n"
+  },
+  "diagnostics": {
+    "readChars": 10538,
+    "reReads": 0,
+    "testRuns": 2,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 8,
+    "outputTokens": 1163,
+    "firstCacheRead": 19131
+  }
+}

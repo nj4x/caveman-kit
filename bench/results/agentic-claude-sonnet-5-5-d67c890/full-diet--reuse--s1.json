@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 1,
+  "finishedAt": "2026-10-27T19:38:46.009Z",
+  "durationMs": 15550,
+  "usage": {
+    "input_tokens": 8,
+    "cache_read_input_tokens": 108605,
+    "cache_creation_input_tokens": 14383,
+    "output_tokens": 1805
+  },
+  "totalCostUsd": 0.0757445,
+  "result": "I added the `flagged` subcommand to `critic_ledger.py` and the usage docstring now lists it. I checked it by hand with five inputs and each gave the expected output and exit code; I didn't add any test files.\n\n- **Valid input:** an array of items with both keys, fenced or not, prints as JSON and exits 0.\n- **Unreadable file or invalid JSON:** exits 1 with `PARSE_ERROR: ...`. This reuses the existing `_load_json`, which also handles the Markdown fence.\n- **Not an array, or an item that isn't an object or lacks `decision` or `why_flagged`:** exits 1 with `FLAGGED_DECISIONS_PARSE_ERROR: ...`. The new `validate_flagged` function does this check.\n\nAn empty array `[]` counts as valid and prints `[]`.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.11s\n"
+  },
+  "diagnostics": {
+    "readChars": 0,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 7,
+    "outputTokens": 1805,
+    "firstCacheRead": 19137
+  }
+}

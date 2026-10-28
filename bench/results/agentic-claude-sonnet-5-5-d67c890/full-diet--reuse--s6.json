@@ -1,0 +1,37 @@
+{
+  "runId": "agentic-claude-sonnet-5-5-d67c890",
+  "kind": "agentic",
+  "model": "claude-sonnet-5-5",
+  "arm": "full-diet",
+  "mode": "full",
+  "task": "reuse",
+  "seed": 6,
+  "finishedAt": "2026-10-27T20:48:18.220Z",
+  "durationMs": 32047,
+  "usage": {
+    "input_tokens": 14,
+    "cache_read_input_tokens": 201423,
+    "cache_creation_input_tokens": 15801,
+    "output_tokens": 3526
+  },
+  "totalCostUsd": 0.11507510000000001,
+  "result": "Added `flagged <flagged-file>` to `critic_ledger.py`. I ran it on six sample files, and each gave the result the spec asks for.\n\n- **Valid input:** a fenced `json` array printed as JSON on stdout, exit 0.\n- **Not an array:** `{}` gave `FLAGGED_DECISIONS_PARSE_ERROR: expected a JSON array`, exit 1.\n- **Item missing a key:** `[{\"decision\":\"a\"}]` gave `FLAGGED_DECISIONS_PARSE_ERROR: item 0 missing why_flagged`, exit 1.\n- **Invalid JSON or missing file:** gave `PARSE_ERROR: ...`, exit 1.\n\nAn item that isn't an object also gets the `FLAGGED_DECISIONS_PARSE_ERROR:` prefix. I didn't test that case.\n\nI also changed `_load_json` to catch `ValueError` instead of `json.JSONDecodeError`. A non-UTF-8 file used to crash with a traceback. It now gives `PARSE_ERROR:`. This applies to `validate` and `upsert` too.\n\nI added the new usage line to the docstring at the top of the script.",
+  "hitMaxTurns": false,
+  "hiddenTest": {
+    "pass": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "tail": ".....                                                                    [100%]\n5 passed in 0.13s\n"
+  },
+  "diagnostics": {
+    "readChars": 5169,
+    "reReads": 0,
+    "testRuns": 0,
+    "testRunsExecuted": 0,
+    "subagentCalls": 0,
+    "subagentStarts": 0,
+    "turns": 13,
+    "outputTokens": 3526,
+    "firstCacheRead": 19137
+  }
+}
