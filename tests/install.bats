@@ -140,6 +140,7 @@ PATCHJS
 
   [[ "$output" == *"warning"* ]] || [[ "$output" == *"best-effort"* ]] || false
   [ ! -d "$HOME/.caveman-kit" ]
+  [[ "$output" == *"/plugin uninstall caveman-badge@caveman-kit"* ]] || false
 }
 
 @test "uninstall.sh removes KIT_HOME and strips settings.json markers" {
@@ -347,6 +348,8 @@ uninstall_with_flag() {
 @test "uninstall removes ultracave when the flag is true" {
   uninstall_with_flag true
   [ ! -e "$CLAUDE_CONFIG_DIR/skills/ultracave" ]
+  # ADR 0022 decision 4: the manifest path prints the badge mod reminder too.
+  [[ "$output" == *"/plugin uninstall caveman-badge@caveman-kit"* ]] || false
 }
 
 @test "uninstall removes a partial ultracave directory when the flag is null" {

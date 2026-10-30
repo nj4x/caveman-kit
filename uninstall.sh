@@ -26,6 +26,12 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
+# ADR 0022 decision 4: printed on both endings, unconditionally. Reads no
+# state: the kit does not own Claude Code's plugin list.
+badge_mod_reminder() {
+  echo "If you installed the desktop badge mod, run: /plugin uninstall caveman-badge@caveman-kit"
+}
+
 if [ ! -f "$MANIFEST" ]; then
   echo "warning: $MANIFEST missing — cannot determine skill state." >&2
   echo "Proceeding with best-effort cleanup (settings/statusline markers, $KIT_HOME)." >&2
@@ -54,6 +60,7 @@ if [ ! -f "$MANIFEST" ]; then
   echo
   echo "caveman-kit uninstalled (best-effort, manifest was missing)."
   echo "Manual cleanup may be needed for the skill entry."
+  badge_mod_reminder
   exit 0
 fi
 
@@ -124,3 +131,4 @@ fi
 
 echo
 echo "caveman-kit uninstalled. Restart Claude Code."
+badge_mod_reminder
