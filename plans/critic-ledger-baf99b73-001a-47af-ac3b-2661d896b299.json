@@ -1,0 +1,462 @@
+[
+  {
+    "id": "ID-001",
+    "group": "A",
+    "claim": "First update.sh run after this change executes the pre-change script, so neither migration fires on that run, though ADR 0021 says it does. Ordering also upgrades skills before hooks are copied, so a failed pull or repatch leaves new skill text under old hooks.",
+    "evidence": "ADR 0021 Consequences: \"A manifest without `skillRef` is treated as \\\"differs\\\", so the first run after this change moves legacy installs to the latest tag.\" Flowchart: \"E --> K{kit has new commits?}\" then \"K -->|yes| L[Unpatch, pull, copy hooks, repatch]\"; Decision 2: \"`update.sh` no longer parses `install.sh`.\"",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-002",
+    "group": "A",
+    "claim": "Override does not persist, so it cannot hold a known-good tag. A plain update.sh run without the variable moves off the held tag.",
+    "evidence": "ADR 0021 Decision 3: \"It needs no manifest field. Its purpose is the safety valve the pin used to provide.\" Consequences: \"the `CAVEMAN_KIT_SKILL_REF` override to hold a known-good tag\".",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-003",
+    "group": "A",
+    "claim": "Missing visual: install, update and uninstall ownership and migration branches appear only in prose. ADR 0020's only diagram covers hook runtime.",
+    "evidence": "ADR 0020 Decision 2: \"`uninstall.sh` removes `$CLAUDE_DIR/skills/ultracave/` only when it is true.\" Decision 6: \"if `skills/ultracave/` is missing it installs the skill and records the flag as true.\" Needed: flowchart of install/update ownership branches.",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-004",
+    "group": "C",
+    "claim": "ADR 0021 does not define partial reinstall failure. If caveman reinstalls and ultracave fails, skills sit at different tags while skillRef matches neither. If skill-patch fails after reinstall, caveman lacks disable-model-invocation and it is unstated whether skillRef advances.",
+    "evidence": "ADR 0021 diagram: \"D -->|fails| W[Warn, keep skills]\"; Decision 5: \"it reinstalls the kit-owned skills at the new tag, re-runs `lib/skill-patch.js` on `caveman` (ADR 0002, fixed in ADR 0020), and updates `skillRef`.\"",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-005",
+    "group": "C",
+    "claim": "ADR 0020 gives no failure policy for installing ultracave at install or update time. Unclear whether install aborts for a user whose caveman is user-managed, or what the manifest records after a partial install.",
+    "evidence": "Decision 1: \"`ultracave` is installed whenever it is missing and `--no-install-skill` is not set, including when `caveman` is user-managed.\" Decision 6 gives only the success path.",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-006",
+    "group": "A",
+    "claim": "Combined install call (--skill caveman --skill ultracave) reinstalls a user-managed caveman when only ultracave is missing, which conflicts with decision 2 ownership rule.",
+    "evidence": "ADR 0020 Decision 1: \"`install.sh` installs both skills in one `npx skills add` call\" next to \"including when `caveman` is user-managed\".",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-007",
+    "group": "A",
+    "claim": "install.sh aborts on tag lookup failure even when no skill needs installing, so offline or --no-install-skill runs may fail.",
+    "evidence": "ADR 0021 Decision 7: \"`install.sh` takes its existing skill-install failure path: abort\"; Consequences: \"`install.sh` and `update.sh` need network access and `git` at run time for the tag lookup\".",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-008",
+    "group": "A",
+    "claim": "ADR 0020 Decision 9 test list covers only the hook fallback, not install ownership flag, legacy migration, or uninstall branch.",
+    "evidence": "\"Tests assert that `ultra` injects the `ultracave` body and that a missing `ultracave` falls back to the caveman body.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-009",
+    "group": "B",
+    "claim": "ADR 0021 says the two skills are independent, but ADR 0020 shows caveman depends on ultracave at runtime. Version skew is assumed harmless without justification.",
+    "evidence": "ADR 0021 Decision 6: \"The two skills may therefore be at different versions; each one's rules are self-contained.\" vs ADR 0020 Context: \"The slash-command path loads `caveman/SKILL.md`, which tells the model to follow `ultracave`.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-010",
+    "group": "B",
+    "claim": "ADR 0020 Decision 3 relies on disable-model-invocation: true seen at one tag, but ADR 0021 removes the pin, so later releases can drop it unchecked.",
+    "evidence": "ADR 0020: \"Upstream already sets `disable-model-invocation: true` on `ultracave`, so there is no frontmatter patch and no backup file.\" vs ADR 0021 Consequences: \"The kit now accepts upstream format changes the moment a release is tagged.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-011",
+    "group": "B",
+    "claim": "Two roots named for the ultracave path, with no statement that they coincide.",
+    "evidence": "ADR 0020 Decision 4: \"reads `$CLAUDE_PLUGIN_ROOT/skills/ultracave/SKILL.md`\" vs Decision 2: \"removes `$CLAUDE_DIR/skills/ultracave/` only when it is true\".",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-012",
+    "group": "B",
+    "claim": "ADR 0020 misquotes ADR 0006.",
+    "evidence": "ADR 0020: \"ADR 0006 consequence \\\"users can invoke wenyan directly\\\" no longer holds\". ADR 0006 Decision text reads: \"users who want wenyan can invoke it directly\"; the upstream v3.1.0 split, not megacave, is the cause.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-013",
+    "group": "B",
+    "claim": "ADR 0021 lists no alternatives and does not list ADR 0003 as amended, though it adds a manifest field.",
+    "evidence": "ADR 0021 Status: \"Amends ADR 0001 (pinned install) and ADR 0007 (skill upgrade when the pin changed).\" vs Decision 4: \"The manifest gains `skillRef`\".",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-014",
+    "group": "B",
+    "claim": "ADR 0020 appends kit-written ultra examples to ultracave text while Decision 8 says the injected rules are unmodified upstream text.",
+    "evidence": "Decision 4: \"The kit's `- ultra:` example lines are still appended.\" vs Decision 8: \"`ultracave` is unmodified upstream text, so this restores upstream's design and does not add a kit-authored supplement.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-015",
+    "group": "C",
+    "claim": "Override accepts any ref, including tags below v3.1.0 that have no ultracave, so the reinstall fails late.",
+    "evidence": "ADR 0021 Decision 3: \"`CAVEMAN_KIT_SKILL_REF=<tag>` skips the lookup and installs that ref.\" ADR 0020 Context: \"moved the ultra rules out of `caveman/SKILL.md` and into a separate `ultracave` skill at v3.1.0.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-016",
+    "group": "C",
+    "claim": "ultra fallback fires only when the file is unreadable. A readable ultracave with an empty body or frontmatter only injects almost nothing and emits no stderr signal.",
+    "evidence": "ADR 0020 Decision 5: \"If the file is unreadable, `ultra` falls back to the caveman body and writes one line to stderr.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-017",
+    "group": "C",
+    "claim": "Migration order on a legacy update run is unstated, and skillRef has no defined value when the kit installs no skill.",
+    "evidence": "ADR 0021 Decision 4: \"It is written on install and on every successful skill upgrade.\" ADR 0020 Decision 6: \"`update.sh` treats a manifest without `ultracaveInstalledByKit` as legacy\".",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-018",
+    "group": "B",
+    "claim": "Legacy absent-field migration installs ultracave for --no-install-skill users, breaking the stated opt-out.",
+    "evidence": "ADR 0020 decision 2: \"`false`: the kit does not own it (pre-existing skill, or `--no-install-skill`).\" vs ADR 0020 decision 7: \"`update.sh` never installs `ultracave` when the value is `false`. A `--no-install-skill` user therefore stays opted out.\" Decision 7 also says: \"If `$CLAUDE_DIR/skills/ultracave/` is missing, it installs the skill at the resolved ref and records `true`.\" Legacy manifests carry an absent field, so a legacy --no-install-skill user with no ultracave dir gets installed.",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-019",
+    "group": "B",
+    "claim": "A failed ultracave migration can stall until the next upstream tag.",
+    "evidence": "ADR 0020 decision 7: \"If the install or the tag lookup fails, it prints a warning, keeps the value as `null`, and finishes the update. The next run retries.\" vs ADR 0021 decision 5: \"When it differs from `skillRef`, upgrade the kit-owned skills (decision 6).\" ADR 0021 decision 6 lists only reinstalls and the patch: \"`skillRef` advances only when every reinstall and the patch succeed.\" So skillRef can advance while ultracave is still `null`. The flowchart then takes `C -->|no| M` on the next run and never reaches the migration. The same gap applies to the install-time null path: \"records `ultracaveInstalledByKit: null`\".",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-020",
+    "group": "A",
+    "claim": "The install-side tag lookup abort appears in no diagram.",
+    "evidence": "ADR 0020 decision 6: \"A tag lookup failure is different: it aborts `install.sh` before any skill call (ADR 0021 decision 7).\" The ADR 0020 install flowchart goes from the --no-install-skill check straight to the presence check and has no lookup node.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-021",
+    "group": "B",
+    "claim": "ADR 0021 asserts the pre-change update.sh skips its skill step when no line matches. That is not verified in the artifact and overlaps ID-001.",
+    "evidence": "ADR 0021 decision 2: \"with no match it skips its skill step instead of installing an unpinned ref.\" vs ADR 0021 consequences: \"it pulls, copies the new hooks, repatches, and skips its skill step (decision 2).\" The stated first-run outcome depends on how the legacy script handles a failed match, which the ADR does not state. Capped at minor: evidence is implementation-level.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-022",
+    "group": "B",
+    "claim": "The ultracave install location is assumed and has no post-install check.",
+    "evidence": "ADR 0020 decision 4: \"When `caveman` is a real directory, that path is `$CLAUDE_DIR/skills/ultracave`, where `npx skills add -g` installs it.\" ADR 0020 decision 6 only covers the call's exit status: \"A failed `ultracave` call does not abort.\" Nothing checks that `ultracave/SKILL.md` exists after a successful call.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-023",
+    "group": "B",
+    "claim": "Caveman-era example and wenyan filters are applied to the ultracave body without a check.",
+    "evidence": "ADR 0020 decision 4: \"The existing row and example filters stay as they are.\" The ADR does not say whether those filters can strip lines from the ultracave body.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-024",
+    "group": "B",
+    "claim": "The skill step's repatch after a pluginRoot change is unspecified.",
+    "evidence": "ADR 0021 decision 5: \"Kit step, only when the kit has new commits: unpatch, pull, copy hooks, repatch, save `kitSha`.\" ADR 0020 decision 4 says: \"`install.sh` derives `pluginRoot` by resolving symlinks on `skills/caveman`.\" ADR 0021 does not say whether the skill step repatches settings.json when a reinstall changes the resolved root.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-025",
+    "group": "A",
+    "claim": "Legacy-install migration is an ordered two-run exchange across old and new update.sh, shown only in prose; no sequenceDiagram or stateDiagram-v2 covers it. Evidence: ADR 0021 Consequences: \"Legacy installs migrate in two runs.\" The only flowchart in ADR 0021 shows a single new-script run.",
+    "evidence": "",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-026",
+    "group": "A",
+    "claim": "skillRefOverride hold (version floor, latest sentinel, per-run notice) adds a manifest field and validation surface beyond the stated need of installing the latest release. Evidence: ADR 0021 decision 3 \"Override, persisted.\" Consequences: \"A held tag stops all skill upgrades until the user clears it.\" Capped at minor (listed construct).",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-027",
+    "group": "B",
+    "claim": "Tag-lookup failure aborts install.sh when caveman is present and ultracave is missing, contradicting the claim that an ultracave failure never blocks install. Evidence: ADR 0020 Consequences: \"A failed `ultracave` install never blocks install or update.\" versus decision 6: \"A tag lookup failure is different: it aborts `install.sh` before any skill call (ADR 0021 decision 7).\" Decision 6 also states \"The user's `caveman` is never blocked by an `ultracave` failure.\"",
+    "evidence": "",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-028",
+    "group": "B",
+    "claim": "A partial ultracave directory is never retried. Evidence: ADR 0020 decision 5: \"A partial directory left by a failed install takes this path.\" Decision 7 null branch: \"If `$CLAUDE_DIR/skills/ultracave/` is present, it records `false`.\" Scenario: install exits 0 but leaves no SKILL.md, so the field is recorded null; the next update.sh sees the directory, records false, and ultra falls back permanently. Distinct from ID-019.",
+    "evidence": "",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-029",
+    "group": "B",
+    "claim": "The update flow does not reach a step that records false for a legacy manifest with skillInstalledByKit false. Evidence: ADR 0020 decision 7: \"`update.sh` records `false` and installs nothing.\" ADR 0021 flowchart routes the owns-a-skill check straight to the final step, and decision 4 defines the must-install condition only as null or absent with skillInstalledByKit true.",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-030",
+    "group": "B",
+    "claim": "skillRef is unspecified for ultracave-only and pending installs. Evidence: ADR 0021 decision 4: \"It is `null` when the kit owns no skill.\" Decision 5: \"The pending step never changes `skillRef`.\" If skillRef stays null, later runs see a differing tag and reinstall pointlessly.",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-031",
+    "group": "B",
+    "claim": "ADR 0020 decision 7 reads as a one-step legacy migration, while ADR 0021 Consequences needs two runs. Evidence: ADR 0021 Consequences: \"Legacy installs migrate in two runs.\" ADR 0020 has no cross-reference.",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-032",
+    "group": "C",
+    "claim": "Scope gap: ownership value true where the user has removed the kit-owned ultracave directory and the tag equals skillRef. Evidence: ADR 0020 decision 2 and ADR 0021 decision 6, \"The skill moves with the kit-owned skills when the tag changes (ADR 0021 decision 6).\" Only a tag change triggers action, so the decision 5 fallback persists with no retry; the scope boundary is unstated.",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-033",
+    "group": "F",
+    "claim": "informational: ADR 0020 opted out via lineage-rules: exempt; filename prefix 0020 is below 0056, so it is a legacy artifact and the user must confirm whether to retrofit. Evidence: docs/adr/0020-onboard-ultracave-skill.md frontmatter \"lineage-rules: exempt\".",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-034",
+    "group": "F",
+    "claim": "informational: ADR 0021 opted out via lineage-rules: exempt; filename prefix 0021 is below 0056, so it is a legacy artifact and the user must confirm whether to retrofit. Evidence: docs/adr/0021-unpin-skill-version.md frontmatter \"lineage-rules: exempt\".",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-035",
+    "group": "F",
+    "claim": "informational: no requirements corpus found (no Requirements corpus block in docs/agents/domain.md, no .data/requirements/, no .scratch/), so Stage 2 is skipped and no Stage-1 major applies.",
+    "evidence": "",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-036",
+    "group": "B",
+    "claim": "A failed upgrade reinstall of a kit-owned ultracave is treated as a user deletion on the next run, so it is never retried.",
+    "evidence": "ADR 0021 decision 6: \"The next run sees the tag still differs from `skillRef` and retries all steps.\" versus ADR 0020 decision 7: \"If `ultracave` is missing, `update.sh` records `false` and does not reinstall it (decision 8).\" ADR 0020 decision 1: \"A directory without such a file counts as missing in every step.\" ADR 0020 decision 5: \"A partial directory left by a failed install takes this path.\" Scenario: the upgrade reinstall of a true ultracave fails and leaves no usable SKILL.md. The next run's presence step records false before the upgrade, so the retry never happens. ultra falls back permanently, and uninstall leaves the directory because \"`false`, `null` and an absent field leave the directory alone.\"",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-037",
+    "group": "B",
+    "claim": "The rule that every printed manual command is pinned cannot hold on the lookup-failure paths, because no tag exists there.",
+    "evidence": "ADR 0021 decision 7: \"Every manual command the kit prints is pinned: `npx skills add JuliusBrussee/caveman@<tag> --skill <skill> -a claude-code -g --copy`, where `<tag>` is the tag printed by `update.sh`'s warning, or `skillRef`.\" versus the same decision: \"When `caveman` is missing, `install.sh` takes its existing skill-install failure path: abort with the manual `npx skills add` command\". On a fresh install whose lookup failed, skillRef is null and no tag was printed, so <tag> has no value. The releases-page fallback covers only release notes: \"Release notes for installs with no recorded tag name the upstream releases page instead\".",
+    "severity": "major",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-038",
+    "group": "C",
+    "claim": "The ADR names re-running install.sh as a remedy but never defines its behavior over an existing install.",
+    "evidence": "ADR 0020 decision 7: \"Such a user installs `ultracave` with the manual command, or re-runs `install.sh`.\" The decision 1 table keys only on skill presence and has no row for an existing manifest. Read literally, the row \"| present | present | either | nothing | `false` | `false` |\" would drop kit ownership of a previously kit-owned ultracave on re-run. Neither ADR says whether a re-run is allowed, needs uninstall.sh first, or keeps existing ownership fields.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-039",
+    "group": "B",
+    "claim": "Decision 5 keeps a \"kit is up to date\" exit, but the same decision runs the skill step and pending step on every run.",
+    "evidence": "ADR 0021 decision 5: \"Presence step, every run, before the \\\"kit is up to date\\\" exit and with no network call\" versus \"Pending step, every run, after the upgrade check and independent of it\". The flowchart has no early exit after K -->|no|. If the exit is kept literally, it skips the retry that ADR 0020 Consequences relies on: \"the retry does not wait for a new upstream tag.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-040",
+    "group": "B",
+    "claim": "Hidden assumption: the overwrite behavior of the skills CLI is verified only at v4.0.1, and npx fetches an unpinned CLI.",
+    "evidence": "ADR 0020 decision 1: \"Verified on 2026-10-29 with `skills` CLI at `v4.0.1` ... a call over a partial `skills/ultracave/` (no `SKILL.md`) overwrites it and exits 0. The kit therefore does not delete a partial directory first.\" A later CLI could refuse to overwrite, and the partial directory would then stay null forever with no named fallback.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-041",
+    "group": "A",
+    "claim": "The skillRefOverride hold is a small state machine (none, held tag, cleared) shown only as prose. This is a critic-induced construct, so capped at minor.",
+    "evidence": "ADR 0021 decision 3: \"When set, the tag is saved in the manifest as `skillRefOverride`. Later runs without the variable use the saved tag and skip the lookup.\" and \"`CAVEMAN_KIT_SKILL_REF=latest` clears `skillRefOverride` and returns to the lookup.\" The ADR 0021 flowchart shows only \"Tag = skillRefOverride, else lookup\" and not how the hold is set or cleared.",
+    "severity": "minor",
+    "fix": "",
+    "status": "fixed",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-042",
+    "group": "A",
+    "claim": "Persisting the tag override in the manifest adds a field, a state machine and a per-run notice for a manual escape hatch. A plain env var per run would be simpler, though the ADR rejects that for hold semantics. Speculative, and the construct is critic-induced",
+    "evidence": "\"Later runs without the variable use the saved tag and skip the lookup.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "open",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-043",
+    "group": "A",
+    "claim": "ADR 0021 depends on release notes (the two-run migration, and the manual ultracave command for users who manage caveman themselves). The fixes list in ADR 0020 decision 10 names code and tests but no release-notes deliverable, so that step could be dropped",
+    "evidence": "\"The release notes tell users to run `update.sh` twice.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "open",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-044",
+    "group": "B",
+    "claim": "ADR 0020 decision 4 contradicts itself on whether the example filter applies to the ultracave path. One sentence says the example filters apply only to the caveman body. The next says the appended ultra example lines are filtered as before.",
+    "evidence": "\"The row and example filters apply only to the caveman body.\" vs \"The kit's appended `- ultra:` example lines are filtered as before (only the `ultra` line is kept).\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "open",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-045",
+    "group": "C",
+    "claim": "The uninstall rule for null does not cover a user who runs the printed manual command before the next update.sh. In that case uninstall.sh deletes an ultracave the user installed, which the ADR says never happens.",
+    "evidence": "ADR 0020 decision 2: \"`uninstall.sh` removes `$CLAUDE_DIR/skills/ultracave/` when the value is `true` or `null`, whether or not `SKILL.md` is still in it.\" and \"Under `null` any directory there is kit-created\"; the null-to-false handoff happens only on the next update.sh run.",
+    "severity": "minor",
+    "fix": "",
+    "status": "open",
+    "introduced_pass": null
+  },
+  {
+    "id": "ID-046",
+    "group": "C",
+    "claim": "No policy for a permanent upstream removal or rename of ultracave in a newer release. The retry rule treats it like a transient failure and repeats on every run with no end.",
+    "evidence": "ADR 0020 Consequences: \"A rename or removal upstream is caught by the fallback and by the bats fixture, not by a hard failure.\" ADR 0021 decision 6: \"The next run sees the tag still differs from `skillRef` and retries all steps.\"",
+    "severity": "minor",
+    "fix": "",
+    "status": "open",
+    "introduced_pass": null
+  }
+]
