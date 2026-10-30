@@ -119,8 +119,30 @@ global `~/.claude/.caveman-active` flag is used, as before. The repo file is
 also the persisted default for that repo — a new session starts in whatever
 mode was last set there. Hand-editing the file works too.
 
+## Desktop badge
+
+The Claude desktop app's Code tab may not render `statusline.sh`, so it shows
+no mode badge. The optional `caveman-badge` mod draws one above the prompt
+(`[CAVEMAN]`, `[CAVEMAN:LITE]`, `[CAVEMAN:ULTRA]`). It is read-only, desktop
+only (the terminal keeps the `statusline.sh` badge), and needs Claude Code
+v2.1.286 or later; older desktop builds show nothing.
+
+```
+/plugin marketplace add nj4x/caveman-kit
+/plugin install caveman-badge@caveman-kit
+```
+
+The badge polls the mode flag every 2 seconds and draws nothing once
+`~/.caveman-kit/hooks/caveman-activate.js` is gone, so it goes blank after
+`./uninstall.sh`. `uninstall.sh` does not remove the mod: run
+`/plugin uninstall caveman-badge@caveman-kit`. If you moved your config with
+`CLAUDE_CONFIG_DIR` and the desktop app does not pass it to mods, the badge
+reads the global flag from `~/.claude`. Terminal, VS Code, WSL, cloud
+sessions and claude.ai/code show no badge from the mod.
+
 ## Layout
 
 - `install.sh` / `uninstall.sh` — entry points
 - `hooks/` — hook scripts injected into `settings.json`
 - `lib/` — patch helpers shared by the hooks
+- `plugins/caveman-badge/` — optional desktop badge mod (`.claude-plugin/marketplace.json` lists it)

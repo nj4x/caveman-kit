@@ -1,0 +1,11 @@
+{
+  "name": "caveman-kit",
+  "owner": { "name": "nj4x" },
+  "plugins": [
+    {
+      "name": "caveman-badge",
+      "source": "./plugins/caveman-badge",
+      "description": "Shows the caveman mode badge in the Claude desktop app's Code tab (read-only; needs caveman-kit installed)"
+    }
+  ]
+}
