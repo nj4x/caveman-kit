@@ -59,6 +59,8 @@ fi
 
 CLAUDE_DIR="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.claudeDir || '')")"
 SKILL_INSTALLED_BY_KIT="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log(m.skillInstalledByKit === true ? 'true' : 'false')")"
+# Path passed as argv, never spliced into a JS string.
+ULTRACAVE_FLAG="$(node "$KIT_DIR/lib/manifest.js" get "$MANIFEST" ultracaveInstalledByKit)"
 SKILL_BACKUP="$(node -e "const m=JSON.parse(require('fs').readFileSync('$MANIFEST','utf8')); console.log((m.skillBackup === null || m.skillBackup === undefined) ? '' : m.skillBackup)")"
 
 SETTINGS="$CLAUDE_DIR/settings.json"
@@ -98,6 +100,18 @@ elif [ -n "$SKILL_BACKUP" ]; then
     echo "warning: skill backup recorded but missing at $SKILL_BACKUP — left SKILL.md untouched" >&2
   fi
 fi
+
+# ultracave cleanup (ADR 0020 decision 2): true = the kit installed it; null =
+# the kit tried to (any directory there is kit-created, SKILL.md or not).
+# false and an absent field (legacy manifest) leave the directory alone.
+case "$ULTRACAVE_FLAG" in
+  true|null)
+    if [ -e "$CLAUDE_DIR/skills/ultracave" ]; then
+      rm -rf "$CLAUDE_DIR/skills/ultracave"
+      echo "removed: $CLAUDE_DIR/skills/ultracave (installed by caveman-kit)"
+    fi
+    ;;
+esac
 
 rm -rf "$KIT_HOME"
 echo "removed: $KIT_HOME"

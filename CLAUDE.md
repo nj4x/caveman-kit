@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Installer kit that wires the third-party `caveman` Claude Code skill (JuliusBrussee/caveman, pinned to v4.0.1) into an existing Claude Code configuration via hooks. It does not contain the skill itself — it injects hook entries into `settings.json`, a badge into `statusline.sh`, and patches the skill's frontmatter.
+Installer kit that wires the third-party `caveman` and `ultracave` Claude Code skills (JuliusBrussee/caveman, newest release tag, ADR 0021) into an existing Claude Code configuration via hooks. It does not contain the skills themselves — it injects hook entries into `settings.json`, a badge into `statusline.sh`, and patches the skill's frontmatter.
 
 ## Commands
 
@@ -38,7 +38,7 @@ Two lifecycles that must stay symmetric:
 
 **Flag-file resolution** (ADR 0004): repo-scoped `<repo>/.claude/.caveman-mode` when cwd is in a git repo whose root has `.claude/` *and the flag file exists*; when the repo flag file is absent, hooks fall back to reading the global `~/.claude/.caveman-active` before the built-in default — a bare `.claude/` dir never shadows the global mode. Passive hooks never create `.claude/` nor the repo flag file (SessionStart re-persists to whichever file the mode came from); an explicit `/caveman <mode>` set does (symlink-safe, then re-resolves), and the flag file is auto-added to `.git/info/exclude`. Either flag doubles as the persisted default honored at startup. The statusline badge block in `lib/statusline-patch.js` duplicates this resolution in shell — keep the two in sync.
 
-**Skill location**: hooks find `SKILL.md` via `CLAUDE_PLUGIN_ROOT`, baked into the hook commands in `settings.json` at install time (symlink-resolved) and stored as `pluginRoot` in the manifest. `update.sh` re-resolves it (`refresh_plugin_root`) and repatches on drift. Deleting or moving the directory it points at silently disables the hooks — check `settings.json` hook commands before touching any `skills/caveman` directory. `update.sh` upgrades the skill only when `skillInstalledByKit=true`.
+**Skill location**: hooks find `SKILL.md` via `CLAUDE_PLUGIN_ROOT`, baked into the hook commands in `settings.json` at install time (symlink-resolved) and stored as `pluginRoot` in the manifest. `update.sh` re-resolves it (`refresh_plugin_root`) and repatches on drift. Deleting or moving the directory it points at silently disables the hooks — check `settings.json` hook commands before touching any `skills/caveman` directory. `update.sh` checks upstream's newest release tag on every run and upgrades only the skills the kit owns (`skillInstalledByKit`, `ultracaveInstalledByKit`: `true` owned, `false` not owned, `null` pending install); in `ultra` mode the hook injects `skills/ultracave/SKILL.md` and falls back to the caveman body when it is missing (ADR 0020, 0021). Manifest `skillRef` / `skillRefOverride` record the installed and held tags.
 
 ## Invariants
 
@@ -49,7 +49,7 @@ Two lifecycles that must stay symmetric:
 
 ## Design records
 
-`docs/adr/` holds six accepted ADRs (auto-install, frontmatter patch, uninstall symmetry/manifest, per-repo mode, SubagentStart delivery, dropped wenyan support). Code comments cite them by number — read the relevant ADR before changing behavior it governs, and record significant new decisions as a new ADR.
+`docs/adr/` holds the accepted ADRs (auto-install, frontmatter patch, uninstall symmetry/manifest, per-repo mode, SubagentStart delivery, dropped wenyan support, ultracave onboarding 0020, unpinned skill version 0021, and the bench records). Code comments cite them by number — read the relevant ADR before changing behavior it governs, and record significant new decisions as a new ADR.
 
 ## Agent skills
 
