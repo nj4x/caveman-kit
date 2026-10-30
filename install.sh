@@ -7,9 +7,11 @@
 # ~/.caveman-kit/backup/ so uninstall.sh can restore it exactly.
 #
 # Requires the caveman skill at $CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md.
-# If missing, installs it automatically (pinned) via `npx skills add`.
-# Pass --no-install-skill (or CAVEMAN_KIT_INSTALL_SKILL=0) to opt out and
-# manage it yourself (ADR 0001, amended).
+# If missing, installs it automatically via `npx skills add`, at the newest
+# upstream release tag (ADR 0021). Also installs the upstream ultracave skill
+# when missing (ADR 0020). Pass --no-install-skill (or
+# CAVEMAN_KIT_INSTALL_SKILL=0) to opt out and manage the skills yourself
+# (ADR 0001, amended). CAVEMAN_KIT_SKILL_REF=vX.Y.Z pins a release tag.
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +21,9 @@ BACKUP_DIR="$KIT_HOME/backup"
 SETTINGS="$CLAUDE_DIR/settings.json"
 STATUSLINE="$CLAUDE_DIR/statusline.sh"
 SKILL_PATH="$CLAUDE_DIR/skills/caveman/SKILL.md"
-SKILL_SOURCE="JuliusBrussee/caveman@v4.0.1"
+
+# shellcheck source=lib/skills.sh
+. "$KIT_DIR/lib/skills.sh"
 
 INSTALL_SKILL=1
 [ "${1:-}" = "--no-install-skill" ] && INSTALL_SKILL=0
@@ -42,6 +46,16 @@ write_manifest() {
   local skill_installed="$5"
   local completed="$6"
 
+  # Skill-tracking fields (ADR 0020, ADR 0021). Globals, so every manifest
+  # write carries the current values and a rollback sees what was installed.
+  local extra=""
+  [ -n "${ULTRACAVE_JSON:-}" ] && extra="$extra  \"ultracaveInstalledByKit\": $ULTRACAVE_JSON,
+"
+  [ -n "${SKILL_REF_JSON:-}" ] && extra="$extra  \"skillRef\": $SKILL_REF_JSON,
+"
+  [ -n "${SKILL_REF_OVERRIDE_JSON:-}" ] && extra="$extra  \"skillRefOverride\": $SKILL_REF_OVERRIDE_JSON,
+"
+
   cat > "$KIT_HOME/manifest.json" <<JSON
 {
   "installedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -51,7 +65,7 @@ write_manifest() {
   "pluginRoot": "${plugin_root:-null}",
   "skillInstalledByKit": ${skill_installed:-false},
   "skillBackup": ${skill_backup:-null},
-  "completed": ${completed:-false}
+${extra}  "completed": ${completed:-false}
 }
 JSON
 }
@@ -80,7 +94,7 @@ fi
 skill_missing_abort() {
   echo "[caveman-kit] error: caveman skill not found at $SKILL_PATH" >&2
   echo "caveman-kit only wires up hooks for it — install the skill first:" >&2
-  echo "  GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx skills add $SKILL_SOURCE --skill caveman -a claude-code -g --copy" >&2
+  echo "  $(manual_skill_cmd caveman "${SKILL_TAG:-}")" >&2
   echo "or drop --no-install-skill to let this installer do it automatically." >&2
   echo "Details: https://github.com/JuliusBrussee/caveman" >&2
   exit 1
@@ -98,12 +112,64 @@ if [ ! -f "$SETTINGS" ]; then
   exit 1
 fi
 
+# Skill installs (ADR 0020 decision 1 table, ADR 0021). Each skill is its own
+# npx call, pinned to the resolved release tag.
 SKILL_INSTALLED_BY_KIT=false
+ULTRACAVE_JSON="false"
+SKILL_REF_JSON=""
+SKILL_REF_OVERRIDE_JSON=""
+SKILL_TAG=""
+NEED_CAVEMAN=0
+NEED_ULTRACAVE=0
+
 if [ ! -f "$SKILL_PATH" ]; then
   [ "$INSTALL_SKILL" = "1" ] || skill_missing_abort
+  NEED_CAVEMAN=1
+fi
+if [ "$INSTALL_SKILL" = "1" ] && ! ultracave_present "$CLAUDE_DIR"; then
+  NEED_ULTRACAVE=1
+fi
 
-  echo "[caveman-kit] Installing caveman skill ($SKILL_SOURCE)..."
-  if ! GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx --yes skills add "$SKILL_SOURCE" --skill caveman -a claude-code -g -y --copy; then
+# A valid CAVEMAN_KIT_SKILL_REF is recorded as the held tag even when nothing
+# needs installing, so later update.sh runs keep using it (ADR 0021 decision 3).
+REF_ENV="${CAVEMAN_KIT_SKILL_REF:-}"
+if [ -n "$REF_ENV" ] && [ "$REF_ENV" != "latest" ]; then
+  if check_override "$REF_ENV"; then
+    SKILL_REF_OVERRIDE_JSON="\"$REF_ENV\""
+  elif [ "$NEED_CAVEMAN" = "0" ] && [ "$NEED_ULTRACAVE" = "0" ]; then
+    echo "[caveman-kit] warning: CAVEMAN_KIT_SKILL_REF=$REF_ENV rejected: expected vX.Y.Z at or above $SKILL_MIN_TAG; not recorded" >&2
+  fi
+fi
+
+if [ "$NEED_CAVEMAN" = "1" ] || [ "$NEED_ULTRACAVE" = "1" ]; then
+  # Resolve the tag: CAVEMAN_KIT_SKILL_REF (a pin), else the newest release.
+  LOOKUP_OK=1
+  if [ -n "$REF_ENV" ] && [ "$REF_ENV" != "latest" ]; then
+    if check_override "$REF_ENV"; then
+      SKILL_TAG="$REF_ENV"
+    else
+      echo "[caveman-kit] warning: CAVEMAN_KIT_SKILL_REF=$REF_ENV rejected: expected vX.Y.Z at or above $SKILL_MIN_TAG" >&2
+      LOOKUP_OK=0
+    fi
+  elif ! SKILL_TAG="$(latest_release_tag)"; then
+    echo "[caveman-kit] warning: could not resolve the latest $SKILL_REPO release tag (network, git, or no vX.Y.Z tags)" >&2
+    SKILL_TAG=""
+    LOOKUP_OK=0
+  fi
+
+  if [ "$LOOKUP_OK" = "0" ]; then
+    # Hard only when caveman itself is missing (ADR 0021 decision 7).
+    [ "$NEED_CAVEMAN" = "1" ] && skill_missing_abort
+    echo "[caveman-kit] warning: ultracave not installed; ultra mode uses the caveman rules until it is. Install it with:" >&2
+    echo "  $(manual_skill_cmd ultracave "")" >&2
+    NEED_ULTRACAVE=0
+    ULTRACAVE_JSON="null"
+  fi
+fi
+
+if [ "$NEED_CAVEMAN" = "1" ]; then
+  echo "[caveman-kit] Installing caveman skill ($SKILL_REPO@$SKILL_TAG)..."
+  if ! install_skill "$SKILL_TAG" caveman; then
     echo "[caveman-kit] warning: automated skill install failed" >&2
     skill_missing_abort
   fi
@@ -112,6 +178,19 @@ if [ ! -f "$SKILL_PATH" ]; then
     skill_missing_abort
   fi
   SKILL_INSTALLED_BY_KIT=true
+  SKILL_REF_JSON="\"$SKILL_TAG\""
+fi
+
+if [ "$NEED_ULTRACAVE" = "1" ]; then
+  echo "[caveman-kit] Installing ultracave skill ($SKILL_REPO@$SKILL_TAG)..."
+  if install_skill "$SKILL_TAG" ultracave && ultracave_present "$CLAUDE_DIR"; then
+    ULTRACAVE_JSON="true"
+    SKILL_REF_JSON="\"$SKILL_TAG\""
+  else
+    echo "[caveman-kit] warning: ultracave install failed; ultra mode uses the caveman rules until it is installed. Install it with:" >&2
+    echo "  $(manual_skill_cmd ultracave "$SKILL_TAG")" >&2
+    ULTRACAVE_JSON="null"
+  fi
 fi
 
 # Resolve through the skill's symlink chain (if any) so the SessionStart hook

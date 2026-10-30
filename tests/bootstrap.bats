@@ -84,6 +84,6 @@ teardown() {
   run bash "$BATS_TEST_DIRNAME/../bootstrap.sh"
   
   # Second run should say "Updating" not "Cloning"
-  [[ "$output" == *"Updating"* ]]
-  [[ "$output" != *"Cloning"* ]]
+  [[ "$output" == *"Updating"* ]] || false
+  [[ "$output" != *"Cloning"* ]] || false
 }

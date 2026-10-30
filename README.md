@@ -63,16 +63,22 @@ rm -rf ~/.local/share/caveman-kit ~/.caveman-kit
 
 Then manually remove hook entries from `~/.claude/settings.json` that reference `caveman-activate.js` or `caveman-mode-tracker.js`.
 
-## The caveman skill
+## The caveman and ultracave skills
 
 `install.sh` expects the `caveman` skill at
 `$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md` and installs it for you by
-default (pinned to `JuliusBrussee/caveman@v3.0.0`, skill only — no CLI,
-proxy, or binaries) via:
+default, at the newest upstream release tag (skill only — no CLI, proxy, or
+binaries), one `npx` call per skill:
 
 ```bash
-npx skills add JuliusBrussee/caveman@v3.0.0 --skill caveman -g --copy
+npx skills add JuliusBrussee/caveman@<tag> --skill caveman -a claude-code -g --copy
 ```
+
+`ultra` mode uses upstream's separate `ultracave` skill, so the installer adds
+it the same way when it is missing (`--skill ultracave`). Without it, `ultra`
+falls back to the caveman rules. Set `CAVEMAN_KIT_SKILL_REF=vX.Y.Z` (at least
+`v3.1.0`) to hold a release tag; the hold is kept in the manifest until
+`CAVEMAN_KIT_SKILL_REF=latest` clears it.
 
 If you'd rather manage that yourself — the install runs `npx` against a
 third-party GitHub repo — pass `--no-install-skill` (or set
@@ -86,15 +92,21 @@ curl -fsSL https://raw.githubusercontent.com/nj4x/caveman-kit/master/bootstrap.s
 
 See [caveman](https://github.com/JuliusBrussee/caveman) for details.
 
-`update.sh` upgrades the skill to the pinned version only when the kit
-installed it. A skill you installed yourself is never touched; upgrade it
-with the command above. `update.sh` also re-resolves where the hooks read
-`SKILL.md` from, so moving or replacing the skill directory does not leave
-the hooks pointing at a stale copy.
+`update.sh` checks upstream for a newer release on every run and upgrades the
+skills the kit installed. A skill you installed yourself is never touched;
+upgrade it with the command above. If you installed with
+`--no-install-skill`, or an older kit install left `caveman` under your
+management, `update.sh` will not install `ultracave`; run `npx skills add JuliusBrussee/caveman@<tag> --skill ultracave -a
+claude-code -g --copy` with `<tag>` set to the newest release on the
+[releases page](https://github.com/JuliusBrussee/caveman/releases). Existing
+installs need two `update.sh` runs to migrate: the first run executes the old
+script. `update.sh` also re-resolves where the hooks read `SKILL.md` from, so
+moving or replacing the skill directory does not leave the hooks pointing at a
+stale copy.
 
-The installer also patches the skill's frontmatter with
+The installer also patches the `caveman` skill's frontmatter with
 `disable-model-invocation: true` (original backed up and restored byte-exact
-on uninstall). If the kit auto-installed the skill, `uninstall.sh` removes it
+on uninstall). If the kit auto-installed a skill, `uninstall.sh` removes it
 again; a pre-existing skill is only ever restored, never removed.
 
 ## Per-repository mode

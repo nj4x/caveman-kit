@@ -10,7 +10,8 @@ setup() {
   export KIT_DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." && pwd)"
 
   mkdir -p "$CLAUDE_CONFIG_DIR/skills/caveman"
-  # Write a minimal SKILL.md fixture for the hook to read
+  # Minimal SKILL.md fixture in the upstream v4.0.1 shape: no intensity table,
+  # a "wenyan" alias line, mode-agnostic rules.
   cat > "$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md" <<'SKILL'
 ---
 name: caveman
@@ -21,31 +22,41 @@ Respond terse like smart caveman. All technical substance stay. Only fluff die.
 
 Default: **full**. Switch: `/caveman lite|full|ultra|wenyan-lite|wenyan-full|wenyan-ultra|off`.
 
+`/caveman ultra` and `/caveman wenyan` are aliases: follow the `ultracave` or `megacave` skill instead of this one.
+
 ## Rules
 
-Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries, hedging. Fragments OK. Short synonyms. No tool-call narration, no decorative tables/emoji.
+CAVEMAN-BODY-MARKER Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries, hedging. Fragments OK. Short synonyms.
 
 Classical chars = wenyan modes only. Never swap a word to a classical char to shrink at non-wenyan levels.
-
-## Intensity
-
-| Level | What change |
-|-------|------------|
-| **lite** | No filler/hedging. Keep articles + full sentences. Professional but tight |
-| **full** | Drop articles, fragments OK, short synonyms. Classic caveman |
-| **ultra** | Strip conjunctions when cause-then-effect stay unambiguous. One word when one word enough |
-
-Example "Why React component re-render?"
-- lite: "Your component re-renders because you create a new object reference each render. Wrap it in `useMemo`."
-- full: "New object ref each render. Inline object prop = new ref = re-render. Wrap in `useMemo`."
-- ultra: "Inline obj prop, new ref, re-render. `useMemo`."
 SKILL
+  install_ultracave "$CLAUDE_CONFIG_DIR"
 
   export CLAUDE_PLUGIN_ROOT="$CLAUDE_CONFIG_DIR"
 }
 
 teardown() {
   rm -rf "$HOME"
+}
+
+# Writes an ultracave fixture (upstream shape) under <root>/skills/ultracave.
+# Its body contains lines that look like caveman's mode bullets, to prove the
+# ultracave body is injected unfiltered.
+install_ultracave() {
+  mkdir -p "$1/skills/ultracave"
+  cat > "$1/skills/ultracave/SKILL.md" <<'SKILL'
+---
+name: ultracave
+disable-model-invocation: true
+---
+
+# ultracave
+
+ULTRACAVE-BODY-MARKER Respond terse like smart caveman. Then cut again.
+
+- lite: ultracave line that looks like a mode bullet
+- wenyan note kept because the ultracave body is not filtered
+SKILL
 }
 
 # Extracts additionalContext from the JSON hookSpecificOutput envelope.
@@ -88,8 +99,8 @@ make_repo() {
 
   output="$(run_hook)"
 
-  [[ "$output" == *"CAVEMAN MODE ACTIVE — level: full"* ]]
-  [[ "$output" == *"| **full** |"* ]]
+  [[ "$output" == *"CAVEMAN MODE ACTIVE — level: full"* ]] || false
+  [[ "$output" == *"CAVEMAN-BODY-MARKER"* ]] || false
 }
 
 @test "prefers the repo-scoped flag over the global one" {
@@ -98,18 +109,84 @@ make_repo() {
 
   output="$(run_hook "$repo")"
 
-  [[ "$output" == *"CAVEMAN MODE ACTIVE — level: ultra"* ]]
-  [[ "$output" == *"| **ultra** |"* ]]
+  [[ "$output" == *"CAVEMAN MODE ACTIVE — level: ultra"* ]] || false
+  [[ "$output" == *"ULTRACAVE-BODY-MARKER"* ]] || false
 }
 
-@test "emits only the active mode's table row" {
-  echo "lite" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+@test "lite and full inject the caveman body, not the ultracave body" {
+  for mode in lite full; do
+    echo "$mode" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+
+    output="$(run_hook)"
+
+    [[ "$output" == *"CAVEMAN-BODY-MARKER"* ]] || false
+    [[ "$output" != *"ULTRACAVE-BODY-MARKER"* ]] || false
+  done
+}
+
+@test "ultra injects the ultracave body in place of the caveman body, unfiltered" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
 
   output="$(run_hook)"
 
-  [[ "$output" == *"| **lite** |"* ]]
-  [[ "$output" != *"| **full** |"* ]]
-  [[ "$output" != *"| **ultra** |"* ]]
+  [[ "$output" == *"ULTRACAVE-BODY-MARKER"* ]] || false
+  [[ "$output" != *"CAVEMAN-BODY-MARKER"* ]] || false
+  [[ "$output" == *"- lite: ultracave line that looks like a mode bullet"* ]] || false
+  [[ "$output" == *"- wenyan note kept"* ]] || false
+  [[ "$output" != *"name: ultracave"* ]] || false
+}
+
+@test "ultra appends only the ultra example lines to the ultracave body" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"- ultra: \"Threads hit same resource unsync"* ]] || false
+  [[ "$output" != *"- full: \"Two threads hit same resource"* ]] || false
+  [[ "$output" != *"- lite: \"A race condition occurs"* ]] || false
+}
+
+@test "ultra reads ultracave from the config dir when the plugin root has none" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  other="$HOME/shared-store"
+  mkdir -p "$other/skills/caveman"
+  cp "$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md" "$other/skills/caveman/SKILL.md"
+  export CLAUDE_PLUGIN_ROOT="$other"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"ULTRACAVE-BODY-MARKER"* ]] || false
+}
+
+@test "ultra falls back to the caveman body with a stderr line when ultracave is missing" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"CAVEMAN MODE ACTIVE — level: ultra"* ]] || false
+  [[ "$output" == *"CAVEMAN-BODY-MARKER"* ]] || false
+  [[ "$output" == *"ultracave skill not found or empty"* ]] || false
+}
+
+@test "ultra falls back when the ultracave body after frontmatter is empty" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  printf -- '---\nname: ultracave\n---\n\n' > "$CLAUDE_CONFIG_DIR/skills/ultracave/SKILL.md"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"CAVEMAN-BODY-MARKER"* ]] || false
+  [[ "$output" != *"ULTRACAVE-BODY-MARKER"* ]] || false
+}
+
+@test "ultra still exits 0 when neither ultracave nor caveman is readable" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  export CLAUDE_PLUGIN_ROOT="$HOME/absent"
+
+  run bash -c "printf '{}' | node '$KIT_DIR/hooks/caveman-activate.js'"
+
+  [ "$status" -eq 0 ]
 }
 
 @test "every mode is resolvable from the global flag" {
@@ -118,7 +195,7 @@ make_repo() {
 
     output="$(run_hook)"
 
-    [[ "$output" == *"CAVEMAN MODE ACTIVE — level: $mode"* ]]
+    [[ "$output" == *"CAVEMAN MODE ACTIVE — level: $mode"* ]] || false
   done
 }
 
@@ -137,8 +214,8 @@ make_repo() {
 
   output="$(run_hook)"
 
-  [[ "$output" == *"could not read"* ]]
-  [[ "$output" == *"SKILL.md"* ]]
+  [[ "$output" == *"could not read"* ]] || false
+  [[ "$output" == *"SKILL.md"* ]] || false
 }
 
 @test "defaults hookEventName to SessionStart when the input omits it" {
@@ -146,8 +223,8 @@ make_repo() {
 
   raw="$(printf '{}' | node "$KIT_DIR/hooks/caveman-activate.js")"
 
-  [[ "$raw" == *'"hookEventName":"SessionStart"'* ]]
-  [[ "$raw" == *'"additionalContext"'* ]]
+  [[ "$raw" == *'"hookEventName":"SessionStart"'* ]] || false
+  [[ "$raw" == *'"additionalContext"'* ]] || false
 }
 
 @test "echoes hook_event_name back so SubagentStart deliveries are accepted" {
@@ -155,9 +232,9 @@ make_repo() {
 
   raw="$(printf '{"hook_event_name":"SubagentStart"}' | node "$KIT_DIR/hooks/caveman-activate.js")"
 
-  [[ "$raw" == *'"hookEventName":"SubagentStart"'* ]]
-  [[ "$raw" == *'"additionalContext"'* ]]
-  [[ "$raw" == *"CAVEMAN MODE ACTIVE"* ]]
+  [[ "$raw" == *'"hookEventName":"SubagentStart"'* ]] || false
+  [[ "$raw" == *'"additionalContext"'* ]] || false
+  [[ "$raw" == *"CAVEMAN MODE ACTIVE"* ]] || false
 }
 
 @test "honors the repo-scoped mode flag via cwd under SubagentStart" {
@@ -166,8 +243,8 @@ make_repo() {
 
   raw="$(printf '{"cwd":"%s","hook_event_name":"SubagentStart"}' "$repo" | node "$KIT_DIR/hooks/caveman-activate.js")"
 
-  [[ "$raw" == *'"hookEventName":"SubagentStart"'* ]]
-  [[ "$raw" == *"CAVEMAN MODE ACTIVE — level: ultra"* ]]
+  [[ "$raw" == *'"hookEventName":"SubagentStart"'* ]] || false
+  [[ "$raw" == *"CAVEMAN MODE ACTIVE — level: ultra"* ]] || false
 }
 
 @test "appends the active mode's supplemental example, not other modes'" {
@@ -175,9 +252,9 @@ make_repo() {
 
   output="$(run_hook)"
 
-  [[ "$output" == *"- full: \"Two threads hit same resource, race."* ]]
-  [[ "$output" != *"- lite: \"A race condition occurs"* ]]
-  [[ "$output" != *"- ultra: \"Threads hit same resource unsync"* ]]
+  [[ "$output" == *"- full: \"Two threads hit same resource, race."* ]] || false
+  [[ "$output" != *"- lite: \"A race condition occurs"* ]] || false
+  [[ "$output" != *"- ultra: \"Threads hit same resource unsync"* ]] || false
 }
 
 @test "strips wenyan mentions from the pinned upstream skill's prose" {
@@ -185,8 +262,8 @@ make_repo() {
 
   output="$(run_hook)"
 
-  [[ "$output" != *"wenyan"* ]]
-  [[ "$output" == *'Switch: `/caveman lite|full|ultra|off`.'* ]]
+  [[ "$output" != *"wenyan"* ]] || false
+  [[ "$output" == *'Switch: `/caveman lite|full|ultra|off`.'* ]] || false
 }
 
 @test "still emits a valid hook envelope when caveman-examples.md is missing" {
@@ -196,7 +273,27 @@ make_repo() {
 
   raw="$(printf '{}' | node "$tmp_hooks/caveman-activate.js")"
 
-  [[ "$raw" == *'"additionalContext"'* ]]
-  [[ "$raw" == *"CAVEMAN MODE ACTIVE — level: full"* ]]
+  [[ "$raw" == *'"additionalContext"'* ]] || false
+  [[ "$raw" == *"CAVEMAN MODE ACTIVE — level: full"* ]] || false
   rm -rf "$tmp_hooks"
+}
+
+@test "ultra treats unterminated ultracave frontmatter as empty and falls back" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  printf -- '---\nname: ultracave\nULTRACAVE-BODY-MARKER\n' > "$CLAUDE_CONFIG_DIR/skills/ultracave/SKILL.md"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"CAVEMAN-BODY-MARKER"* ]] || false
+  [[ "$output" != *"ULTRACAVE-BODY-MARKER"* ]] || false
+}
+
+@test "a mid-line --- in ultracave frontmatter does not end the frontmatter" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  printf -- '---\nname: ultracave\ndescription: terse---ultra\n---\nULTRACAVE-BODY-MARKER\n' > "$CLAUDE_CONFIG_DIR/skills/ultracave/SKILL.md"
+
+  output="$(run_hook)"
+
+  [[ "$output" == *"ULTRACAVE-BODY-MARKER"* ]] || false
+  [[ "$output" != *"description:"* ]] || false
 }

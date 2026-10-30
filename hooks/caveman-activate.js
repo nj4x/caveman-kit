@@ -4,10 +4,12 @@
 // Resolves the active mode, persists it to a flag file (read by the
 // statusline badge and the UserPromptSubmit hook), and — unless mode is
 // 'off' — injects the caveman ruleset filtered to that mode's row/examples
-// from the preinstalled caveman skill's SKILL.md.
+// from the preinstalled caveman skill's SKILL.md. In ultra mode it injects
+// the upstream ultracave skill instead (ADR 0020).
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
 
@@ -52,19 +54,10 @@ if (mode === 'off') {
 safeWriteFlag(target, mode);
 if (target === flagPath && repoRoot) ensureGitExclude(repoRoot);
 
-if (!process.env.CLAUDE_PLUGIN_ROOT) {
-  process.stderr.write('caveman-kit: CLAUDE_PLUGIN_ROOT not set, cannot locate the caveman skill\n');
-  process.exit(0);
-}
-
-const skillPath = path.join(process.env.CLAUDE_PLUGIN_ROOT, 'skills', 'caveman', 'SKILL.md');
-let skillContent;
-try {
-  skillContent = fs.readFileSync(skillPath, 'utf8');
-} catch (e) {
-  process.stderr.write(`caveman-kit: could not read ${skillPath}\n`);
-  process.exit(0);
-}
+// Strip YAML frontmatter from a skill file.
+// The fences must be whole lines, matching lib/skills.sh ultracave_present.
+const FRONTMATTER = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)\s*/;
+const stripFrontmatter = text => text.replace(FRONTMATTER, '');
 
 // Supplemental kit-authored examples (hooks/caveman-examples.md), covering
 // topics the upstream skill doesn't demonstrate. Optional — a missing file
@@ -74,19 +67,16 @@ try {
   examplesContent = fs.readFileSync(path.join(__dirname, 'caveman-examples.md'), 'utf8');
 } catch (e) { /* no supplemental examples shipped/found */ }
 
-// Strip YAML frontmatter, then keep only the active level's intensity-table
-// row and example lines — the rest of the ruleset (rules, boundaries, etc.)
-// applies at every level and is kept as-is. Supplemental examples are
-// appended before filtering so the same mode-keyed bullet regex applies.
-const body = skillContent.replace(/^---[\s\S]*?---\s*/, '') + (examplesContent ? '\n' + examplesContent : '');
-
 // The kit no longer supports wenyan-* modes (ADR 0006), but the pinned
 // upstream SKILL.md still advertises them in prose outside the table/bullet
 // lines below (e.g. the "Switch:" line). Strip those mentions so the
 // injected ruleset never advertises a mode caveman-mode-tracker.js rejects.
 const dropUnsupportedMode = line => line.replace(/\|?wenyan-(lite|full|ultra)/gi, '');
 
-const filtered = body.split('\n').reduce((acc, rawLine) => {
+// Keep only the active level's intensity-table row and example lines — the
+// rest of the ruleset (rules, boundaries, etc.) applies at every level and is
+// kept as-is.
+const filterForMode = text => text.split('\n').reduce((acc, rawLine) => {
   const line = dropUnsupportedMode(rawLine);
   const tableRowMatch = line.match(/^\|\s*\*\*(\S+?)\*\*\s*\|/);
   if (tableRowMatch) {
@@ -103,9 +93,60 @@ const filtered = body.split('\n').reduce((acc, rawLine) => {
   return acc;
 }, []);
 
+// In ultra mode the ruleset is the upstream ultracave skill (ADR 0020): its
+// body replaces the caveman body, unfiltered (it is already a single mode).
+// Looked up under the caveman skill's plugin root first, then under the
+// config dir, since a symlinked caveman can resolve to a different tree.
+// Unreadable or empty → null, and the caller falls back to the caveman body.
+const readUltracaveBody = () => {
+  const roots = [];
+  if (process.env.CLAUDE_PLUGIN_ROOT) roots.push(process.env.CLAUDE_PLUGIN_ROOT);
+  roots.push(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'));
+  for (const root of roots) {
+    try {
+      const raw = fs.readFileSync(path.join(root, 'skills', 'ultracave', 'SKILL.md'), 'utf8');
+      // Unterminated frontmatter counts as empty, as in ultracave_present.
+      if (/^---[ \t]*\r?\n/.test(raw) && !FRONTMATTER.test(raw)) continue;
+      const body = stripFrontmatter(raw);
+      if (body.trim()) return body;
+    } catch (e) { /* try the next root */ }
+  }
+  return null;
+};
+
+let injected = null;
+if (mode === 'ultra') {
+  const ultraBody = readUltracaveBody();
+  if (ultraBody !== null) {
+    injected = ultraBody + (examplesContent ? '\n' + filterForMode(examplesContent).join('\n') : '');
+  } else {
+    process.stderr.write('caveman-kit: ultracave skill not found or empty, using the caveman rules for ultra\n');
+  }
+}
+
+if (injected === null) {
+  if (!process.env.CLAUDE_PLUGIN_ROOT) {
+    process.stderr.write('caveman-kit: CLAUDE_PLUGIN_ROOT not set, cannot locate the caveman skill\n');
+    process.exit(0);
+  }
+
+  const skillPath = path.join(process.env.CLAUDE_PLUGIN_ROOT, 'skills', 'caveman', 'SKILL.md');
+  let skillContent;
+  try {
+    skillContent = fs.readFileSync(skillPath, 'utf8');
+  } catch (e) {
+    process.stderr.write(`caveman-kit: could not read ${skillPath}\n`);
+    process.exit(0);
+  }
+
+  // Supplemental examples are appended before filtering so the same
+  // mode-keyed bullet regex applies.
+  injected = filterForMode(stripFrontmatter(skillContent) + (examplesContent ? '\n' + examplesContent : '')).join('\n');
+}
+
 process.stdout.write(JSON.stringify({
   hookSpecificOutput: {
     hookEventName,
-    additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + filtered.join('\n')
+    additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + injected
   }
 }));
