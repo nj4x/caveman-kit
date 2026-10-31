@@ -1,8 +1,8 @@
 // Runs plugins/caveman-badge/hooks/badge.mjs against the real file system
-// (lstat for stat, as the JS hooks do) and prints the badge, or nothing.
+// (lstat for stat, as the JS hooks do) and prints the resolved mode, or none.
 // usage: node badge-run.mjs <home> <cwd>
 import { lstatSync, statSync, readFileSync } from 'node:fs';
-import { resolveMode, formatBadge } from '../../plugins/caveman-badge/hooks/badge.mjs';
+import { resolveMode } from '../../plugins/caveman-badge/hooks/badge.mjs';
 
 const [home, cwd] = process.argv.slice(2);
 const fs = {
@@ -20,5 +20,4 @@ const fs = {
   read: async path => readFileSync(path, 'utf8'),
 };
 const mode = await resolveMode({ home, configDir: process.env.CLAUDE_CONFIG_DIR, cwd, fs });
-const badge = formatBadge(mode);
-if (badge) process.stdout.write(badge);
+process.stdout.write(mode || 'none');

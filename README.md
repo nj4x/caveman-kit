@@ -122,8 +122,11 @@ mode was last set there. Hand-editing the file works too.
 ## Desktop badge
 
 The Claude desktop app's Code tab may not render `statusline.sh`, so it shows
-no mode badge. The optional `caveman-badge` mod draws one above the prompt
-(`[CAVEMAN]`, `[CAVEMAN:LITE]`, `[CAVEMAN:ULTRA]`). It is read-only, desktop
+no mode badge. The optional `caveman-badge` mod draws one above the prompt: a
+chip of three bones, where the number of solid bones is the mode (one for
+`lite`, two for `full`, three for `ultra`; unused bones are faded). Hover the
+chip to see the mode name. Version 0.1.0 drew text (`[CAVEMAN:ULTRA]`); update
+the plugin to get the chip. It is read-only, desktop
 only (the terminal keeps the `statusline.sh` badge), and needs Claude Code
 v2.1.286 or later; older desktop builds show nothing.
 
