@@ -126,7 +126,13 @@ no mode badge. The optional `caveman-badge` mod draws one above the prompt: a
 chip of three bones, where the number of solid bones is the mode (one for
 `lite`, two for `full`, three for `ultra`; unused bones are faded). Hover the
 chip to see the mode name. Version 0.1.0 drew text (`[CAVEMAN:ULTRA]`); update
-the plugin to get the chip. It is read-only, desktop
+the plugin to get the chip. Since 0.3.0, every 20 to 60 seconds the solid bones
+fall out of the chip and drop back into a stack, each taking a new color as it
+lands. The color is decoration only: the level is still the number of solid
+bones. Turn the animation off for every session with
+`/caveman-badge animation off` (`on` brings it back, `status` reports it); the
+setting is kept across restarts. The terminal badge does not animate. It is
+read-only, desktop
 only (the terminal keeps the `statusline.sh` badge), and needs Claude Code
 v2.1.286 or later; older desktop builds show nothing.
 
