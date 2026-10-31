@@ -1,5 +1,5 @@
 {
   "name": "caveman-badge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shows the caveman-kit mode badge in the Claude desktop app's Code tab. Read-only; needs caveman-kit installed."
 }

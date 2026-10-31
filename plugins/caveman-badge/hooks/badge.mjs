@@ -1,7 +1,7 @@
-// caveman-badge — pure flag resolution, parsing and formatting (ADR 0022
-// decisions 9-12). No `$` and no Node built-ins: every file access goes through
-// the injected `fs`, so tests run it with node's fs and register.tsx runs it
-// with `$.fs`.
+// caveman-badge — pure flag resolution and parsing (ADR 0022 decisions 9-12;
+// drawing moved to chip.mjs by ADR 0023). No `$` and no Node built-ins:
+// every file access goes through the injected `fs`, so tests run it with
+// node's fs and register.tsx runs it with `$.fs`.
 //
 // fs.stat(path) -> { kind, size, isLink } | null   (null when missing)
 // fs.read(path) -> string
@@ -25,12 +25,6 @@ function parentOf(dir) {
 export function parseMode(text) {
   const mode = String(text).toLowerCase().replace(/[^a-z0-9-]/g, '');
   return MODES.includes(mode) ? mode : null;
-}
-
-export function formatBadge(mode) {
-  if (mode === 'full') return '[CAVEMAN]';
-  if (mode === 'lite' || mode === 'ultra') return `[CAVEMAN:${mode.toUpperCase()}]`;
-  return null;
 }
 
 // Returns 'lite' | 'full' | 'ultra' | null. Every failure is null.

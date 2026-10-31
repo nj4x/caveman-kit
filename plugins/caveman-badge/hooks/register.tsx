@@ -1,10 +1,12 @@
 import type { EngineInterface, Register } from 'claude-code'
 
-import { formatBadge, resolveMode } from './badge.mjs'
+import { resolveMode } from './badge.mjs'
+import { CHIP_HEIGHT, CHIP_WIDTH, chipLabel, chipSvg } from './chip.mjs'
 
 // ADR 0022: read-only caveman mode badge, desktop only, drawn at AbovePrompt
 // (the prototype showed SessionMode is not drawn in the desktop Code tab).
-// Polls the flag every 2 s; redraws only when the mode changed.
+// Polls the flag every 2 s; redraws only when the mode changed. ADR 0023: the
+// badge is a chip of three bones (solid count = level) with a hover label.
 
 const POLL_MS = 2000
 
@@ -51,11 +53,25 @@ export const register: Register = on => {
     }
     startPolling($)
     if (mode === undefined) await refresh($)
-    const badge = formatBadge(mode)
-    if (!badge) {
+    const svg = chipSvg(mode)
+    const label = chipLabel(mode)
+    if (!svg || !label) {
       return next(e)
     }
-    const { Text } = $.ui.resolve(e)
-    return <Text>{badge}</Text>
+    const { Box, Svg, Text } = $.ui.resolve(e)
+    // Svg is missing on a build that cannot draw it: yield to the engine.
+    if (!Svg) return next(e)
+    // hover can only reveal a hidden Box, so the label is a sibling drawn
+    // display: none inside the keyed chip Box.
+    return (
+      <Box key="caveman-chip" flexDirection="row" alignItems="center">
+        <Box flexShrink={0}>
+          <Svg source={svg} alt={label.alt} width={CHIP_WIDTH} height={CHIP_HEIGHT} />
+        </Box>
+        <Box display="none" hover={{ display: 'flex' }} marginLeft={1}>
+          <Text>{label.hover}</Text>
+        </Box>
+      </Box>
+    )
   })
 }
