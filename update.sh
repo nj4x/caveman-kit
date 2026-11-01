@@ -142,7 +142,26 @@ repatch_settings() {
 health_check() {
   if [ ! -r "$PLUGIN_ROOT/skills/caveman/SKILL.md" ]; then
     echo "[caveman-kit update] warning: hooks read $PLUGIN_ROOT/skills/caveman/SKILL.md but it is missing or unreadable; caveman rules will not load until the skill is restored there" >&2
+    return 0
   fi
+  # ADR 0026 decision 5: ask the installed hook which rules ultra would load.
+  # resolveRulesSource reads skill files only, never a flag file. Any failure
+  # (no node, hook fails to load, no export) skips silently.
+  [ -d "$PLUGIN_ROOT" ] || return 0
+  local src
+  src="$(CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT" node -e '
+    const m = require(process.argv[1]);
+    if (typeof m.resolveRulesSource !== "function") process.exit(3);
+    process.stdout.write(String(m.resolveRulesSource("ultra")));
+  ' "$KIT_HOME/hooks/caveman-activate.js" 2>/dev/null)" || return 0
+  if [ "$src" = "caveman, ultracave missing" ]; then
+    # Pinned to the resolved or held tag, else skillRef (ADR 0021 decision 7).
+    local cmd_tag="${TAG:-}"
+    if [ -z "$cmd_tag" ] && [ -n "${OVERRIDE:-}" ] && check_override "$OVERRIDE"; then cmd_tag="$OVERRIDE"; fi
+    [ -n "$cmd_tag" ] || cmd_tag="$(mget_str skillRef 2>/dev/null || true)"
+    echo "[caveman-kit update] warning: ultracave is missing or unusable (no readable SKILL.md, an empty body, or unterminated frontmatter); ultra uses the caveman rules. Install it with: $(manual_skill_cmd ultracave "$cmd_tag")" >&2
+  fi
+  return 0
 }
 
 refresh_plugin_root
