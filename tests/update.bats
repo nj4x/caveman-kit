@@ -380,3 +380,124 @@ add_upstream_tag() {
   [ "$status" -eq 0 ]
   [ "$(manifest_get skillRef)" = '"v4.10.0"' ]
 }
+
+# ---- ultra health check (ADR 0026 decision 5) ----
+
+# Setup's install auto-installs ultracave; remove it and opt out so update.sh
+# does not reinstall it.
+drop_ultracave() {
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave" "$HOME/.agents/skills/ultracave"
+  mset ultracaveInstalledByKit false
+}
+
+# Record the clone's HEAD so update.sh skips the kit step, which would
+# overwrite a hand-edited hook copy.
+pin_kit_sha() {
+  mset kitSha "\"$(git -C "$HOME/kit" rev-parse HEAD)\""
+}
+
+add_ultracave() {
+  drop_ultracave
+  mkdir -p "$HOME/.agents/skills/ultracave"
+  printf -- '---\nname: ultracave\n---\n# Ultracave\nbody\n' > "$HOME/.agents/skills/ultracave/SKILL.md"
+}
+
+@test "health check: missing ultracave warns with a pinned manual command, exit 0" {
+  drop_ultracave
+  mset skillRef '"v4.0.1"'
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ultracave is missing or unusable"* ]] || false
+  [[ "$output" == *"ultra uses the caveman rules"* ]] || false
+  [[ "$output" == *"caveman@v4.0.1 --skill ultracave -a claude-code -g --copy"* ]] || false
+}
+
+@test "health check: present ultracave is silent" {
+  add_ultracave
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: ultracave with an empty body warns" {
+  drop_ultracave
+  mkdir -p "$HOME/.agents/skills/ultracave"
+  printf -- '---\nname: ultracave\n---\n' > "$HOME/.agents/skills/ultracave/SKILL.md"
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: hook copy without the export skips silently" {
+  drop_ultracave
+  pin_kit_sha
+  printf 'module.exports = {};\n' > "$HOME/.caveman-kit/hooks/caveman-activate.js"
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: hook that fails to load skips silently" {
+  drop_ultracave
+  pin_kit_sha
+  printf 'this is not javascript (\n' > "$HOME/.caveman-kit/hooks/caveman-activate.js"
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: node error skips silently" {
+  drop_ultracave
+  mkdir -p "$HOME/bin"
+  # Fail only the health-check probe; every other node call runs for real.
+  printf '#!/bin/sh\ncase "$*" in *resolveRulesSource*) exit 1;; esac\nexec %s "$@"\n' "$(command -v node)" > "$HOME/bin/node"
+  chmod +x "$HOME/bin/node"
+  PATH="$HOME/bin:$PATH" run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: non-directory plugin root gives only the caveman warning" {
+  drop_ultracave
+  # A live skill path would re-resolve the root (refresh_plugin_root).
+  rm "$CLAUDE_CONFIG_DIR/skills/caveman"
+  mset pluginRoot "\"$HOME/not-a-dir\""
+  : > "$HOME/not-a-dir"
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"missing or unreadable"* ]] || false
+  [[ "$output" != *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: manual command pins to a held tag when a rejected env ref blocks the lookup" {
+  drop_ultracave
+  mset skillRef '"v4.0.1"'
+  mset skillRefOverride '"v4.0.0"'
+  CAVEMAN_KIT_SKILL_REF=bogus run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ultracave is missing or unusable"*"caveman@v4.0.0 --skill ultracave"* ]] || false
+}
+
+@test "health check: a prior caveman warning suppresses the ultracave warning" {
+  drop_ultracave
+  rm -rf "$HOME/.agents/skills/caveman"
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"missing or unreadable"* ]] || false
+  [[ "$output" != *"ultracave is missing or unusable"* ]] || false
+}
+
+@test "health check: saved global and repo modes are unchanged" {
+  drop_ultracave
+  echo full > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  repo="$HOME/repo"
+  mkdir -p "$repo/.claude"
+  git -C "$repo" init -q
+  echo lite > "$repo/.claude/.caveman-mode"
+  cd "$repo"
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ultracave is missing or unusable"* ]] || false
+  [ "$(cat "$CLAUDE_CONFIG_DIR/.caveman-active")" = "full" ]
+  [ "$(cat "$repo/.claude/.caveman-mode")" = "lite" ]
+}
