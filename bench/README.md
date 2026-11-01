@@ -177,6 +177,37 @@ The runner does not compute this gate or escalate seeds by itself: read the
 paired cells yourself, and to escalate rerun with `--seeds 6` and the same
 `--run-id` (cells for seeds 1-3 are reused).
 
+## Upstream contract check
+
+```bash
+node bench/contract.js                 # newest upstream release tag
+node bench/contract.js --tag v3.2.0    # a given tag
+```
+
+Checks the real upstream skills against the hook (ADR 0026 decision 3). It
+makes **no API calls and spends no API quota**, but needs the network for the
+tag lookup and `npx skills add`. Run it before each kit release and whenever
+upstream tags a new release.
+
+All child processes run in a scrubbed environment: `HOME` is a temporary dir,
+`CLAUDE_CONFIG_DIR` and `CLAUDE_PLUGIN_ROOT` are both `<temp>/.claude`, and
+every `CAVEMAN_*` variable is removed, so your real config dir is never
+written to. The one exception is `CAVEMAN_KIT_SKILL_REMOTE` (a test-only
+remote override), which is passed only to the `lib/skills.sh` children. Steps: resolve the tag (`lib/skills.sh`, or validate `--tag`),
+probe `npx skills --version`, install both skills with `install_skills`, run
+the real SessionStart hook for `lite`, `full` and `ultra`, derive one
+distinguishing line per skill (`lib/rules.js`), and assert that `ultra` gets
+`(rules: ultracave)` with the `ultracave` line and without the caveman line,
+and `lite`/`full` the reverse.
+
+| Exit | Meaning |
+|------|---------|
+| `0` | every assertion passed |
+| `1` | upstream content broke the contract (skill missing, unusable or not distinguishable, a mode with no hook context, wrong header or line); every failure is printed |
+| `2` | the environment stopped the check (tag lookup, unknown or unreachable `--tag`, CLI probe, install that produced nothing while the repeat tag lookup also failed) |
+
+The temporary dir is removed on every exit. It opens no issue.
+
 ## Cost
 
 Every run spends real quota; the runner prints an estimate before the first
