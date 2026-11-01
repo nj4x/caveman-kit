@@ -56,7 +56,8 @@ const USAGE = `usage: node bench/run.js --kind single-turn|agentic [options]
   --yes               start without asking (required when there is no TTY)
 
 Auth: ANTHROPIC_API_KEY, else a readable <config dir>/.credentials.json.
-Skill: CAVEMAN_BENCH_SKILL_ROOT, else the kit manifest pluginRoot, else ~/.claude.`;
+Skill: CAVEMAN_BENCH_SKILL_ROOT, else the kit manifest pluginRoot, else ~/.claude.
+  The root needs skills/caveman/SKILL.md; ultra arms also need skills/ultracave/SKILL.md.`;
 
 class UsageError extends Error {}
 

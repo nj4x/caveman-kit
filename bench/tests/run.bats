@@ -62,6 +62,27 @@ teardown() { bench_teardown; }
   [ "$(stub_calls)" -eq 0 ]
 }
 
+@test "preflight-ultra-fallback: ultracave absent aborts the run before any claude call, naming the skill root" {
+  rm -r "$HOME/.claude/skills/ultracave"
+
+  run run_bench --kind single-turn --seeds 1 --yes
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"preflight ultra: ultracave SKILL.md missing or unusable under skill root $HOME/.claude"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"Estimated cost"* ]] || false
+  [ "$(stub_calls)" -eq 0 ]
+}
+
+@test "preflight-ultra-no-line: no distinguishing line aborts the run before any claude call" {
+  cp "$HOME/.claude/skills/caveman/SKILL.md" "$HOME/.claude/skills/ultracave/SKILL.md"
+
+  run run_bench --kind single-turn --seeds 1 --yes
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"no distinguishing line for: caveman, ultracave under skill root $HOME/.claude"* ]] || { echo "$output"; false; }
+  [ "$(stub_calls)" -eq 0 ]
+}
+
 @test "auth-missing: no API key and no credentials file exits non-zero naming both, before estimate" {
   unset ANTHROPIC_API_KEY
 
@@ -134,8 +155,8 @@ teardown() { bench_teardown; }
 
 @test "real-config-hidden: an explicit CLAUDE_CONFIG_DIR is replaced, never passed through" {
   export CLAUDE_CONFIG_DIR="$TEST_ROOT/custom-config"
-  mkdir -p "$CLAUDE_CONFIG_DIR/skills/caveman"
-  cp "$HOME/.claude/skills/caveman/SKILL.md" "$CLAUDE_CONFIG_DIR/skills/caveman/"
+  mkdir -p "$CLAUDE_CONFIG_DIR/skills"
+  cp -R "$HOME/.claude/skills/caveman" "$HOME/.claude/skills/ultracave" "$CLAUDE_CONFIG_DIR/skills/"
 
   run run_bench --kind single-turn --seeds 1 --yes
   [ "$status" -eq 0 ]

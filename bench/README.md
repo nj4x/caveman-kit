@@ -387,9 +387,13 @@ working directory (agentic calls run in a fixture clone, see above).
   `<config dir>/.credentials.json` is copied in; otherwise the run stops.
 - Skill: `CAVEMAN_BENCH_SKILL_ROOT`, else the kit manifest's `pluginRoot`,
   else `~/.claude` — whichever first contains `skills/caveman/SKILL.md`.
+  When an `ultra` arm is selected, that root also needs
+  `skills/ultracave/SKILL.md`; other arms do not.
 
 Before any paid call the runner executes each arm's SessionStart hook once
-(preflight; a mode arm with empty context aborts) and prints a rough cost
+(preflight; a mode arm with empty context aborts, and an `ultra` or
+`ultra-no-focus` arm whose context lacks the `ultracave` distinguishing line
+from `lib/rules.js` aborts, naming the skill root, ADR 0026) and prints a rough cost
 estimate (constants in `lib/estimate.js`).
 
 ## Tests
