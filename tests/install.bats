@@ -189,14 +189,99 @@ run_install() {
   run bash "$KIT_DIR/install.sh"
 }
 
-@test "both skills missing: installs caveman then ultracave at the newest release tag" {
+@test "both skills missing: one combined npx call at the newest release tag" {
   run_install
   [ "$status" -eq 0 ]
-  [ "$(sed -n 1p "$HOME/npx.log")" = "caveman JuliusBrussee/caveman@v4.0.1" ]
-  [ "$(sed -n 2p "$HOME/npx.log")" = "ultracave JuliusBrussee/caveman@v4.0.1" ]
+  [ "$(wc -l < "$HOME/npx.log" | tr -d ' ')" = "1" ]
+  [ "$(sed -n 1p "$HOME/npx.log")" = "caveman,ultracave JuliusBrussee/caveman@v4.0.1" ]
   [ "$(manifest_get skillInstalledByKit)" = "true" ]
   [ "$(manifest_get ultracaveInstalledByKit)" = "true" ]
   [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
+}
+
+@test "combined call, non-zero exit with both present: both true, warning names the exit" {
+  export NPX_EXIT1=1
+  run_install
+  [ "$status" -eq 0 ]
+  [ "$(manifest_get skillInstalledByKit)" = "true" ]
+  [ "$(manifest_get ultracaveInstalledByKit)" = "true" ]
+  [[ "$output" == *"exited 1"* ]] || false
+}
+
+@test "combined call, caveman missing after: aborts, no manifest, created ultracave dir removed" {
+  export NPX_NOWRITE=caveman
+  run_install
+  [ "$status" -ne 0 ]
+  [ ! -d "$HOME/.caveman-kit" ]
+  [ ! -e "$CLAUDE_CONFIG_DIR/skills/ultracave" ]
+}
+
+@test "combined call, caveman missing after: a pre-existing partial ultracave dir is left alone" {
+  mkdir -p "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  echo junk > "$CLAUDE_CONFIG_DIR/skills/ultracave/README.md"
+  export NPX_NOWRITE=caveman
+  run_install
+  [ "$status" -ne 0 ]
+  [ -f "$CLAUDE_CONFIG_DIR/skills/ultracave/README.md" ]
+}
+
+@test "combined call, caveman missing after: a dangling ultracave symlink is left alone" {
+  ln -s "$HOME/nowhere" "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  export NPX_FAIL=caveman
+  run_install
+  [ "$status" -ne 0 ]
+  [ -L "$CLAUDE_CONFIG_DIR/skills/ultracave" ]
+}
+
+@test "combined call, caveman present, ultracave missing: ultracave null with manual command, install finishes" {
+  export NPX_NOWRITE=ultracave
+  run_install
+  [ "$status" -eq 0 ]
+  [ "$(manifest_get skillInstalledByKit)" = "true" ]
+  [ "$(manifest_get ultracaveInstalledByKit)" = "null" ]
+  [[ "$output" == *"npx skills add JuliusBrussee/caveman@v4.0.1 --skill ultracave"* ]] || false
+  [ "$(manifest_get completed)" = "true" ]
+}
+
+@test "single-skill caveman call, non-zero exit with caveman present: records true with a warning" {
+  seed_ultracave
+  export NPX_EXIT1=1
+  run_install
+  [ "$status" -eq 0 ]
+  [ "$(manifest_get skillInstalledByKit)" = "true" ]
+  [[ "$output" == *"exited 1"* ]] || false
+}
+
+@test "single-skill ultracave call, non-zero exit with ultracave present: true, not null" {
+  seed_caveman
+  export NPX_EXIT1=1
+  run_install
+  [ "$status" -eq 0 ]
+  [ "$(manifest_get ultracaveInstalledByKit)" = "true" ]
+  [[ "$output" == *"exited 1"* ]] || false
+}
+
+@test "user-managed skill is never named in --skill" {
+  seed_ultracave
+  run_install
+  [ "$(cat "$HOME/npx.log")" = "caveman JuliusBrussee/caveman@v4.0.1" ]
+  rm -rf "$HOME/.caveman-kit" "$CLAUDE_CONFIG_DIR/skills/caveman"
+  : > "$HOME/npx.log"
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"; seed_caveman
+  run_install
+  [ "$(cat "$HOME/npx.log")" = "ultracave JuliusBrussee/caveman@v4.0.1" ]
+}
+
+@test "install_skills builds one call with repeated --skill; install_skill passes one" {
+  cat > "$HOME/bin/npx" <<'STUB'
+#!/usr/bin/env bash
+echo "$*" >> "$HOME/npx.args"
+STUB
+  . "$KIT_DIR/lib/skills.sh"
+  install_skills v1.2.3 caveman ultracave
+  install_skill v1.2.3 caveman
+  [ "$(sed -n 1p "$HOME/npx.args")" = "--yes skills add JuliusBrussee/caveman@v1.2.3 --skill caveman --skill ultracave -a claude-code -g -y --copy" ]
+  [ "$(sed -n 2p "$HOME/npx.args")" = "--yes skills add JuliusBrussee/caveman@v1.2.3 --skill caveman -a claude-code -g -y --copy" ]
 }
 
 @test "caveman present, ultracave missing: installs ultracave only" {
@@ -267,6 +352,7 @@ run_install() {
 }
 
 @test "failed caveman call aborts and rolls back" {
+  seed_ultracave
   export NPX_FAIL=caveman
   run_install
   [ "$status" -ne 0 ]

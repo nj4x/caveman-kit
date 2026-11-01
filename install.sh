@@ -112,8 +112,9 @@ if [ ! -f "$SETTINGS" ]; then
   exit 1
 fi
 
-# Skill installs (ADR 0020 decision 1 table, ADR 0021). Each skill is its own
-# npx call, pinned to the resolved release tag.
+# Skill installs (ADR 0020 decision 1 table, ADR 0021, ADR 0025). One npx call
+# when both skills are missing, else one per missing skill, pinned to the
+# resolved release tag.
 SKILL_INSTALLED_BY_KIT=false
 ULTRACAVE_JSON="false"
 SKILL_REF_JSON=""
@@ -167,25 +168,54 @@ if [ "$NEED_CAVEMAN" = "1" ] || [ "$NEED_ULTRACAVE" = "1" ]; then
   fi
 fi
 
-if [ "$NEED_CAVEMAN" = "1" ]; then
-  echo "[caveman-kit] Installing caveman skill ($SKILL_REPO@$SKILL_TAG)..."
-  if ! install_skill "$SKILL_TAG" caveman; then
-    echo "[caveman-kit] warning: automated skill install failed" >&2
-    skill_missing_abort
-  fi
+# Presence after a call decides the outcome for a skill that was missing before
+# it; a non-zero exit only adds a warning (ADR 0025 decisions 2 and 4).
+ULTRACAVE_DIR="$CLAUDE_DIR/skills/ultracave"
+ULTRACAVE_ENTRY_BEFORE=0
+{ [ -e "$ULTRACAVE_DIR" ] || [ -L "$ULTRACAVE_DIR" ]; } && ULTRACAVE_ENTRY_BEFORE=1
+
+if [ "$NEED_CAVEMAN" = "1" ] && [ "$NEED_ULTRACAVE" = "1" ]; then
+  echo "[caveman-kit] Installing caveman and ultracave skills ($SKILL_REPO@$SKILL_TAG)..."
+  CALL_RC=0
+  install_skills "$SKILL_TAG" caveman ultracave || CALL_RC=$?
   if [ ! -f "$SKILL_PATH" ]; then
-    echo "[caveman-kit] warning: skill install ran but $SKILL_PATH still missing" >&2
+    # No manifest is written on this path, so uninstall.sh could not remove a
+    # directory the call created (ADR 0025 decision 2).
+    if [ "$ULTRACAVE_ENTRY_BEFORE" = "0" ] && [ -d "$ULTRACAVE_DIR" ] && [ ! -L "$ULTRACAVE_DIR" ]; then
+      rm -rf "$ULTRACAVE_DIR"
+    fi
+    echo "[caveman-kit] warning: skill install ran (exit $CALL_RC) but $SKILL_PATH still missing" >&2
     skill_missing_abort
   fi
   SKILL_INSTALLED_BY_KIT=true
   SKILL_REF_JSON="\"$SKILL_TAG\""
-fi
-
-if [ "$NEED_ULTRACAVE" = "1" ]; then
+  if ultracave_present "$CLAUDE_DIR"; then
+    ULTRACAVE_JSON="true"
+    [ "$CALL_RC" = "0" ] || echo "[caveman-kit] warning: skill install exited $CALL_RC but both skills are present" >&2
+  else
+    echo "[caveman-kit] warning: ultracave install failed; ultra mode uses the caveman rules until it is installed. Install it with:" >&2
+    echo "  $(manual_skill_cmd ultracave "$SKILL_TAG")" >&2
+    ULTRACAVE_JSON="null"
+  fi
+elif [ "$NEED_CAVEMAN" = "1" ]; then
+  echo "[caveman-kit] Installing caveman skill ($SKILL_REPO@$SKILL_TAG)..."
+  CALL_RC=0
+  install_skill "$SKILL_TAG" caveman || CALL_RC=$?
+  if [ ! -f "$SKILL_PATH" ]; then
+    echo "[caveman-kit] warning: skill install ran (exit $CALL_RC) but $SKILL_PATH still missing" >&2
+    skill_missing_abort
+  fi
+  [ "$CALL_RC" = "0" ] || echo "[caveman-kit] warning: caveman install exited $CALL_RC but the skill is present" >&2
+  SKILL_INSTALLED_BY_KIT=true
+  SKILL_REF_JSON="\"$SKILL_TAG\""
+elif [ "$NEED_ULTRACAVE" = "1" ]; then
   echo "[caveman-kit] Installing ultracave skill ($SKILL_REPO@$SKILL_TAG)..."
-  if install_skill "$SKILL_TAG" ultracave && ultracave_present "$CLAUDE_DIR"; then
+  CALL_RC=0
+  install_skill "$SKILL_TAG" ultracave || CALL_RC=$?
+  if ultracave_present "$CLAUDE_DIR"; then
     ULTRACAVE_JSON="true"
     SKILL_REF_JSON="\"$SKILL_TAG\""
+    [ "$CALL_RC" = "0" ] || echo "[caveman-kit] warning: ultracave install exited $CALL_RC but the skill is present" >&2
   else
     echo "[caveman-kit] warning: ultracave install failed; ultra mode uses the caveman rules until it is installed. Install it with:" >&2
     echo "  $(manual_skill_cmd ultracave "$SKILL_TAG")" >&2
