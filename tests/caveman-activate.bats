@@ -297,3 +297,60 @@ make_repo() {
   [[ "$output" == *"ULTRACAVE-BODY-MARKER"* ]] || false
   [[ "$output" != *"description:"* ]] || false
 }
+
+# --- ADR 0026: rules source in the header, resolveRules export ---
+
+hook_header() {
+  printf '{"hook_event_name":"%s"}' "${1:-SessionStart}" | node "$KIT_DIR/hooks/caveman-activate.js" 2>/dev/null \
+    | node -e 'let r="";process.stdin.on("data",c=>r+=c).on("end",()=>process.stdout.write(JSON.parse(r).hookSpecificOutput.additionalContext.split("\n")[0]))'
+}
+
+@test "header names rules: ultracave for ultra with a usable ultracave" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  [ "$(hook_header)" = "CAVEMAN MODE ACTIVE — level: ultra (rules: ultracave)" ]
+}
+
+@test "header names rules: caveman for lite and full" {
+  for mode in lite full; do
+    echo "$mode" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+    [ "$(hook_header)" = "CAVEMAN MODE ACTIVE — level: $mode (rules: caveman)" ]
+  done
+}
+
+@test "header says ultracave missing when ultracave is absent, empty or unterminated" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  want="CAVEMAN MODE ACTIVE — level: ultra (rules: caveman, ultracave missing)"
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  [ "$(hook_header)" = "$want" ]
+  mkdir -p "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  printf -- '---\nname: ultracave\n---\n\n' > "$CLAUDE_CONFIG_DIR/skills/ultracave/SKILL.md"
+  [ "$(hook_header)" = "$want" ]
+  printf -- '---\nname: ultracave\nBODY text never closed\n' > "$CLAUDE_CONFIG_DIR/skills/ultracave/SKILL.md"
+  [ "$(hook_header)" = "$want" ]
+}
+
+@test "SubagentStart header carries the rules suffix" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  [ "$(hook_header SubagentStart)" = "CAVEMAN MODE ACTIVE — level: ultra (rules: ultracave)" ]
+}
+
+@test "fallback keeps the stderr line" {
+  echo "ultra" > "$CLAUDE_CONFIG_DIR/.caveman-active"
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  run bash -c "printf '{}' | node '$KIT_DIR/hooks/caveman-activate.js' 2>&1 >/dev/null"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ultracave skill not found or empty"* ]] || false
+}
+
+@test "requiring the module has no side effects and resolveRulesSource labels ultra" {
+  run node -e '
+    const m = require(process.argv[1]);
+    process.stdout.write(m.resolveRulesSource("ultra") + "|" + m.resolveRulesSource("full") + "|" + m.resolveRules("ultra").body.includes("ULTRACAVE-BODY-MARKER"));
+  ' "$KIT_DIR/hooks/caveman-activate.js"
+  [ "$status" -eq 0 ]
+  [ "$output" = "ultracave|caveman|true" ]
+  [ ! -e "$CLAUDE_CONFIG_DIR/.caveman-active" ]
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  run node -e 'process.stdout.write(require(process.argv[1]).resolveRulesSource("ultra"))' "$KIT_DIR/hooks/caveman-activate.js"
+  [ "$output" = "caveman, ultracave missing" ]
+}
