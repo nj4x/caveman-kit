@@ -151,8 +151,7 @@ add_upstream_tag() {
 
   run bash "$HOME/kit/update.sh"
   [ "$status" -eq 0 ]
-  grep -q '^caveman JuliusBrussee/caveman@v4.1.0$' "$HOME/npx.log"
-  grep -q '^ultracave JuliusBrussee/caveman@v4.1.0$' "$HOME/npx.log"
+  grep -q '^caveman,ultracave JuliusBrussee/caveman@v4.1.0$' "$HOME/npx.log"
   grep -q '^disable-model-invocation: true$' "$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md"
   [ "$(manifest_get skillRef)" = '"v4.1.0"' ]
 }
@@ -165,7 +164,7 @@ add_upstream_tag() {
   run bash "$HOME/kit/update.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"caveman-kit updated"* ]] || false
-  [[ "$output" == *"Upgrading caveman skill"* ]] || false
+  [[ "$output" == *"Upgrading caveman ultracave"* ]] || false
   [[ "$output" != *"Kit is already up to date"* ]] || false
   [ "$(manifest_get skillRef)" = '"v4.1.0"' ]
   [ "$(manifest_get kitSha)" = "\"$(git -C "$HOME/kit" rev-parse HEAD)\"" ]
@@ -303,7 +302,7 @@ add_upstream_tag() {
 
   CAVEMAN_KIT_SKILL_REF=v4.0.0 run bash "$HOME/kit/update.sh"
   [ "$status" -eq 0 ]
-  grep -q '^caveman JuliusBrussee/caveman@v4.0.0$' "$HOME/npx.log"
+  grep -q '^caveman,ultracave JuliusBrussee/caveman@v4.0.0$' "$HOME/npx.log"
   [ "$(manifest_get skillRef)" = '"v4.0.0"' ]
   [ "$(manifest_get skillRefOverride)" = '"v4.0.0"' ]
 
@@ -359,7 +358,7 @@ add_upstream_tag() {
   : > "$HOME/npx.log"
   run bash "$HOME/kit/update.sh"
   [ "$status" -eq 0 ]
-  grep -q '^caveman JuliusBrussee/caveman@v4.0.1$' "$HOME/npx.log"
+  grep -q '^caveman,ultracave JuliusBrussee/caveman@v4.0.1$' "$HOME/npx.log"
   [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
 }
 
@@ -379,4 +378,83 @@ add_upstream_tag() {
   run bash "$HOME/kit/update.sh"
   [ "$status" -eq 0 ]
   [ "$(manifest_get skillRef)" = '"v4.10.0"' ]
+}
+
+# ---- combined upgrade (ADR 0025 decisions 1, 3, 4) ----
+
+@test "combined: both due makes exactly one call" {
+  reinstall_kit_owned
+  add_upstream_tag v4.1.0
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [ "$(npx_calls)" = "1" ]
+  grep -q '^caveman,ultracave JuliusBrussee/caveman@v4.1.0$' "$HOME/npx.log"
+  [ "$(manifest_get skillRef)" = '"v4.1.0"' ]
+  [ "$(manifest_get skillInstalledByKit)" = "true" ]
+  [ "$(manifest_get ultracaveInstalledByKit)" = "true" ]
+}
+
+@test "combined: a user-managed caveman is never named in --skill" {
+  add_upstream_tag v4.1.0
+  run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [ "$(npx_calls)" = "1" ]
+  grep -q '^ultracave JuliusBrussee/caveman@v4.1.0$' "$HOME/npx.log"
+}
+
+@test "combined: non-zero exit with a kit-owned ultracave still present keeps true and skillRef" {
+  reinstall_kit_owned
+  add_upstream_tag v4.1.0
+  NPX_EXIT1=1 run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [ "$(npx_calls)" = "1" ]
+  [ "$(manifest_get ultracaveInstalledByKit)" = "true" ]
+  [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
+  # skill-patch.js ran despite the exit code.
+  grep -q '^disable-model-invocation: true$' "$CLAUDE_CONFIG_DIR/skills/caveman/SKILL.md"
+}
+
+@test "combined: ultracave missing after the call is null, skillRef unchanged, same-run single-skill retry" {
+  reinstall_kit_owned
+  add_upstream_tag v4.1.0
+  NPX_WIPE=ultracave run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [ "$(npx_calls)" = "2" ]
+  [ "$(sed -n 1p "$HOME/npx.log")" = "caveman,ultracave JuliusBrussee/caveman@v4.1.0" ]
+  [ "$(sed -n 2p "$HOME/npx.log")" = "ultracave JuliusBrussee/caveman@v4.1.0" ]
+  [ "$(manifest_get ultracaveInstalledByKit)" = "null" ]
+  [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
+}
+
+@test "combined: legacy migration run is one call; non-zero exit with ultracave written records true" {
+  reinstall_kit_owned
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/ultracave"
+  mset ultracaveInstalledByKit null
+  add_upstream_tag v4.1.0
+  NPX_EXIT1=1 run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [ "$(npx_calls)" = "1" ]
+  grep -q '^caveman,ultracave JuliusBrussee/caveman@v4.1.0$' "$HOME/npx.log"
+  [ "$(manifest_get ultracaveInstalledByKit)" = "true" ]
+  [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
+}
+
+@test "combined: a patch failure warns about auto-invocation and keeps skillRef" {
+  reinstall_kit_owned
+  add_upstream_tag v4.1.0
+  NPX_NOFRONT=caveman run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"could not patch caveman frontmatter"* ]] || false
+  [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
+}
+
+@test "combined: caveman missing after the call warns with the manual command and skips the patch" {
+  reinstall_kit_owned
+  add_upstream_tag v4.1.0
+  NPX_WIPE=caveman run bash "$HOME/kit/update.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"caveman is not present after the upgrade"* ]] || false
+  [[ "$output" == *"npx skills add JuliusBrussee/caveman@v4.1.0 --skill caveman"* ]] || false
+  [[ "$output" != *"could not patch"* ]] || false
+  [ "$(manifest_get skillRef)" = '"v4.0.1"' ]
 }
