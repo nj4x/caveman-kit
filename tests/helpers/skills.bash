@@ -5,7 +5,9 @@
 #   NPX_FAIL=<skill>      exit 1 for that skill, write nothing
 #   NPX_NOWRITE=<skill>   exit 0 for that skill but write no SKILL.md
 #   NPX_WIPE=<skill>      exit 0 for that skill after deleting its directory
-# Calls are logged to $HOME/npx.log, one line per call: "<skill> <repo@tag>".
+#   NPX_EXIT1=1           write files as normal but exit 1
+# A repeated --skill call writes each skill; NPX_FAIL makes the whole call exit 1.
+# Calls are logged to $HOME/npx.log, one line per call: "<skill[,skill]> <repo@tag>".
 
 # make_upstream <tag>...: creates $HOME/upstream.git with the given tags.
 make_upstream() {
@@ -23,22 +25,27 @@ install_npx_stub() {
   mkdir -p "$HOME/bin"
   cat > "$HOME/bin/npx" <<'STUB'
 #!/usr/bin/env bash
-skill=""; ref=""
+skills=""; ref=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --skill) skill="$2"; shift ;;
+    --skill) skills="${skills:+$skills,}$2"; shift ;;
     JuliusBrussee/caveman@*) ref="$1" ;;
   esac
   shift
 done
-echo "$skill $ref" >> "$HOME/npx.log"
-[ "${NPX_FAIL:-}" = "$skill" ] && exit 1
-[ "${NPX_NOWRITE:-}" = "$skill" ] && exit 0
-if [ "${NPX_WIPE:-}" = "$skill" ]; then rm -rf "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$skill"; exit 0; fi
-dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$skill"
-mkdir -p "$dir"
-printf -- '---\nname: %s\n---\n# %s from %s\n' "$skill" "$skill" "$ref" > "$dir/SKILL.md"
-exit 0
+echo "$skills $ref" >> "$HOME/npx.log"
+rc=0
+[ "${NPX_EXIT1:-}" = "1" ] && rc=1
+IFS=, read -r -a list <<< "$skills"
+for skill in "${list[@]}"; do
+  if [ "${NPX_FAIL:-}" = "$skill" ]; then rc=1; continue; fi
+  [ "${NPX_NOWRITE:-}" = "$skill" ] && continue
+  if [ "${NPX_WIPE:-}" = "$skill" ]; then rm -rf "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$skill"; continue; fi
+  dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$skill"
+  mkdir -p "$dir"
+  printf -- '---\nname: %s\n---\n# %s from %s\n' "$skill" "$skill" "$ref" > "$dir/SKILL.md"
+done
+exit $rc
 STUB
   chmod +x "$HOME/bin/npx"
   export PATH="$HOME/bin:$PATH"
