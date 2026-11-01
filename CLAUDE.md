@@ -25,6 +25,12 @@ echo '{"prompt":"/caveman ultra","cwd":"'$PWD'"}' | node hooks/caveman-mode-trac
 
 `bench/` is a maintainer-only live benchmark harness (ADR 0008): `install.sh`/`update.sh` never copy it, CI never runs it, and every `node bench/run.js` run spends real API quota. Its stub-based tests run with `bats bench/tests/` (not picked up by `bats tests/`). See `bench/README.md`.
 
+```bash
+node bench/contract.js [--tag vX.Y.Z]   # upstream contract check (ADR 0026): no API quota, needs network
+```
+
+Run it before each kit release and on each new upstream tag. It installs both skills at the tag into a temp `HOME` and checks that `ultra` gets the `ultracave` ruleset and `lite`/`full` the caveman one. Exit 0 pass, 1 upstream broke the contract, 2 environment stopped the check.
+
 ## Architecture
 
 Two lifecycles that must stay symmetric:
