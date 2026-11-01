@@ -43,6 +43,10 @@ for skill in "${list[@]}"; do
   if [ "${NPX_WIPE:-}" = "$skill" ]; then rm -rf "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$skill"; continue; fi
   dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/$skill"
   mkdir -p "$dir"
+  if [ "${NPX_NOFRONT:-}" = "$skill" ]; then
+    printf -- '# %s from %s\n' "$skill" "$ref" > "$dir/SKILL.md"
+    continue
+  fi
   printf -- '---\nname: %s\n---\n# %s from %s\n' "$skill" "$skill" "$ref" > "$dir/SKILL.md"
 done
 exit $rc
