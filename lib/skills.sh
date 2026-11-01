@@ -50,9 +50,18 @@ ultracave_present() {
   ' "$f"
 }
 
-# install_skill <tag> <skill>: one npx call for one skill, pinned to the tag.
+# install_skills <tag> <skill>...: one npx call for one or more skills, each
+# named by its own --skill flag, pinned to the tag (ADR 0025 decision 1).
+install_skills() {
+  local tag="$1" args=() s
+  shift
+  for s in "$@"; do args+=(--skill "$s"); done
+  GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx --yes skills add "$SKILL_REPO@$tag" "${args[@]}" -a claude-code -g -y --copy
+}
+
+# install_skill <tag> <skill>: the one-skill case of install_skills.
 install_skill() {
-  GH_HOST=github.com GH_TOKEN= GITHUB_TOKEN= npx --yes skills add "$SKILL_REPO@$1" --skill "$2" -a claude-code -g -y --copy
+  install_skills "$1" "$2"
 }
 
 # manual_skill_cmd <skill> [tag]: the command a user can run by hand. Always

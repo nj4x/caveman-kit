@@ -32,6 +32,14 @@ Respond terse like smart caveman.
 | **full** | Drop articles |
 | **ultra** | Strip conjunctions |
 SKILL
+  mkdir -p "$HOME/.claude/skills/ultracave"
+  cat > "$HOME/.claude/skills/ultracave/SKILL.md" <<'SKILL'
+---
+name: ultracave
+---
+
+Ultracave strips grammar. Payload only.
+SKILL
   echo "REAL USER CLAUDE.md" > "$HOME/.claude/CLAUDE.md"
   echo '{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"echo real-user-hook"}]}]}}' > "$HOME/.claude/settings.json"
 

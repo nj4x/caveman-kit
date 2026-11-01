@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Stub `npx` for bench/tests/contract.bats: never touches the network.
+# Logs each call (args, HOME, CLAUDE_CONFIG_DIR) to $STUB_NPX_LOG.
+# `npx skills --version`: exit $STUB_NPX_VERSION_EXIT (default 0).
+# `npx --yes skills add <repo@tag> --skill a --skill b ...`: copies
+# $STUB_SKILLS_SRC/<skill>/SKILL.md into $CLAUDE_CONFIG_DIR/skills/<skill>/
+# when the source exists, moves $STUB_BREAK_REMOTE aside when set (network
+# lost mid-run), prints a stderr line and exits $STUB_NPX_EXIT (default 0).
+printf '%s|HOME=%s|CCD=%s\n' "$*" "$HOME" "$CLAUDE_CONFIG_DIR" >> "${STUB_NPX_LOG:-/dev/null}"
+[ "$1" = "--yes" ] && shift
+if [ "$1 $2" = "skills --version" ]; then
+  echo "1.0.0-stub"
+  exit "${STUB_NPX_VERSION_EXIT:-0}"
+fi
+shift 3
+while [ $# -gt 0 ]; do
+  if [ "$1" = "--skill" ]; then
+    src="$STUB_SKILLS_SRC/$2/SKILL.md"
+    if [ -f "$src" ]; then
+      mkdir -p "$CLAUDE_CONFIG_DIR/skills/$2"
+      cp "$src" "$CLAUDE_CONFIG_DIR/skills/$2/SKILL.md"
+    fi
+    shift
+  fi
+  shift
+done
+if [ -n "${STUB_BREAK_REMOTE:-}" ]; then mv "$STUB_BREAK_REMOTE" "$STUB_BREAK_REMOTE.gone"; fi
+echo "stub npx: clone error tail" >&2
+exit "${STUB_NPX_EXIT:-0}"

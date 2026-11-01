@@ -14,6 +14,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const rules = require('./rules');
 
 const VALID_MODES = ['off', 'lite', 'full', 'ultra'];
 const ACTIVATE = 'caveman-activate.js';
@@ -73,11 +74,12 @@ function resolveAuth(env) {
   );
 }
 
-function skillFile(root) {
-  return path.join(root, 'skills', 'caveman', 'SKILL.md');
+function skillFile(root, skill = 'caveman') {
+  return path.join(root, 'skills', skill, 'SKILL.md');
 }
 
-// Directory holding skills/caveman/SKILL.md, in order: CAVEMAN_BENCH_SKILL_ROOT,
+// Directory holding skills/caveman/SKILL.md (skills/ultracave/SKILL.md next
+// to it is read only for ultra arms, ADR 0026 decision 4), in order: CAVEMAN_BENCH_SKILL_ROOT,
 // the kit manifest's pluginRoot, the real config dir. The file is copied into
 // each arm, so this path itself is never passed to claude.
 function resolveSkillRoot(env) {
@@ -96,8 +98,9 @@ function resolveSkillRoot(env) {
     } catch (e) { /* next */ }
   }
   throw new BenchError(
-    `caveman SKILL.md not found under: ${candidates.map(skillFile).join(', ')} ` +
-    '(set CAVEMAN_BENCH_SKILL_ROOT to a dir containing skills/caveman/SKILL.md)'
+    `caveman SKILL.md not found under: ${candidates.map(r => skillFile(r)).join(', ')} ` +
+    '(set CAVEMAN_BENCH_SKILL_ROOT to a dir containing skills/caveman/SKILL.md; ' +
+    'it needs skills/ultracave/SKILL.md too only when an ultra arm is selected)'
   );
 }
 
@@ -146,6 +149,11 @@ function buildArmConfig(arm, options = {}) {
     fs.mkdirSync(d, { recursive: true, mode: 0o700 });
   }
   fs.copyFileSync(skillFile(skillRoot), skillFile(pluginRoot));
+  // ultra arms inject ultracave when present (ADR 0020); preflight checks it.
+  if (fs.existsSync(skillFile(skillRoot, 'ultracave'))) {
+    fs.mkdirSync(path.dirname(skillFile(pluginRoot, 'ultracave')), { recursive: true, mode: 0o700 });
+    fs.copyFileSync(skillFile(skillRoot, 'ultracave'), skillFile(pluginRoot, 'ultracave'));
+  }
 
   const activateCmd = hookCommand(pluginRoot, hooksDir, ACTIVATE);
   const trackerCmd = hookCommand(pluginRoot, hooksDir, TRACKER);
@@ -183,7 +191,7 @@ function buildArmConfig(arm, options = {}) {
   env.CLAUDE_PLUGIN_ROOT = pluginRoot;
 
   return {
-    arm, name: arm.name, mode: arm.mode,
+    arm, name: arm.name, mode: arm.mode, skillRoot,
     dir, configDir, pluginRoot, workDir, hooksDir, settingsPath, flagPath,
     sessionStartCommand: activateCmd, userPromptSubmitCommand: trackerCmd, env,
   };
@@ -198,6 +206,27 @@ function disposeArmConfig(armConfig) {
 function asList(v) {
   if (v === undefined || v === null) return [];
   return Array.isArray(v) ? v : [v];
+}
+
+// The ultracave distinguishing line for a skill root (ADR 0026 decision 4),
+// derived via bench/lib/rules.js, the same derivation as bench/contract.js.
+// Throws BenchError naming the root when either skill is missing or
+// unusable, or no distinguishing line exists.
+function ultracaveLine(skillRoot) {
+  const where = `under skill root ${skillRoot}`;
+  const caveman = rules.readSkillBody(skillFile(skillRoot));
+  if (caveman === null) throw new BenchError(`caveman SKILL.md missing or unusable ${where}`);
+  const ultracave = rules.readSkillBody(skillFile(skillRoot, 'ultracave'));
+  if (ultracave === null) {
+    throw new BenchError(`ultracave SKILL.md missing or unusable ${where} (needed by ultra arms)`);
+  }
+  let line;
+  try {
+    line = rules.distinguishingLines(caveman, ultracave).ultracave;
+  } catch (e) {
+    throw new BenchError(`${e.message} ${where}`);
+  }
+  return line;
 }
 
 // Runs the arm's SessionStart hook command once, exactly as claude would,
@@ -241,6 +270,19 @@ function preflight(armConfig, options = {}) {
     // The seeded flag must be what the hook resolved (e.g. not shadowed by a
     // repo-scoped flag above the temp dir).
     fail(`context is not for mode ${armConfig.mode}: ${context.split('\n')[0]}`);
+  }
+  // An ultra arm whose hook fell back to the caveman body fails here,
+  // before any paid call (ADR 0026 decision 4).
+  if (armConfig.mode === 'ultra') {
+    let line;
+    try {
+      line = ultracaveLine(armConfig.skillRoot);
+    } catch (e) {
+      fail(e.message);
+    }
+    if (!context.includes(line)) {
+      fail(`context lacks the ultracave line ${JSON.stringify(line)} (caveman fallback?) under skill root ${armConfig.skillRoot}`);
+    }
   }
   for (const text of asList(options.requireText)) {
     if (!context.includes(text)) fail(`context lacks required text: ${JSON.stringify(text)}`);

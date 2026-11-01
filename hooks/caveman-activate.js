@@ -13,47 +13,6 @@ const os = require('os');
 const path = require('path');
 const { getDefaultMode, safeWriteFlag, readFlag, clearFlag, resolveFlagPath, ensureGitExclude } = require('./caveman-config');
 
-let cwd = null;
-let hookEventName = 'SessionStart';
-try {
-  if (!process.stdin.isTTY) {
-    const raw = fs.readFileSync(0, 'utf8');
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (data && typeof data.cwd === 'string') cwd = data.cwd;
-      if (data && typeof data.hook_event_name === 'string') hookEventName = data.hook_event_name;
-    }
-  }
-} catch (e) { /* no/bad stdin → global flag fallback */ }
-
-const { flagPath, repoRoot, globalFlag } = resolveFlagPath(cwd);
-
-// The flag file — repo-scoped or global — is both the live session state and
-// the persisted default (ADR 0004): every SessionStart honors it, including
-// a real startup. Precedence (decision 6): repo flag file → global flag →
-// CAVEMAN_DEFAULT_MODE / built-in 'full'. The write goes to whichever file
-// the mode came from — a passive session never creates the repo flag file,
-// even when a .claude/ dir already exists (only an explicit '/caveman <mode>'
-// scopes the mode to the repo).
-let mode = readFlag(flagPath);
-let target = flagPath;
-if (mode === null && flagPath !== globalFlag) {
-  mode = readFlag(globalFlag);
-  if (mode !== null) target = globalFlag;
-}
-if (mode === null) {
-  mode = getDefaultMode();
-  target = globalFlag;
-}
-
-if (mode === 'off') {
-  clearFlag(target);
-  process.exit(0);
-}
-
-safeWriteFlag(target, mode);
-if (target === flagPath && repoRoot) ensureGitExclude(repoRoot);
-
 // Strip YAML frontmatter from a skill file.
 // The fences must be whole lines, matching lib/skills.sh ultracave_present.
 const FRONTMATTER = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)\s*/;
@@ -76,7 +35,7 @@ const dropUnsupportedMode = line => line.replace(/\|?wenyan-(lite|full|ultra)/gi
 // Keep only the active level's intensity-table row and example lines — the
 // rest of the ruleset (rules, boundaries, etc.) applies at every level and is
 // kept as-is.
-const filterForMode = text => text.split('\n').reduce((acc, rawLine) => {
+const filterForMode = (text, mode) => text.split('\n').reduce((acc, rawLine) => {
   const line = dropUnsupportedMode(rawLine);
   const tableRowMatch = line.match(/^\|\s*\*\*(\S+?)\*\*\s*\|/);
   if (tableRowMatch) {
@@ -114,39 +73,94 @@ const readUltracaveBody = () => {
   return null;
 };
 
-let injected = null;
-if (mode === 'ultra') {
-  const ultraBody = readUltracaveBody();
-  if (ultraBody !== null) {
-    injected = ultraBody + (examplesContent ? '\n' + filterForMode(examplesContent).join('\n') : '');
-  } else {
-    process.stderr.write('caveman-kit: ultracave skill not found or empty, using the caveman rules for ultra\n');
+// Picks the ruleset body and its header label together (ADR 0026), so the
+// label cannot disagree with the body. Side-effect-free: reads skill files
+// only. source: 'ultracave' | 'caveman' | 'caveman, ultracave missing'.
+// body is null when the caveman skill is needed but unreadable (no
+// CLAUDE_PLUGIN_ROOT, or SKILL.md unreadable); error then names the cause.
+const resolveRules = mode => {
+  let source = 'caveman';
+  if (mode === 'ultra') {
+    const ultraBody = readUltracaveBody();
+    if (ultraBody !== null) {
+      return { source: 'ultracave', body: ultraBody + (examplesContent ? '\n' + filterForMode(examplesContent, mode).join('\n') : '') };
+    }
+    source = 'caveman, ultracave missing';
   }
-}
-
-if (injected === null) {
   if (!process.env.CLAUDE_PLUGIN_ROOT) {
-    process.stderr.write('caveman-kit: CLAUDE_PLUGIN_ROOT not set, cannot locate the caveman skill\n');
-    process.exit(0);
+    return { source, body: null, error: 'caveman-kit: CLAUDE_PLUGIN_ROOT not set, cannot locate the caveman skill\n' };
   }
-
   const skillPath = path.join(process.env.CLAUDE_PLUGIN_ROOT, 'skills', 'caveman', 'SKILL.md');
   let skillContent;
   try {
     skillContent = fs.readFileSync(skillPath, 'utf8');
   } catch (e) {
-    process.stderr.write(`caveman-kit: could not read ${skillPath}\n`);
+    return { source, body: null, error: `caveman-kit: could not read ${skillPath}\n` };
+  }
+  // Supplemental examples are appended before filtering so the same
+  // mode-keyed bullet regex applies.
+  return { source, body: filterForMode(stripFrontmatter(skillContent) + (examplesContent ? '\n' + examplesContent : ''), mode).join('\n') };
+};
+
+const resolveRulesSource = mode => resolveRules(mode).source;
+
+module.exports = { resolveRules, resolveRulesSource };
+
+if (require.main === module) {
+  let cwd = null;
+  let hookEventName = 'SessionStart';
+  try {
+    if (!process.stdin.isTTY) {
+      const raw = fs.readFileSync(0, 'utf8');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && typeof data.cwd === 'string') cwd = data.cwd;
+        if (data && typeof data.hook_event_name === 'string') hookEventName = data.hook_event_name;
+      }
+    }
+  } catch (e) { /* no/bad stdin → global flag fallback */ }
+
+  const { flagPath, repoRoot, globalFlag } = resolveFlagPath(cwd);
+
+  // The flag file — repo-scoped or global — is both the live session state and
+  // the persisted default (ADR 0004): every SessionStart honors it, including
+  // a real startup. Precedence (decision 6): repo flag file → global flag →
+  // CAVEMAN_DEFAULT_MODE / built-in 'full'. The write goes to whichever file
+  // the mode came from — a passive session never creates the repo flag file,
+  // even when a .claude/ dir already exists (only an explicit '/caveman <mode>'
+  // scopes the mode to the repo).
+  let mode = readFlag(flagPath);
+  let target = flagPath;
+  if (mode === null && flagPath !== globalFlag) {
+    mode = readFlag(globalFlag);
+    if (mode !== null) target = globalFlag;
+  }
+  if (mode === null) {
+    mode = getDefaultMode();
+    target = globalFlag;
+  }
+
+  if (mode === 'off') {
+    clearFlag(target);
     process.exit(0);
   }
 
-  // Supplemental examples are appended before filtering so the same
-  // mode-keyed bullet regex applies.
-  injected = filterForMode(stripFrontmatter(skillContent) + (examplesContent ? '\n' + examplesContent : '')).join('\n');
-}
+  safeWriteFlag(target, mode);
+  if (target === flagPath && repoRoot) ensureGitExclude(repoRoot);
 
-process.stdout.write(JSON.stringify({
-  hookSpecificOutput: {
-    hookEventName,
-    additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode}\n\n` + injected
+  const rules = resolveRules(mode);
+  if (rules.source === 'caveman, ultracave missing') {
+    process.stderr.write('caveman-kit: ultracave skill not found or empty, using the caveman rules for ultra\n');
   }
-}));
+  if (rules.body === null) {
+    process.stderr.write(rules.error);
+    process.exit(0);
+  }
+
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName,
+      additionalContext: `CAVEMAN MODE ACTIVE — level: ${mode} (rules: ${rules.source})\n\n` + rules.body
+    }
+  }));
+}

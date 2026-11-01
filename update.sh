@@ -142,7 +142,26 @@ repatch_settings() {
 health_check() {
   if [ ! -r "$PLUGIN_ROOT/skills/caveman/SKILL.md" ]; then
     echo "[caveman-kit update] warning: hooks read $PLUGIN_ROOT/skills/caveman/SKILL.md but it is missing or unreadable; caveman rules will not load until the skill is restored there" >&2
+    return 0
   fi
+  # ADR 0026 decision 5: ask the installed hook which rules ultra would load.
+  # resolveRulesSource reads skill files only, never a flag file. Any failure
+  # (no node, hook fails to load, no export) skips silently.
+  [ -d "$PLUGIN_ROOT" ] || return 0
+  local src
+  src="$(CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT" node -e '
+    const m = require(process.argv[1]);
+    if (typeof m.resolveRulesSource !== "function") process.exit(3);
+    process.stdout.write(String(m.resolveRulesSource("ultra")));
+  ' "$KIT_HOME/hooks/caveman-activate.js" 2>/dev/null)" || return 0
+  if [ "$src" = "caveman, ultracave missing" ]; then
+    # Pinned to the resolved or held tag, else skillRef (ADR 0021 decision 7).
+    local cmd_tag="${TAG:-}"
+    if [ -z "$cmd_tag" ] && [ -n "${OVERRIDE:-}" ] && check_override "$OVERRIDE"; then cmd_tag="$OVERRIDE"; fi
+    [ -n "$cmd_tag" ] || cmd_tag="$(mget_str skillRef 2>/dev/null || true)"
+    echo "[caveman-kit update] warning: ultracave is missing or unusable (no readable SKILL.md, an empty body, or unterminated frontmatter); ultra uses the caveman rules. Install it with: $(manual_skill_cmd ultracave "$cmd_tag")" >&2
+  fi
+  return 0
 }
 
 refresh_plugin_root
@@ -308,40 +327,75 @@ if [ -n "$TAG" ]; then
     REINSTALLED=0
     ALL_OK=1
 
+    # One call for every due skill (ADR 0025 decision 1). A user-managed skill
+    # is never named. A pending ultracave joins only beside a kit-owned caveman
+    # (the legacy migration run); alone it takes the pending step below.
+    UP_SKILLS=()
+    UP_CAVEMAN=0
+    UP_ULTRA_BEFORE=""
     if [ "$SKILL_INSTALLED_BY_KIT" = "true" ]; then
-      echo "[caveman-kit update] Upgrading caveman skill ($SKILL_REPO@$TAG)..."
-      if install_skill "$TAG" caveman; then
-        REINSTALLED=$((REINSTALLED + 1))
-        # The reinstall replaces SKILL.md, dropping the ADR 0002 patch.
+      UP_SKILLS+=(caveman)
+      UP_CAVEMAN=1
+      if [ "$ULTRA" = "true" ] || [ "$ULTRA" = "null" ]; then
+        UP_SKILLS+=(ultracave)
+        UP_ULTRA_BEFORE="$ULTRA"
+      fi
+    elif [ "$ULTRA" = "true" ]; then
+      UP_SKILLS+=(ultracave)
+      UP_ULTRA_BEFORE="true"
+    fi
+
+    echo "[caveman-kit update] Upgrading ${UP_SKILLS[*]} ($SKILL_REPO@$TAG)..."
+    if install_skills "$TAG" "${UP_SKILLS[@]}"; then
+      UP_RC=0
+    else
+      UP_RC=1
+    fi
+
+    if [ "$UP_CAVEMAN" = "1" ]; then
+      if [ ! -f "$SKILL_PATH" ]; then
+        echo "[caveman-kit update] warning: caveman is not present after the upgrade; the hooks load no caveman rules until it is restored: $(manual_skill_cmd caveman "$TAG")" >&2
+        ALL_OK=0
+        CAVEMAN_FAILED=1
+      else
+        # Runs whatever the exit code: a failed call may still have replaced
+        # SKILL.md and dropped the ADR 0002 patch (ADR 0025 decision 3).
+        PATCH_OK=1
         if ! node "$KIT_DIR/lib/skill-patch.js" "$SKILL_PATH"; then
           echo "[caveman-kit update] warning: could not patch caveman frontmatter; the model can auto-invoke caveman until the next run" >&2
+          PATCH_OK=0
           ALL_OK=0
           CAVEMAN_FAILED=1
         fi
-      else
-        echo "[caveman-kit update] warning: caveman upgrade failed; keeping the old skillRef" >&2
-        ALL_OK=0
-        CAVEMAN_FAILED=1
+        if [ "$UP_RC" -ne 0 ]; then
+          echo "[caveman-kit update] warning: caveman upgrade failed; keeping the old skillRef" >&2
+          ALL_OK=0
+          CAVEMAN_FAILED=1
+        elif [ "$PATCH_OK" = "1" ]; then
+          REINSTALLED=$((REINSTALLED + 1))
+        fi
       fi
     fi
 
-    if [ "$ULTRA" = "true" ]; then
-      echo "[caveman-kit update] Upgrading ultracave skill ($SKILL_REPO@$TAG)..."
-      if install_skill "$TAG" ultracave; then
-        UC_RC=0
-      else
-        UC_RC=1
-      fi
+    if [ "$UP_ULTRA_BEFORE" = "true" ]; then
       if ! ultracave_present "$CLAUDE_DIR"; then
         echo "[caveman-kit update] warning: ultracave is not present after the upgrade; marking it pending" >&2
         ULTRA="null"
         mset ultracaveInstalledByKit null
         ALL_OK=0
-      elif [ "$UC_RC" -ne 0 ]; then
+      elif [ "$UP_RC" -ne 0 ]; then
         echo "[caveman-kit update] warning: ultracave upgrade failed; the previous copy stays in place" >&2
         ALL_OK=0
       else
         REINSTALLED=$((REINSTALLED + 1))
+      fi
+    elif [ "$UP_ULTRA_BEFORE" = "null" ]; then
+      # Missing before the call: presence decides (ADR 0025 decision 4).
+      if ultracave_present "$CLAUDE_DIR"; then
+        ULTRA="true"
+        mset ultracaveInstalledByKit true
+        CHANGED=1
+        [ "$UP_RC" -ne 0 ] && echo "[caveman-kit update] warning: the skills call exited non-zero but ultracave is present; recording it as installed" >&2
       fi
     fi
 
@@ -354,12 +408,17 @@ if [ -n "$TAG" ]; then
   fi
 
   # Pending step: runs whenever ultracave is still null, even with an
-  # unchanged tag (ADR 0021 decision 5).
+  # unchanged tag (ADR 0021 decision 5). After a combined call that left it
+  # null this is the same-run single-skill retry (ADR 0025 decision 3).
   if [ "$ULTRA" = "null" ]; then
     echo "[caveman-kit update] Installing ultracave skill ($SKILL_REPO@$TAG)..."
-    if install_skill "$TAG" ultracave && ultracave_present "$CLAUDE_DIR"; then
+    UC_RC=0
+    install_skill "$TAG" ultracave || UC_RC=1
+    # Presence decides for a skill that was missing (ADR 0025 decision 4).
+    if ultracave_present "$CLAUDE_DIR"; then
       ULTRA="true"
       mset ultracaveInstalledByKit true
+      [ "$UC_RC" -ne 0 ] && echo "[caveman-kit update] warning: the ultracave call exited non-zero but ultracave is present; recording it as installed" >&2
       # skillRef is written here only when it is still null, and never after a
       # failed caveman upgrade this run: that would hide the caveman retry.
       if [ -z "$(mget_str skillRef)" ] && [ "$CAVEMAN_FAILED" = "0" ]; then

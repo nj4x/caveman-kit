@@ -113,6 +113,50 @@ teardown() { bench_teardown; }
   '
 }
 
+@test "preflight-ultra: ultra arms pass with ultracave and fail without it, naming the skill root" {
+  node_assert '
+    const root = process.env.HOME + "/.claude";
+    const ultra = isolation.buildArmConfig({ name: "ultra", mode: "ultra" }, { kitDir: process.env.KIT_DIR });
+    assert.ok(isolation.preflight(ultra).context.includes("Ultracave strips grammar. Payload only."));
+    fs.rmSync(root + "/skills/ultracave", { recursive: true });
+    for (const name of ["ultra", "ultra-no-focus"]) {
+      const c = isolation.buildArmConfig({ name, mode: "ultra" }, { kitDir: process.env.KIT_DIR, skillRoot: root });
+      assert.throws(() => isolation.preflight(c), e => e.message.startsWith("preflight " + name + ": ") && e.message.includes("ultracave SKILL.md missing or unusable under skill root " + root));
+    }
+  '
+}
+
+@test "preflight-ultra: bare, lite and full arms pass without ultracave" {
+  rm -r "$HOME/.claude/skills/ultracave"
+  node_assert '
+    for (const [name, mode] of [["bare", "off"], ["lite", "lite"], ["full", "full"]]) {
+      const c = isolation.buildArmConfig({ name, mode }, { kitDir: process.env.KIT_DIR });
+      isolation.preflight(c);
+    }
+  '
+}
+
+@test "preflight-ultra: a caveman fallback context fails even with ultracave present" {
+  hooks="$TEST_ROOT/fallback-hooks"
+  mkdir -p "$hooks"
+  cp "$KIT_DIR"/hooks/*.js "$hooks/"
+  printf '%s\n' 'process.stdout.write(JSON.stringify({hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:"CAVEMAN MODE ACTIVE — level: ultra\nRespond terse like smart caveman."}}));' > "$hooks/caveman-activate.js"
+  export FALLBACK_HOOKS="$hooks"
+
+  node_assert '
+    const c = isolation.buildArmConfig({ name: "ultra", mode: "ultra" }, { hooksDir: process.env.FALLBACK_HOOKS });
+    assert.throws(() => isolation.preflight(c), /preflight ultra: context lacks the ultracave line "Ultracave strips grammar. Payload only."/);
+  '
+}
+
+@test "preflight-ultra: no distinguishing line fails the ultra arm" {
+  cp "$HOME/.claude/skills/caveman/SKILL.md" "$HOME/.claude/skills/ultracave/SKILL.md"
+  node_assert '
+    const c = isolation.buildArmConfig({ name: "ultra", mode: "ultra" }, { kitDir: process.env.KIT_DIR });
+    assert.throws(() => isolation.preflight(c), /no distinguishing line for: caveman, ultracave under skill root /);
+  '
+}
+
 @test "estimate-confirm: on a TTY y/yes proceed; n, empty and end of input abort" {
   node -e '
     const { PassThrough } = require("stream");
@@ -166,6 +210,7 @@ teardown() { bench_teardown; }
     assert.strictEqual(isolation.resolveSkillRoot({ HOME: home }), root + "/manifest-root");
     assert.strictEqual(isolation.resolveSkillRoot({ HOME: home, CAVEMAN_BENCH_SKILL_ROOT: root + "/override" }), root + "/override");
     assert.throws(() => isolation.resolveSkillRoot({ HOME: root + "/nohome" }), /SKILL.md not found/);
+    assert.throws(() => isolation.resolveSkillRoot({ HOME: root + "/nohome" }), /CAVEMAN_BENCH_SKILL_ROOT .*skills\/caveman\/SKILL.md; it needs skills\/ultracave\/SKILL.md too only when an ultra arm is selected/);
   '
 }
 
