@@ -22,6 +22,12 @@ process.stdin.on('end', () => {
     let { flagPath, repoRoot, gitRoot, globalFlag } = resolveFlagPath(cwd);
     let prompt = (data.prompt || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
+    // Prompts a human didn't type (background-task and session/CI envelopes)
+    // get no mode parsing and no reminder: each one would repeat the reminder
+    // and its text is not the user speaking. Allowlist, lowercased to match.
+    const NON_HUMAN_PREFIXES = ['<task-notification>', '<side-sessions-event>', '<ci-monitor-event>'];
+    if (NON_HUMAN_PREFIXES.some(p => prompt.startsWith(p))) return;
+
     // Claude Code delivers slash commands to this hook as an envelope, not
     // the literal text:
     //   <command-name>/caveman</command-name><command-args>ultra</command-args>
